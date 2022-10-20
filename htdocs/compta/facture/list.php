@@ -217,6 +217,7 @@ $arrayfields = array(
 	'f.date_valid'=>array('label'=>"DateValidation", 'checked'=>0, 'position'=>22),
 	'f.date_lim_reglement'=>array('label'=>"DateDue", 'checked'=>1, 'position'=>25),
 	'f.date_closing'=>array('label'=>"DateClosing", 'checked'=>0, 'position'=>30),
+	'f.last_sent_email_date'=>array('label'=>"Envoyé par mail le", 'checked'=>0, 'position'=>35),
 	'p.ref'=>array('label'=>"ProjectRef", 'checked'=>1, 'enabled'=>(!isModEnabled('project') ? 0 : 1), 'position'=>40),
 	'p.title'=>array('label'=>"ProjectLabel", 'checked'=>0, 'enabled'=>(!isModEnabled('project') ? 0 : 1), 'position'=>41),
 	's.nom'=>array('label'=>"ThirdParty", 'checked'=>1, 'position'=>50),
@@ -1369,6 +1370,11 @@ if ($resql) {
 		print '</div>';
 		print '</td>';
 	}
+	// Last sent email date
+	if (!empty($arrayfields['f.last_sent_email_date']['checked'])) {
+		print '<td class="liste_titre">';
+		print '</td>';
+	}
 	// Project ref
 	if (!empty($arrayfields['p.ref']['checked'])) {
 		print '<td class="liste_titre"><input class="flat maxwidth50imp" type="text" name="search_project_ref" value="'.$search_project_ref.'"></td>';
@@ -1627,6 +1633,9 @@ if ($resql) {
 	}
 	if (!empty($arrayfields['f.date_lim_reglement']['checked'])) {
 		print_liste_field_titre($arrayfields['f.date_lim_reglement']['label'], $_SERVER['PHP_SELF'], "f.date_lim_reglement", '', $param, 'align="center"', $sortfield, $sortorder);
+	}
+	if (!empty($arrayfields['f.last_sent_email_date']['checked'])) {
+		print_liste_field_titre($arrayfields['f.last_sent_email_date']['label'], $_SERVER["PHP_SELF"], "f.last_sent_email_date", "", $param, 'align="center" class="nowrap"', $sortfield, $sortorder);
 	}
 	if (!empty($arrayfields['p.ref']['checked'])) {
 		print_liste_field_titre($arrayfields['p.ref']['label'], $_SERVER['PHP_SELF'], "p.ref", '', $param, '', $sortfield, $sortorder);
@@ -1995,6 +2004,22 @@ if ($resql) {
 				if ($facturestatic->hasDelay()) {
 					print img_warning($langs->trans('Alert').' - '.$langs->trans('Late'));
 				}
+				print '</td>';
+				if (!$i) {
+					$totalarray['nbfield']++;
+				}
+			}
+
+			// Last sent email date
+			if (!empty($arrayfields['f.last_sent_email_date']['checked'])) {
+				print '<td align="center" class="nowrap">';
+				$lastemail = $objecttmp->getLastSentEmail($obj->id);
+				if($lastemail){
+					print dol_print_date($db->jdate($lastemail->datec), 'dayhour', 'tzuser');
+				}
+				//print_r($obj->id);
+				//print $obj->getLastSentEmail($obj->id);
+				//print dol_print_date($db->jdate($obj->date_closing), 'dayhour', 'tzuser');
 				print '</td>';
 				if (!$i) {
 					$totalarray['nbfield']++;

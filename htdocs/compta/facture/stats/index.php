@@ -65,6 +65,14 @@ if ($user->socid > 0) {
 }
 
 $nowyear = strftime("%Y", dol_now());
+$nowmonth = strftime("%m", dol_now());
+
+$startmonth = $conf->global->SOCIETE_FISCAL_MONTH_START?($conf->global->SOCIETE_FISCAL_MONTH_START) : 1;
+if (empty($conf->global->GRAPH_USE_FISCAL_YEAR)) $startmonth = 1;
+
+if($nowmonth>=$startmonth){
+	$nowyear = $nowyear + 1;
+}
 $year = GETPOST('year') > 0 ? GETPOST('year', 'int') : $nowyear;
 $startyear = $year - (empty($conf->global->MAIN_STATS_GRAPHS_SHOW_N_YEARS) ? 2 : max(1, min(10, $conf->global->MAIN_STATS_GRAPHS_SHOW_N_YEARS)));
 $endyear = $year;
@@ -119,7 +127,7 @@ if ($mode == 'supplier') {
 
 // Build graphic number of object
 // $data = array(array('Lib',val1,val2,val3),...)
-$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear);
+$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear, 0, $startmonth);
 //var_dump($data);
 
 $filenamenb = $dir."/invoicesnbinyear-".$year.".png";
@@ -137,7 +145,15 @@ if (!$mesg) {
 	$i = $startyear;
 	$legend = array();
 	while ($i <= $endyear) {
-		$legend[] = $i;
+		//$legend[] = $i;
+		if ($startmonth != 1)
+		{
+			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
+		}
+		else
+		{
+			$legend[]=$i;
+		}
 		$i++;
 	}
 	$px1->SetLegend($legend);
@@ -154,7 +170,7 @@ if (!$mesg) {
 }
 
 // Build graphic amount of object
-$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear);
+$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear, 0, $startmonth);
 //var_dump($data);
 // $data = array(array('Lib',val1,val2,val3),...)
 
@@ -173,7 +189,15 @@ if (!$mesg) {
 	$i = $startyear;
 	$legend = array();
 	while ($i <= $endyear) {
-		$legend[] = $i;
+		//$legend[] = $i;
+		if ($startmonth != 1)
+		{
+			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
+		}
+		else
+		{
+			$legend[]=$i;
+		}
 		$i++;
 	}
 	$px2->SetLegend($legend);
@@ -218,7 +242,15 @@ if (!$mesg) {
 	$i = $startyear;
 	$legend = array();
 	while ($i <= $endyear) {
-		$legend[] = $i;
+		//$legend[] = $i;
+		if ($startmonth != 1)
+		{
+			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
+		}
+		else
+		{
+			$legend[]=$i;
+		}
 		$i++;
 	}
 	$px3->SetLegend($legend);
@@ -237,7 +269,7 @@ if (!$mesg) {
 
 
 // Show array
-$data = $stats->getAllByYear();
+$data = $stats->getAllByFiscalYear();
 $arrayyears = array();
 foreach ($data as $val) {
 	$arrayyears[$val['year']] = $val['year'];
@@ -363,7 +395,13 @@ print '</tr>';
 
 $oldyear = 0;
 foreach ($data as $val) {
-	$year = $val['year'];
+	if($val['year']==$oldyear){
+		$year = $val['year']-1;
+	}
+	else{
+		$year = $val['year'];
+	}
+	$nextperiod = $year+1;
 	while ($year && $oldyear > $year + 1) {	// If we have empty year
 		$oldyear--;
 
@@ -379,7 +417,7 @@ foreach ($data as $val) {
 	}
 
 	print '<tr class="oddeven" height="24">';
-	print '<td align="center"><a href="'.$_SERVER["PHP_SELF"].'?year='.$year.'&amp;mode='.$mode.($socid > 0 ? '&socid='.$socid : '').($userid > 0 ? '&userid='.$userid : '').'">'.$year.'</a></td>';
+	print '<td align="center"><a href="'.$_SERVER["PHP_SELF"].'?year='.$nextperiod.'&amp;mode='.$mode.($socid > 0 ? '&socid='.$socid : '').($userid > 0 ? '&userid='.$userid : '').'">'.$year.'/'.$nextperiod.'</a></td>';
 	print '<td class="right">'.$val['nb'].'</td>';
 	print '<td class="right opacitylow" style="'.((empty($val['nb_diff']) || $val['nb_diff'] >= 0) ? 'color: green;' : 'color: red;').'">'.(!empty($val['nb_diff']) && $val['nb_diff'] < 0 ? '' : '+').round(!empty($val['nb_diff']) ? $val['nb_diff'] : 0).'%</td>';
 	print '<td class="right"><span class="amount">'.price(price2num($val['total'], 'MT'), 1).'</span></td>';

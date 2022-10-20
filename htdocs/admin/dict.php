@@ -149,6 +149,7 @@ $tabname[41] = "c_transport_mode";
 $tabname[42] = "c_product_nature";
 $tabname[43] = "c_productbatch_qcstatus";
 $tabname[44] = "c_asset_disposal_type";
+$tabname[45] = "c_sectent";
 
 // Dictionary labels
 $tablib = array();
@@ -196,6 +197,7 @@ $tablib[41] = "DictionaryTransportMode";
 $tablib[42] = "DictionaryProductNature";
 $tablib[43] = "DictionaryBatchStatus";
 $tablib[44] = "DictionaryAssetDisposalType";
+$tablib[45] = "DictionarySecteurEntreprise";
 
 // Requests to extract data
 $tabsql = array();
@@ -243,6 +245,7 @@ $tabsql[41] = "SELECT rowid as rowid, code, label, active FROM ".MAIN_DB_PREFIX.
 $tabsql[42] = "SELECT rowid as rowid, code, label, active FROM ".MAIN_DB_PREFIX."c_product_nature";
 $tabsql[43] = "SELECT rowid, code, label, active FROM ".MAIN_DB_PREFIX."c_productbatch_qcstatus";
 $tabsql[44] = "SELECT rowid, code, label, active FROM ".MAIN_DB_PREFIX."c_asset_disposal_type";
+$tabsql[45] = "SELECT id, code, libelle, active FROM ".MAIN_DB_PREFIX."c_sectent";
 
 // Criteria to sort dictionaries
 $tabsqlsort = array();
@@ -576,6 +579,7 @@ $tabcomplete = array(
 	'c_product_nature'=>array('picto'=>'product', 'help'=>array('code'=>$langs->trans("EnterAnyCode"))),
 	'c_productbatch_qcstatus'=>array('picto'=>'lot', 'help'=>array('code'=>$langs->trans("EnterAnyCode"))),
 	'c_asset_disposal_type'=>array('picto'=>'asset', 'help'=>array('code'=>$langs->trans("EnterAnyCode"))),
+	'c_sectent'=>array('picto'=>'company'),
 );
 
 

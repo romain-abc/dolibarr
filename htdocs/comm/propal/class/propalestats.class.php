@@ -238,6 +238,28 @@ class PropaleStats extends Stats
 	}
 
 
+	/**
+	 *	Return nb, total and average
+	 *
+	 *	@return	array	Array of values
+	 */
+	public function getAllByFiscalYear()
+	{
+		global $user;
+
+		$sql = "SELECT date_format(".$this->field_date.",'%Y') as year, COUNT(*) as nb, SUM(".$this->field.") as total, AVG(".$this->field.") as avg";
+		$sql .= " FROM ".$this->from;
+		if (!$user->rights->societe->client->voir && !$this->socid) {
+			$sql .= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
+		}
+		$sql .= $this->join;
+		$sql .= " WHERE ".$this->where;
+		$sql .= " GROUP BY floor(period_diff( DATE_FORMAT(".$this->field_date.", '%Y%m'), '200704') / 12)";
+		$sql .= $this->db->order('year', 'DESC');
+
+		return $this->_getAllByYear($sql);
+	}
+
 
 	/**
 	 *	Return nb, amount of predefined product for year
