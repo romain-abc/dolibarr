@@ -97,10 +97,11 @@ $dol_openinpopup = GETPOST('dol_openinpopup', 'aZ09');
 $confirm 	= GETPOST('confirm', 'alpha');
 
 $socid = GETPOST('socid', 'int') ?GETPOST('socid', 'int') : GETPOST('id', 'int');
+$code_client = GETPOST('code_client', 'alpha');
 if ($user->socid) {
 	$socid = $user->socid;
 }
-if (empty($socid) && $action == 'view') {
+if ((empty($socid) && empty($code_client)) && $action == 'view') {
 	$action = 'create';
 }
 
@@ -117,8 +118,13 @@ $socialnetworks = getArrayOfSocialNetworks();
 // Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
 $hookmanager->initHooks(array('thirdpartycard', 'globalcard'));
 
-if ($socid > 0) {
-	$object->fetch($socid);
+if($code_client){
+	$object->fetch(0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $code_client);
+}
+else{
+	if ($socid > 0) {
+		$object->fetch($socid);
+	}
 }
 
 if (!($object->id > 0) && $action == 'view') {
