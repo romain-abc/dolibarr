@@ -127,7 +127,7 @@ if ($mode == 'supplier') {
 
 // Build graphic number of object
 // $data = array(array('Lib',val1,val2,val3),...)
-$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear, 0, $startmonth);
+$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear, 0, 0, $startmonth);
 //var_dump($data);
 
 $filenamenb = $dir."/invoicesnbinyear-".$year.".png";
@@ -170,7 +170,7 @@ if (!$mesg) {
 }
 
 // Build graphic amount of object
-$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear, 0, $startmonth);
+$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear, 0, 0, $startmonth);
 //var_dump($data);
 // $data = array(array('Lib',val1,val2,val3),...)
 
@@ -215,7 +215,7 @@ if (!$mesg) {
 }
 
 
-$data = $stats->getAverageByMonthWithPrevYear($endyear, $startyear);
+$data = $stats->getAverageByMonthWithPrevYear($endyear, $startyear, $startmonth);
 
 if (empty($user->rights->societe->client->voir) || $user->socid) {
 	$filename_avg = $dir.'/ordersaverage-'.$user->id.'-'.$year.'.png';
