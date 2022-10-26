@@ -4520,6 +4520,35 @@ class Facture extends CommonInvoice
 	}
 
 
+
+	public function getLastSentEmail($id)
+	{
+
+		$sql = "SELECT a.datec";
+		$sql .= " FROM ".MAIN_DB_PREFIX."actioncomm as a";
+		/*$sql .= " WHERE a.entity IN (".getEntity('agenda').")";
+		if (!empty($socid)) {
+			$sql .= " AND a.fk_soc = ".((int) $socid);
+		}*/
+
+		$sql .= " WHERE a.fk_element = ".((int) $id)." AND a.code = 'AC_BILL_SENTBYMAIL'";
+		$sql .= " ORDER BY id DESC LIMIT 1";
+
+
+		$result = $this->db->query($sql);
+		if ($result) {
+			if ($this->db->num_rows($result)) {
+				$obj = $this->db->fetch_object($result);
+				//var_dump($obj);
+			}
+			$this->db->free($result);
+		} else {
+			dol_print_error($this->db);
+		}
+		return $obj;
+	}
+
+
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	/**
 	 *  Return list of invoices (eventually filtered on a user) into an array
