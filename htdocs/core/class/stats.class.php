@@ -246,7 +246,7 @@ abstract class Stats
 	 * @param	int		$startyear		End year
 	 * @return 	array					Array of values
 	 */
-	public function getAverageByMonthWithPrevYear($endyear, $startyear)
+	public function getAverageByMonthWithPrevYear($endyear, $startyear, $startmonth = 1)
 	{
 		if ($startyear > $endyear) {
 			return -1;
@@ -255,6 +255,10 @@ abstract class Stats
 		$datay = array();
 
 		$year = $startyear;
+		$sm = $startmonth - 1;
+		if ($sm != 0) {
+			$year = $year - 1;
+		}
 		while ($year <= $endyear) {
 			$datay[$year] = $this->getAverageByMonth($year);
 			$year++;
@@ -263,10 +267,10 @@ abstract class Stats
 		$data = array();
 
 		for ($i = 0; $i < 12; $i++) {
-			$data[$i][] = $datay[$endyear][$i][0];
+			$data[$i][] = isset($datay[$endyear][($i + $sm) % 12]['label']) ? $datay[$endyear][($i + $sm) % 12]['label'] : $datay[$endyear][($i + $sm) % 12][0]; // set label
 			$year = $startyear;
 			while ($year <= $endyear) {
-				$data[$i][] = $datay[$year][$i][1];
+				$data[$i][] = $datay[$year - (1 - ((int) ($i + $sm) / 12)) + ($sm == 0 ? 1 : 0)][($i + $sm) % 12][1]; // set yval for x=i
 				$year++;
 			}
 		}
