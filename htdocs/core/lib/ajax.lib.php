@@ -130,7 +130,10 @@ function ajax_autocompleter($selected, $htmlname, $url, $urloption = '', $minLen
 											$("#search_'.$htmlnamejquery.'").val(item.value);
 											$("#'.$htmlnamejquery.'").val(item.key).trigger("change");
 										}
-										var label = item.label.toString();
+										var label = "";
+										if (item.label != null) {
+											label = item.label.toString();
+										}
 										var update = {};
 										if (options.update) {
 											$.each(options.update, function(key, value) {
@@ -162,7 +165,9 @@ function ajax_autocompleter($selected, $htmlname, $url, $urloption = '', $minLen
 												 price_unit_ht_locale: item.price_unit_ht_locale,
 												 description : item.description,
 												 ref_customer: item.ref_customer,
-												 tva_tx: item.tva_tx }
+												 tva_tx: item.tva_tx,
+												 default_vat_code: item.default_vat_code
+										}
 									}));
 								} else {
 									console.error("Error: Ajax url '.$url.($urloption ? '?'.$urloption : '').' has returned an empty page. Should be an empty json array.");
@@ -175,7 +180,8 @@ function ajax_autocompleter($selected, $htmlname, $url, $urloption = '', $minLen
     						console.log("We will trigger change on input '.$htmlname.' because of the select definition of autocomplete code for input#search_'.$htmlname.'");
     					    console.log("Selected id = "+ui.item.id+" - If this value is null, it means you select a record with key that is null so selection is not effective");
 
-							console.log("Propagate before some properties retrieved by ajax into data-xxx properties");
+							console.log("Propagate before some properties retrieved by ajax into data-xxx properties of #'.$htmlnamejquery.' component");
+							//console.log(ui.item);
 
 							// For supplier price and customer when price by quantity is off
 							$("#'.$htmlnamejquery.'").attr("data-up", ui.item.price_ht);
@@ -186,10 +192,12 @@ function ajax_autocompleter($selected, $htmlname, $url, $urloption = '', $minLen
 							$("#'.$htmlnamejquery.'").attr("data-description", ui.item.description);
 							$("#'.$htmlnamejquery.'").attr("data-ref-customer", ui.item.ref_customer);
 							$("#'.$htmlnamejquery.'").attr("data-tvatx", ui.item.tva_tx);
+							$("#'.$htmlnamejquery.'").attr("data-default-vat-code", ui.item.default_vat_code);
 	';
-	if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY)) {
+	if (!empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY) || !empty($conf->global->PRODUIT_CUSTOMER_PRICES_BY_QTY_MULTIPRICES)) {
 		$script .= '
 							// For customer price when PRODUIT_CUSTOMER_PRICES_BY_QTY is on
+							console.log("PRODUIT_CUSTOMER_PRICES_BY_QTY is on, propagate also prices by quantity into data-pbqxxx properties");
 							$("#'.$htmlnamejquery.'").attr("data-pbq", ui.item.pbq);
 							$("#'.$htmlnamejquery.'").attr("data-pbqup", ui.item.price_ht);
 							$("#'.$htmlnamejquery.'").attr("data-pbqbase", ui.item.pricebasetype);
@@ -434,10 +442,11 @@ function ajax_dialog($title, $message, $w = 350, $h = 150)
  * @param	int		$forcefocus					Force focus on field
  * @param	string	$widthTypeOfAutocomplete	'resolve' or 'off'
  * @param	string	$idforemptyvalue			'-1'
+ * @param	string	$morecss					More css
  * @return	string								Return html string to convert a select field into a combo, or '' if feature has been disabled for some reason.
  * @see selectArrayAjax() of html.form.class
  */
-function ajax_combobox($htmlname, $events = array(), $minLengthToAutocomplete = 0, $forcefocus = 0, $widthTypeOfAutocomplete = 'resolve', $idforemptyvalue = '-1')
+function ajax_combobox($htmlname, $events = array(), $minLengthToAutocomplete = 0, $forcefocus = 0, $widthTypeOfAutocomplete = 'resolve', $idforemptyvalue = '-1', $morecss = '')
 {
 	global $conf;
 
@@ -463,14 +472,17 @@ function ajax_combobox($htmlname, $events = array(), $minLengthToAutocomplete = 
 		$minLengthToAutocomplete = 0;
 	}
 
+	$moreselect2theme = ($morecss ? dol_escape_js(' '.$morecss) : '');
+	$moreselect2theme = preg_replace('/widthcentpercentminus[^\s]*/', '', $moreselect2theme);
+
 	$tmpplugin = 'select2';
 	$msg = "\n".'<!-- JS CODE TO ENABLE '.$tmpplugin.' for id = '.$htmlname.' -->
 		<script>
 			$(document).ready(function () {
 				$(\''.(preg_match('/^\./', $htmlname) ? $htmlname : '#'.$htmlname).'\').'.$tmpplugin.'({
 					dir: \'ltr\',
-					width: \''.$widthTypeOfAutocomplete.'\',		/* off or resolve */
-					minimumInputLength: '.$minLengthToAutocomplete.',
+					width: \''.dol_escape_js($widthTypeOfAutocomplete).'\',		/* off or resolve */
+					minimumInputLength: '.((int) $minLengthToAutocomplete).',
 					language: select2arrayoflanguage,
 					matcher: function (params, data) {
 						if ($.trim(params.term) === "") {
@@ -484,6 +496,7 @@ function ajax_combobox($htmlname, $events = array(), $minLengthToAutocomplete = 
 						}
 						return data;
 					},
+					theme: \'default'.$moreselect2theme.'\',		/* to add css on generated html components */
 					containerCssClass: \':all:\',					/* Line to add class of origin SELECT propagated to the new <span class="select2-selection...> tag */
 					selectionCssClass: \':all:\',					/* Line to add class of origin SELECT propagated to the new <span class="select2-selection...> tag */
 					templateResult: function (data, container) {	/* Format visible output into combo list */

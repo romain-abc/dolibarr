@@ -329,7 +329,9 @@ if (!empty($conf->global->TICKET_ENABLE_PUBLIC_INTERFACE)) {
 	print '</td>';
 	print '</tr>';
 
-	// Create third-party with contact if email not linked to a contact
+	// Auto fill the contact found from email
+	// This option is a serious security hole. it allows to any non logged perso, to get the database of contacts or to check if an email is a customer or not. We must keep it as hidden option only.
+	/*
 	print '<tr class="oddeven"><td>'.$langs->trans("TicketCreateThirdPartyWithContactIfNotExist").'</td>';
 	print '<td class="left">';
 	if (empty(getDolGlobalInt('TICKET_CREATE_THIRD_PARTY_WITH_CONTACT_IF_NOT_EXIST'))) {
@@ -342,6 +344,7 @@ if (!empty($conf->global->TICKET_ENABLE_PUBLIC_INTERFACE)) {
 	print $form->textwithpicto('', $langs->trans("TicketCreateThirdPartyWithContactIfNotExistHelp"), 1, 'help');
 	print '</td>';
 	print '</tr>';
+	*/
 
 	/*if ($conf->global->MAIN_FEATURES_LEVEL >= 2)
 	{
@@ -419,7 +422,7 @@ if (!empty($conf->global->TICKET_ENABLE_PUBLIC_INTERFACE)) {
 	print '<tr><td>'.$langs->trans("TicketPublicInterfaceTextHomeLabelAdmin").'</label>';
 	print '</td><td>';
 	require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
-	$doleditor = new DolEditor('TICKET_PUBLIC_TEXT_HOME', $public_text_home, '100%', 180, 'dolibarr_notes', '', false, true, getDolGlobalInt('FCKEDITOR_ENABLE_SOCIETE'), ROWS_2, 70);
+	$doleditor = new DolEditor('TICKET_PUBLIC_TEXT_HOME', $public_text_home, '100%', 180, 'dolibarr_notes', '', false, true, getDolGlobalInt('FCKEDITOR_ENABLE_TICKET'), ROWS_2, 70);
 	$doleditor->Create();
 	print '</td>';
 	print '<td class="center">';
@@ -431,7 +434,7 @@ if (!empty($conf->global->TICKET_ENABLE_PUBLIC_INTERFACE)) {
 	print '<tr><td>'.$langs->trans("TicketPublicInterfaceTextHelpMessageLabelAdmin").'</label>';
 	print '</td><td>';
 	require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
-	$doleditor = new DolEditor('TICKET_PUBLIC_TEXT_HELP_MESSAGE', $public_text_help_message, '100%', 180, 'dolibarr_notes', '', false, true, getDolGlobalInt('FCKEDITOR_ENABLE_SOCIETE'), ROWS_2, 70);
+	$doleditor = new DolEditor('TICKET_PUBLIC_TEXT_HELP_MESSAGE', $public_text_help_message, '100%', 180, 'dolibarr_notes', '', false, true, getDolGlobalInt('FCKEDITOR_ENABLE_TICKET'), ROWS_2, 70);
 	$doleditor->Create();
 	print '</td>';
 	print '<td class="center">';

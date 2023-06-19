@@ -37,7 +37,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 
 
 // Load translation files required by the page
-$langs->loadLangs(array("members", "companies"));
+$langs->loadLangs(array("members", "companies", "categories"));
 
 
 // Get parameters
@@ -181,7 +181,8 @@ $result = restrictedArea($user, 'adherent');
  */
 
 if (GETPOST('cancel', 'alpha')) {
-	$action = 'list'; $massaction = '';
+	$action = 'list';
+	$massaction = '';
 }
 if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massaction != 'confirm_presend') {
 	$massaction = '';
@@ -300,8 +301,8 @@ if (empty($reshook)) {
 	// Mass actions
 	$objectclass = 'Adherent';
 	$objectlabel = 'Members';
-	$permissiontoread = $user->rights->adherent->lire;
-	$permissiontodelete = $user->rights->adherent->supprimer;
+	$permissiontoread = $user->hasRight('adherent', 'lire');
+	$permissiontodelete = $user->hasRight('adherent', 'supprimer');
 	$permissiontoadd = $user->hasRight('adherent', 'creer');
 	$uploaddir = $conf->adherent->dir_output;
 	include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
@@ -317,10 +318,17 @@ $formother = new FormOther($db);
 $membertypestatic = new AdherentType($db);
 $memberstatic = new Adherent($db);
 
-$title = $langs->trans("Members");
-
 $now = dol_now();
 
+// Page Header
+$title = $langs->trans("Members")." - ".$langs->trans("List");
+$help_url = 'EN:Module_Foundations|FR:Module_Adh&eacute;rents|ES:M&oacute;dulo_Miembros|DE:Modul_Mitglieder';
+$morejs = array();
+$morecss = array();
+
+
+// Build and execute select
+// --------------------------------------------------------------------
 if ((!empty($search_categ) && $search_categ > 0) || !empty($catid)) {
 	$sql = "SELECT DISTINCT";
 } else {
@@ -343,9 +351,12 @@ if (!empty($extrafields->attributes[$object->table_element]['label'])) {
 }
 // Add fields from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters); // Note that $action and $object may have been modified by hook
-$sql .= preg_replace('/^,/', '', $hookmanager->resPrint);
+$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
+$sql .= $hookmanager->resPrint;
 $sql = preg_replace('/,\s*$/', '', $sql);
+
+$sqlfields = $sql; // $sql fields to remove for count total
+
 $sql .= " FROM ".MAIN_DB_PREFIX."adherent as d";
 if (!empty($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element."_extrafields as ef on (d.rowid = ef.fk_object)";
@@ -370,7 +381,11 @@ if (!empty($searchCategoryContactList)) {
 		if (intval($searchCategoryContact) == -2) {
 			$searchCategoryContactSqlList[] = "NOT EXISTS (SELECT ck.fk_categorie FROM ".MAIN_DB_PREFIX."categorie_member as ck WHERE d.rowid = ck.fk_member)";
 		} elseif (intval($searchCategoryContact) > 0) {
-			$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryContact);
+			if ($searchCategoryContactOperator == 0) {
+				$searchCategoryContactSqlList[] = " EXISTS (SELECT ck.fk_categorie FROM ".MAIN_DB_PREFIX."categorie_member as ck WHERE d.rowid = ck.fk_member AND ck.fk_categorie = ".((int) $searchCategoryContact).")";
+			} else {
+				$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryContact);
+			}
 		}
 	}
 	if ($listofcategoryid) {
@@ -401,10 +416,10 @@ if ($search_filter == 'waitingsubscription') {
 	$sql .= " AND (datefin IS NULL AND t.subscription = '1')";
 }
 if ($search_filter == 'uptodate') {
-	$sql .= " AND (datefin >= '".$db->idate($now)."' OR t.subscription = '0')";
+	$sql .= " AND (datefin >= '".$db->idate($now)."' OR (datefin IS NULL AND t.subscription = '0'))";
 }
 if ($search_filter == 'outofdate') {
-	$sql .= " AND (datefin < '".$db->idate($now)."' AND t.subscription = '1')";
+	$sql .= " AND (datefin < '".$db->idate($now)."')";
 }
 if ($search_status != '') {
 	// Peut valoir un nombre ou liste de nombre separes par virgules
@@ -464,31 +479,34 @@ if ($search_country) {
 if ($search_import_key) {
 	$sql .= natural_search("d.import_key", $search_import_key);
 }
-
 // Add where from extra fields
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_sql.tpl.php';
-
 // Add where from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
 
-// Count total nb of records with no order and no limits
+// Count total nb of records
 $nbtotalofrecords = '';
 if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
-	$resql = $db->query($sql);
+	/* The fast and low memory method to get and count full list converts the sql into a sql count */
+	$sqlforcount = preg_replace('/^'.preg_quote($sqlfields, '/').'/', 'SELECT COUNT(*) as nbtotalofrecords', $sql);
+	$sqlforcount = preg_replace('/GROUP BY .*$/', '', $sqlforcount);
+	$resql = $db->query($sqlforcount);
 	if ($resql) {
-		$nbtotalofrecords = $db->num_rows($resql);
+		$objforcount = $db->fetch_object($resql);
+		$nbtotalofrecords = $objforcount->nbtotalofrecords;
 	} else {
 		dol_print_error($db);
 	}
 
-	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller then paging size (filtering), goto and load page 0
+	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller than the paging size (filtering), goto and load page 0
 		$page = 0;
 		$offset = 0;
 	}
 	$db->free($resql);
 }
+//print $sql;
 
 // Complete request and execute it with limit
 $sql .= $db->order($sortfield, $sortorder);
@@ -505,8 +523,7 @@ if (!$resql) {
 $num = $db->num_rows($resql);
 
 
-$arrayofselected = is_array($toselect) ? $toselect : array();
-
+// Direct jump if only one record found
 if ($num == 1 && !empty($conf->global->MAIN_SEARCH_DIRECT_OPEN_IF_ONLY_ONE) && $sall) {
 	$obj = $db->fetch_object($resql);
 	$id = $obj->rowid;
@@ -514,8 +531,12 @@ if ($num == 1 && !empty($conf->global->MAIN_SEARCH_DIRECT_OPEN_IF_ONLY_ONE) && $
 	exit;
 }
 
-$help_url = 'EN:Module_Foundations|FR:Module_Adh&eacute;rents|ES:M&oacute;dulo_Miembros';
-llxHeader('', $title, $help_url);
+// Output page
+// --------------------------------------------------------------------
+
+llxHeader('', $title, $help_url, '', 0, 0, $morejs, $morecss, '', 'bodyforlist');	// Can use also classforhorizontalscrolloftabs instead of bodyforlist for no horizontal scroll
+
+$arrayofselected = is_array($toselect) ? $toselect : array();
 
 if ($search_type > 0) {
 	$membertype = new AdherentType($db);
@@ -610,13 +631,13 @@ $arrayofmassactions = array(
 if ($user->hasRight('adherent', 'creer')) {
 	$arrayofmassactions['close'] = img_picto('', 'close_title', 'class="pictofixedwidth"').$langs->trans("Resiliate");
 }
-if ($user->rights->adherent->supprimer) {
+if ($user->hasRight('adherent', 'supprimer')) {
 	$arrayofmassactions['predelete'] = img_picto('', 'delete', 'class="pictofixedwidth"').$langs->trans("Delete");
 }
-if (isModEnabled('category') && $user->rights->adherent->creer) {
+if (isModEnabled('category') && $user->hasRight('adherent', 'creer')) {
 	$arrayofmassactions['preaffecttag'] = img_picto('', 'category', 'class="pictofixedwidth"').$langs->trans("AffectTag");
 }
-if ($user->hasRight('adherent', 'creer') && $user->rights->user->user->creer) {
+if ($user->hasRight('adherent', 'creer') && $user->hasRight('user', 'user', 'creer')) {
 	$arrayofmassactions['createexternaluser'] = img_picto('', 'user', 'class="pictofixedwidth"').$langs->trans("CreateExternalUser");
 }
 if (GETPOST('nomassaction', 'int') || in_array($massaction, array('presend', 'predelete', 'preaffecttag'))) {
@@ -657,7 +678,7 @@ if ($sall) {
 
 // Filter on categories
 $moreforfilter = '';
-if (isModEnabled('categorie') && $user->rights->categorie->lire) {
+if (isModEnabled('categorie') && $user->hasRight('categorie', 'lire')) {
 	require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
 	$moreforfilter .= '<div class="divsearchfield">';
 	$moreforfilter .= img_picto($langs->trans('Categories'), 'category', 'class="pictofixedlength"').$formother->select_categories(Categorie::TYPE_MEMBER, $search_categ, 'search_categ', 1, $langs->trans("MembersCategoriesShort"));
@@ -832,7 +853,7 @@ if (!empty($arrayfields['d.statut']['checked'])) {
 		Adherent::STATUS_RESILIATED => $langs->trans("MemberStatusResiliatedShort"),
 		Adherent::STATUS_EXCLUDED =>$langs->trans("MemberStatusExcludedShort")
 	);
-	print $form->selectarray('search_status', $liststatus, $search_status, -3);
+	print $form->selectarray('search_status', $liststatus, $search_status, -3, 0, 0, '', 0, 0, 0, '', 'onrightofpage');
 	print '</td>';
 }
 if (!empty($arrayfields['d.import_key']['checked'])) {
@@ -947,6 +968,7 @@ while ($i < min($num, $limit)) {
 	$obj = $db->fetch_object($resql);
 
 	$datefin = $db->jdate($obj->datefin);
+
 	$memberstatic->id = $obj->rowid;
 	$memberstatic->ref = $obj->ref;
 	$memberstatic->civility_id = $obj->civility;
@@ -1063,14 +1085,7 @@ while ($i < min($num, $limit)) {
 	// Nature (Moral/Physical)
 	if (!empty($arrayfields['d.morphy']['checked'])) {
 		print '<td class="center">';
-		$s = '';
-		if ($obj->morphy == 'phy') {
-			$s .= '<span class="customer-back" title="'.$langs->trans("Physical").'">'.dol_substr($langs->trans("Physical"), 0, 1).'</span>';
-		}
-		if ($obj->morphy == 'mor') {
-			$s .= '<span class="vendor-back" title="'.$langs->trans("Moral").'">'.dol_substr($langs->trans("Moral"), 0, 1).'</span>';
-		}
-		print $s;
+		print $memberstatic->getmorphylib('', 2);
 		print "</td>\n";
 		if (!$i) {
 			$totalarray['nbfield']++;
@@ -1268,7 +1283,7 @@ if ($num == 0) {
 			$colspan++;
 		}
 	}
-	print '<tr><td colspan="'.$colspan.'" class="opacitymedium">'.$langs->trans("NoRecordFound").'</td></tr>';
+	print '<tr><td colspan="'.$colspan.'"><span class="opacitymedium">'.$langs->trans("NoRecordFound").'</span></td></tr>';
 }
 
 $db->free($resql);

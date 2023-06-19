@@ -543,6 +543,10 @@ class FormMail extends Form
 				$helpforsubstitution .= $langs->trans('AvailableVariables').' :<br>'."\n";
 			}
 			foreach ($this->substit as $key => $val) {
+				// Do not show deprecated variables into the tooltip help of substitution variables
+				if (in_array($key, array('__NEWREF__', '__REFCLIENT__', '__REFSUPPLIER__', '__SUPPLIER_ORDER_DATE_DELIVERY__', '__SUPPLIER_ORDER_DELAY_DELIVERY__'))) {
+					continue;
+				}
 				$helpforsubstitution .= $key.' -> '.$langs->trans(dol_string_nohtmltag(dolGetFirstLineOfText($val))).'<br>';
 			}
 			if (!empty($this->withsubstit)) {	// Unset or set ->withsubstit=0 to disable this.
@@ -1193,7 +1197,7 @@ class FormMail extends Form
 			$out .= "</td></tr>\n";
 		} else {
 			$out = '<tr><td>'.$langs->trans("MailErrorsTo").'</td><td>';
-			$out .= '<input size="30" id="errorstomail" name="errorstomail" value="'.$errorstomail.'" />';
+			$out .= '<input class="minwidth200" id="errorstomail" name="errorstomail" value="'.$errorstomail.'" />';
 			$out .= "</td></tr>\n";
 		}
 		return $out;
@@ -1279,7 +1283,7 @@ class FormMail extends Form
 	 *
 	 *  @param	DoliDB		$dbs			Database handler
 	 *  @param	string		$type_template	Get message for model/type=$type_template, type='all' also included.
-	 *  @param	User		$user			Get template public or limited to this user
+	 *  @param	User		$user			Get templates public + limited to this user
 	 *  @param	Translate	$outputlangs	Output lang object
 	 *  @param	int			$id				Id of template to get, or -1 for first found with position 0, or 0 for first found whatever is position (priority order depends on lang provided or not) or -2 for exact match with label (no answer if not found)
 	 *  @param  int         $active         1=Only active template, 0=Only disabled, -1=All
@@ -1305,9 +1309,9 @@ class FormMail extends Form
 			$languagetosearchmain = '';
 		}
 
-		$sql = "SELECT rowid, module, label, type_template, topic, joinfiles, content, content_lines, lang";
+		$sql = "SELECT rowid, module, label, type_template, topic, joinfiles, content, content_lines, lang, email_from, email_to, email_tocc, email_tobcc";
 		$sql .= " FROM ".$dbs->prefix().'c_email_templates';
-		$sql .= " WHERE (type_template='".$dbs->escape($type_template)."' OR type_template='all')";
+		$sql .= " WHERE (type_template = '".$dbs->escape($type_template)."' OR type_template = 'all')";
 		$sql .= " AND entity IN (".getEntity('c_email_templates').")";
 		$sql .= " AND (private = 0 OR fk_user = ".((int) $user->id).")"; // Get all public or private owned
 		if ($active >= 0) {
@@ -1646,7 +1650,7 @@ class FormMail extends Form
 						$tmparray['__SECUREKEYPAYMENT_CONTRACTLINE__'] = 'SecureKeyPAYMENTUniquePerContractLine';
 					}
 
-					//Online payement link
+					//Online payment link
 					if (isModEnabled('adherent')) {
 						$tmparray['__ONLINEPAYMENTLINK_MEMBER__'] = 'OnlinePaymentLinkUniquePerMember';
 					}
@@ -1727,6 +1731,11 @@ class ModelMail
 	public $content_lines;
 	public $lang;
 	public $joinfiles;
+
+	public $email_from;
+	public $email_to;
+	public $email_tocc;
+	public $email_tobcc;
 
 	/**
 	 * @var string Module the template is dedicated for

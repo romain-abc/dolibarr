@@ -578,7 +578,7 @@ if (empty($reshook)) {
 		} else {
 			$mesg = $object->error;
 		}
-	} elseif ($action == 'updateline' && $user->rights->ficheinter->creer && GETPOST('save', 'alpha') == $langs->trans("Save")) {
+	} elseif ($action == 'updateline' && $user->rights->ficheinter->creer && GETPOST('save', 'alpha')) {
 		// Mise a jour d'une ligne d'intervention
 		$objectline = new FichinterLigne($db);
 		if ($objectline->fetch($lineid) <= 0) {
@@ -596,7 +596,7 @@ if (empty($reshook)) {
 		$date_inter = dol_mktime(GETPOST('dihour', 'int'), GETPOST('dimin', 'int'), 0, GETPOST('dimonth', 'int'), GETPOST('diday', 'int'), GETPOST('diyear', 'int'));
 		$duration = convertTime2Seconds(GETPOST('durationhour', 'int'), GETPOST('durationmin', 'int'));
 
-		$objectline->datei = $date_inter;
+		$objectline->date = $date_inter;
 		$objectline->desc = $desc;
 		$objectline->duration = $duration;
 
@@ -734,6 +734,7 @@ if (empty($reshook)) {
 			// Actions on extra fields
 			$result = $object->insertExtraFields('INTERVENTION_MODIFY');
 			if ($result < 0) {
+				setEventMessages($object->error, $object->errors, 'errors');
 				$error++;
 			}
 		}
@@ -1159,7 +1160,7 @@ if ($action == 'create') {
 	$morehtmlref.=$form->editfieldkey("RefCustomer", 'ref_client', $object->ref_client, $object, $user->rights->ficheinter->creer, 'string', '', 0, 1);
 	$morehtmlref.=$form->editfieldval("RefCustomer", 'ref_client', $object->ref_client, $object, $user->rights->ficheinter->creer, 'string', '', null, null, '', 1);
 	// Thirdparty
-	$morehtmlref .= '<br><span class="hideonsmartphone">'.$langs->trans('ThirdParty').' : </span>'.$object->thirdparty->getNomUrl(1, 'customer');
+	$morehtmlref .= '<br>'.$object->thirdparty->getNomUrl(1, 'customer');
 	// Project
 	if (isModEnabled('project')) {
 		$langs->load("projects");
@@ -1177,7 +1178,7 @@ if ($action == 'create') {
 				$morehtmlref .= '<input type="submit" class="button button-edit valignmiddle" value="'.$langs->trans("Modify").'">';
 				$morehtmlref .= '</form>';
 			} else {
-				$morehtmlref .= $form->form_project($_SERVER['PHP_SELF'].'?id='.$object->id, $object->socid, $object->fk_project, 'none', 0, 0, 0, 1);
+				$morehtmlref .= $form->form_project($_SERVER['PHP_SELF'].'?id='.$object->id, $object->socid, $object->fk_project, 'none', 0, 0, 0, 1, '', 'maxwidth300');
 			}
 		} else {
 			if (!empty($object->fk_project)) {
@@ -1642,7 +1643,7 @@ if ($action == 'create') {
 				// Create intervention model
 				if ($conf->global->MAIN_FEATURES_LEVEL >= 1 && $object->statut == Fichinter::STATUS_DRAFT && $user->rights->ficheinter->creer && (count($object->lines) > 0)) {
 					print '<div class="inline-block divButAction">';
-					print '<a class="butAction" href="'.DOL_URL_ROOT.'/fichinter/card-rec.php?id='.$object->id.'&action=create">'.$langs->trans("ChangeIntoRepeatableIntervention").'</a>';
+					print '<a class="butAction" href="'.DOL_URL_ROOT.'/fichinter/card-rec.php?id='.$object->id.'&action=create&backtopage='.urlencode($_SERVER['PHP_SELF'].'?id='.$object->id).'">'.$langs->trans("ChangeIntoRepeatableIntervention").'</a>';
 					print '</div>';
 				}
 
@@ -1713,6 +1714,19 @@ if ($action == 'create') {
 		$linktoelem = $form->showLinkToObjectBlock($object, null, array('fichinter'));
 		$somethingshown = $form->showLinkedObjectBlock($object, $linktoelem);
 
+		// Show direct download link
+		if ($object->statut != Fichinter::STATUS_DRAFT && !empty($conf->global->FICHINTER_ALLOW_EXTERNAL_DOWNLOAD)) {
+			print '<br><!-- Link to download main doc -->'."\n";
+			print showDirectDownloadLink($object).'<br>';
+		}
+
+		// Show online signature link
+		if ($object->statut != Fichinter::STATUS_DRAFT && !empty($conf->global->FICHINTER_ALLOW_ONLINE_SIGN)) {
+			print '<br><!-- Link to sign -->';
+			require_once DOL_DOCUMENT_ROOT.'/core/lib/signature.lib.php';
+
+			print showOnlineSignatureUrl('fichinter', $object->ref).'<br>';
+		}
 
 		print '</div><div class="fichehalfright">';
 

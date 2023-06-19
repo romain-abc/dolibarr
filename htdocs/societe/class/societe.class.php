@@ -15,7 +15,7 @@
  * Copyright (C) 2017       Rui Strecht			    <rui.strecht@aliartalentos.com>
  * Copyright (C) 2018	    Philippe Grand	        <philippe.grand@atoo-net.com>
  * Copyright (C) 2019-2020  Josep Lluís Amador      <joseplluis@lliuretic.cat>
- * Copyright (C) 2019-2021  Frédéric France         <frederic.france@netlogic.fr>
+ * Copyright (C) 2019-2022  Frédéric France         <frederic.france@netlogic.fr>
  * Copyright (C) 2020       Open-Dsi         		<support@open-dsi.fr>
  * Copyright (C) 2022		ButterflyOfFire         <butterflyoffire+dolibarr@protonmail.com>
  *
@@ -49,6 +49,11 @@ require_once DOL_DOCUMENT_ROOT.'/multicurrency/class/multicurrency.class.php';
 class Societe extends CommonObject
 {
 	use CommonIncoterm;
+
+	/**
+	 * @var string ID of module.
+	 */
+	public $module = 'societe';
 
 	/**
 	 * @var string ID to identify managed object
@@ -235,7 +240,7 @@ class Societe extends CommonObject
 		'last_main_doc' =>array('type'=>'varchar(255)', 'label'=>'LastMainDoc', 'enabled'=>1, 'visible'=>-1, 'position'=>270),
 		'fk_multicurrency' =>array('type'=>'integer', 'label'=>'Fk multicurrency', 'enabled'=>1, 'visible'=>-1, 'position'=>440),
 		'multicurrency_code' =>array('type'=>'varchar(255)', 'label'=>'Multicurrency code', 'enabled'=>1, 'visible'=>-1, 'position'=>445),
-		'fk_account' =>array('type'=>'integer', 'label'=>'AccountingAccount', 'enabled'=>1, 'visible'=>-1, 'position'=>450),
+		'fk_account' =>array('type'=>'integer', 'label'=>'PaymentBankAccount', 'enabled'=>1, 'visible'=>-1, 'position'=>450),
 		'fk_warehouse' =>array('type'=>'integer', 'label'=>'Warehouse', 'enabled'=>1, 'visible'=>-1, 'position'=>455),
 		'logo' =>array('type'=>'varchar(255)', 'label'=>'Logo', 'enabled'=>1, 'visible'=>-1, 'position'=>400),
 		'logo_squarred' =>array('type'=>'varchar(255)', 'label'=>'Logo squarred', 'enabled'=>1, 'visible'=>-1, 'position'=>401),
@@ -784,11 +789,14 @@ class Societe extends CommonObject
 	 */
 	public $multicurrency_code;
 
+	/**
+	 * @var string  Set if company email found into unsubscribe of emailing list table
+	 */
+	public $no_email;
 
 	// Fields loaded by fetchPartnerships()
 
 	public $partnerships = array();
-
 
 
 	/**
@@ -796,35 +804,40 @@ class Societe extends CommonObject
 	 */
 	public $bank_account;
 
+
+	const STATUS_CEASED = 0;
+	const STATUS_INACTIVITY = 1;
+
 	/**
-	 * Third party is no customer
+	 * Third party type is no customer
 	 */
 	const NO_CUSTOMER = 0;
 
 	/**
-	 * Third party is a customer
+	 * Third party type is a customer
 	 */
 	const CUSTOMER = 1;
 
 	/**
-	 * Third party is a prospect
+	 * Third party type is a prospect
 	 */
 	const PROSPECT = 2;
 
 	/**
-	 * Third party is a customer and a prospect
+	 * Third party type is a customer and a prospect
 	 */
 	const CUSTOMER_AND_PROSPECT = 3;
 
 	/**
-	 * Third party is no supplier
+	 * Third party supplier flag is not supplier
 	 */
 	const NO_SUPPLIER = 0;
 
 	/**
-	 * Third party is a supplier
+	 * Third party supplier flag is a supplier
 	 */
 	const SUPPLIER = 1;
+
 
 	/**
 	 *    Constructor
@@ -1171,7 +1184,7 @@ class Societe extends CommonObject
 		}
 
 		// Check for duplicate or mandatory fields defined into setup
-		$array_to_check = array('IDPROF1', 'IDPROF2', 'IDPROF3', 'IDPROF4', 'IDPROF5', 'IDPROF6', 'EMAIL');
+		$array_to_check = array('IDPROF1', 'IDPROF2', 'IDPROF3', 'IDPROF4', 'IDPROF5', 'IDPROF6', 'EMAIL', 'TVA_INTRA');
 		foreach ($array_to_check as $key) {
 			$keymin = strtolower($key);
 			$i = (int) preg_replace('/[^0-9]/', '', $key);
@@ -1214,6 +1227,14 @@ class Societe extends CommonObject
 						if ($this->id_prof_exists($keymin, $vallabel, ($this->id > 0 ? $this->id : 0))) {
 							$langs->load("errors");
 							$error++; $this->errors[] = $langs->trans('Email')." ".$langs->trans("ErrorProdIdAlreadyExist", $vallabel).' ('.$langs->trans("ForbiddenBySetupRules").')';
+						}
+					}
+				} elseif ($key == 'TVA_INTRA') {
+					// Check for unicity
+					if ($vallabel && !empty($conf->global->SOCIETE_VAT_INTRA_UNIQUE)) {
+						if ($this->id_prof_exists($keymin, $vallabel, ($this->id > 0 ? $this->id : 0))) {
+							$langs->load("errors");
+							$error++; $this->errors[] = $langs->trans('VATIntra')." ".$langs->trans("ErrorProdIdAlreadyExist", $vallabel).' ('.$langs->trans("ForbiddenBySetupRules").')';
 						}
 					}
 				}
@@ -1474,7 +1495,7 @@ class Societe extends CommonObject
 
 			$sql .= ",fk_effectif = ".($this->effectif_id > 0 ? ((int) $this->effectif_id) : "null");
 			if (isset($this->stcomm_id)) {
-				$sql .= ",fk_stcomm=".($this->stcomm_id > 0 ? ((int) $this->stcomm_id) : "0");
+				$sql .= ",fk_stcomm=".(int) $this->stcomm_id;
 			}
 			if (isset($this->typent_id)) {
 				$sql .= ",fk_typent = ".($this->typent_id > 0 ? ((int) $this->typent_id) : "0");
@@ -1702,13 +1723,13 @@ class Societe extends CommonObject
 		$sql .= ', s.tms as date_modification, s.fk_user_creat, s.fk_user_modif';
 		$sql .= ', s.phone, s.fax, s.email';
 		$sql .= ', s.socialnetworks';
-		$sql .= ', s.url, s.zip, s.town, s.note_private, s.note_public, s.model_pdf, s.client, s.fournisseur';
+		$sql .= ', s.url, s.zip, s.town, s.note_private, s.note_public, s.client, s.fournisseur';
 		$sql .= ', s.siren as idprof1, s.siret as idprof2, s.ape as idprof3, s.idprof4, s.idprof5, s.idprof6';
 		$sql .= ', s.capital, s.tva_intra';
 		$sql .= ', s.fk_typent as typent_id';
 		$sql .= ', s.fk_effectif as effectif_id';
 		$sql .= ', s.fk_forme_juridique as forme_juridique_code';
-		$sql .= ', s.webservices_url, s.webservices_key, s.model_pdf';
+		$sql .= ', s.webservices_url, s.webservices_key, s.model_pdf, s.last_main_doc';
 		if (empty($conf->global->MAIN_COMPANY_PERENTITY_SHARED)) {
 			$sql .= ', s.code_compta, s.code_compta_fournisseur, s.accountancy_code_buy, s.accountancy_code_sell';
 		} else {
@@ -1944,7 +1965,10 @@ class Societe extends CommonObject
 				// multicurrency
 				$this->fk_multicurrency = $obj->fk_multicurrency;
 				$this->multicurrency_code = $obj->multicurrency_code;
+
+				// pdf
 				$this->model_pdf = $obj->model_pdf;
+				$this->last_main_doc = $obj->last_main_doc;
 
 				$result = 1;
 
@@ -2696,23 +2720,24 @@ class Societe extends CommonObject
 		if (!empty($this->tva_intra) || (!empty($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP) && strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'vatnumber') !== false)) {
 			$label2 .= '<br><b>'.$langs->trans('VATIntra').':</b> '.dol_escape_htmltag($this->tva_intra);
 		}
+
 		if (!empty($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP)) {
-			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid1') !== false) {
+			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid1') !== false && $langs->trans('ProfId1'.$this->country_code) != '-') {
 				$label2 .= '<br><b>'.$langs->trans('ProfId1'.$this->country_code).':</b> '.$this->idprof1;
 			}
-			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid2') !== false) {
+			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid2') !== false && $langs->trans('ProfId2'.$this->country_code) != '-') {
 				$label2 .= '<br><b>'.$langs->trans('ProfId2'.$this->country_code).':</b> '.$this->idprof2;
 			}
-			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid3') !== false) {
+			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid3') !== false && $langs->trans('ProfId3'.$this->country_code) != '-') {
 				$label2 .= '<br><b>'.$langs->trans('ProfId3'.$this->country_code).':</b> '.$this->idprof3;
 			}
-			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid4') !== false) {
+			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid4') !== false && $langs->trans('ProfId4'.$this->country_code) != '-') {
 				$label2 .= '<br><b>'.$langs->trans('ProfId4'.$this->country_code).':</b> '.$this->idprof4;
 			}
-			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid5') !== false) {
+			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid5') !== false && $langs->trans('ProfId5'.$this->country_code) != '-') {
 				$label2 .= '<br><b>'.$langs->trans('ProfId5'.$this->country_code).':</b> '.$this->idprof5;
 			}
-			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid6') !== false) {
+			if (strpos($conf->global->SOCIETE_SHOW_FIELD_IN_TOOLTIP, 'profid6') !== false && $langs->trans('ProfId6'.$this->country_code) != '-') {
 				$label2 .= '<br><b>'.$langs->trans('ProfId6'.$this->country_code).':</b> '.$this->idprof6;
 			}
 		}
@@ -3609,14 +3634,14 @@ class Societe extends CommonObject
 		}
 
 		 //Verify duplicate entries
-		$sql = "SELECT COUNT(*) as idprof FROM ".MAIN_DB_PREFIX."societe WHERE ".$field." = '".$this->db->escape($value)."' AND entity IN (".getEntity('societe').")";
+		$sql = "SELECT COUNT(*) as nb FROM ".MAIN_DB_PREFIX."societe WHERE ".$field." = '".$this->db->escape($value)."' AND entity IN (".getEntity('societe').")";
 		if ($socid) {
 			$sql .= " AND rowid <> ".$socid;
 		}
 		$resql = $this->db->query($sql);
 		if ($resql) {
 			$obj = $this->db->fetch_object($resql);
-			$count = $obj->idprof;
+			$count = $obj->nb;
 		} else {
 			$count = 0;
 			print $this->db->error();
@@ -4874,7 +4899,7 @@ class Societe extends CommonObject
 	 * Existing categories are left untouch.
 	 *
 	 * @param 	int[]|int 	$categories 	Category ID or array of Categories IDs
-	 * @param 	string 		$type_categ 			Category type ('customer' or 'supplier')
+	 * @param 	string 		$type_categ 	Category type ('customer' or 'supplier')
 	 * @return	int							<0 if KO, >0 if OK
 	 */
 	public function setCategories($categories, $type_categ)

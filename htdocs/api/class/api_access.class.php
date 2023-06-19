@@ -1,6 +1,7 @@
 <?php
 /* Copyright (C) 2015   Jean-François Ferry     <jfefe@aternatik.fr>
  * Copyright (C) 2016	Laurent Destailleur		<eldy@users.sourceforge.net>
+ * Copyright (C) 2023	Ferran Marcet			<fmarcet@2byte.es>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,15 +113,15 @@ class DolibarrApiAccess implements iAuthenticate
 			$sql = "SELECT u.login, u.datec, u.api_key, ";
 			$sql .= " u.tms as date_modification, u.entity";
 			$sql .= " FROM ".MAIN_DB_PREFIX."user as u";
-			$sql .= " WHERE u.api_key = '".$this->db->escape($api_key)."'";
-			// TODO Check if 2 users has same API key.
+			$sql .= " WHERE u.api_key = '".$this->db->escape($api_key)."' OR u.api_key = '".$this->db->escape(dolEncrypt($api_key, '', '', 'dolibarr'))."'";
 
 			$result = $this->db->query($sql);
 			if ($result) {
-				if ($this->db->num_rows($result)) {
+				$nbrows = $this->db->num_rows($result);
+				if ($nbrows == 1) {
 					$obj = $this->db->fetch_object($result);
 					$login = $obj->login;
-					$stored_key = $obj->api_key;
+					$stored_key = dolDecrypt($obj->api_key);
 					$userentity = $obj->entity;
 
 					if (!defined("DOLENTITY") && $conf->entity != ($obj->entity ? $obj->entity : 1)) {		// If API was not forced with HTTP_DOLENTITY, and user is on another entity, so we reset entity to entity of user
@@ -129,6 +130,8 @@ class DolibarrApiAccess implements iAuthenticate
 						dol_syslog("Entity was not set on http header with HTTP_DOLAPIENTITY (recommanded for performance purpose), so we switch now on entity of user (".$conf->entity.") and we have to reload configuration.", LOG_WARNING);
 						$conf->setValues($this->db);
 					}
+				} elseif ($nbrows > 1) {
+					throw new RestException(503, 'Error when fetching user api_key : More than 1 user with this apikey');
 				}
 			} else {
 				throw new RestException(503, 'Error when fetching user api_key :'.$this->db->error_msg);
@@ -146,6 +149,9 @@ class DolibarrApiAccess implements iAuthenticate
 			$result = $fuser->fetch('', $login, '', 0, (empty($userentity) ? -1 : $conf->entity)); // If user is not entity 0, we search in working entity $conf->entity  (that may have been forced to a different value than user entity)
 			if ($result <= 0) {
 				throw new RestException(503, 'Error when fetching user :'.$fuser->error.' (conf->entity='.$conf->entity.')');
+			}
+			if ($fuser->statut == 0) {
+				throw new RestException(503, 'Error when fetching user. This user has been locked or disabled');
 			}
 
 			$fuser->getrights();

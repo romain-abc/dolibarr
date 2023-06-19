@@ -72,15 +72,15 @@ if (empty($reshook) && isset($extrafields->attributes[$object->table_element]['l
 
 		$enabled = 1;
 		if ($enabled && isset($extrafields->attributes[$object->table_element]['enabled'][$tmpkeyextra])) {
-			$enabled = dol_eval($extrafields->attributes[$object->table_element]['enabled'][$tmpkeyextra], 1);
+			$enabled = dol_eval($extrafields->attributes[$object->table_element]['enabled'][$tmpkeyextra], 1, 1, '2');
 		}
 		if ($enabled && isset($extrafields->attributes[$object->table_element]['list'][$tmpkeyextra])) {
-			$enabled = dol_eval($extrafields->attributes[$object->table_element]['list'][$tmpkeyextra], 1);
+			$enabled = dol_eval($extrafields->attributes[$object->table_element]['list'][$tmpkeyextra], 1, 1, '2');
 		}
 
 		$perms = 1;
 		if ($perms && isset($extrafields->attributes[$object->table_element]['perms'][$tmpkeyextra])) {
-			$perms = dol_eval($extrafields->attributes[$object->table_element]['perms'][$tmpkeyextra], 1);
+			$perms = dol_eval($extrafields->attributes[$object->table_element]['perms'][$tmpkeyextra], 1, 1, '2');
 		}
 		//print $tmpkeyextra.'-'.$enabled.'-'.$perms.'<br>'."\n";
 
@@ -99,7 +99,7 @@ if (empty($reshook) && isset($extrafields->attributes[$object->table_element]['l
 			$langs->load($extrafields->attributes[$object->table_element]['langfile'][$tmpkeyextra]);
 		}
 		if ($action == 'edit_extras') {
-			$value = (GETPOSTISSET("options_".$tmpkeyextra) ? GETPOST("options_".$tmpkeyextra) : $object->array_options["options_".$tmpkeyextra]);
+			$value = (GETPOSTISSET("options_".$tmpkeyextra) ? GETPOST("options_".$tmpkeyextra) : (isset($object->array_options["options_".$tmpkeyextra]) ? $object->array_options["options_".$tmpkeyextra] : ''));
 		} else {
 			$value = (isset($object->array_options["options_".$tmpkeyextra]) ? $object->array_options["options_".$tmpkeyextra] : '');
 			//var_dump($tmpkeyextra.' - '.$value);

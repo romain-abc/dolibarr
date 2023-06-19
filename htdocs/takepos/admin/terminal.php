@@ -219,8 +219,8 @@ if (isModEnabled("banque")) {
 
 		$reader = array();
 		$reader[""] = $langs->trans("NoReader");
-		foreach ($readers as $readers) {
-			$reader[$reader->id] = $readers->label.' ('.$readers->status.')';
+		foreach ($readers as $tmpreader) {
+			$reader[$tmpreader->id] = $tmpreader->label.' ('.$tmpreader->status.')';
 		}
 		print $form->selectarray('CASHDESK_ID_BANKACCOUNT_STRIPETERMINAL'.$terminaltouse, $reader, $conf->global->{'CASHDESK_ID_BANKACCOUNT_STRIPETERMINAL'.$terminaltouse});
 		print '</td></tr>';
@@ -338,7 +338,7 @@ if (getDolGlobalString('TAKEPOS_PRINT_METHOD') == "receiptprinter" || getDolGlob
 
 print '<tr class="oddeven"><td>'.$langs->trans('CashDeskReaderKeyCodeForEnter').'</td>';
 print '<td>';
-print '<input type="text" name="CASHDESK_READER_KEYCODE_FOR_ENTER'.$terminaltouse.'" value="'.getDolGlobalString('CASHDESK_READER_KEYCODE_FOR_ENTER'.$terminaltouse).'" />';
+print '<input type="text" class="width50" name="CASHDESK_READER_KEYCODE_FOR_ENTER'.$terminaltouse.'" value="'.getDolGlobalString('CASHDESK_READER_KEYCODE_FOR_ENTER'.$terminaltouse).'" />';
 print '</td></tr>';
 
 // Numbering module

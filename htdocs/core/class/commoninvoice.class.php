@@ -131,8 +131,8 @@ abstract class CommonInvoice extends CommonObject
 	 * 	Return amount of payments already done. This must include ONLY the record into the payment table.
 	 *  Payments dones using discounts, credit notes, etc are not included.
 	 *
-	 *  @param 		int 		$multicurrency 		Return multicurrency_amount instead of amount
-	 *	@return		float|int						Amount of payment already done, <0 and set ->error if KO
+	 *  @param 		int 			$multicurrency 		Return multicurrency_amount instead of amount. -1=Return both.
+	 *	@return		float|int|array						Amount of payment already done, <0 and set ->error if KO
 	 */
 	public function getSommePaiement($multicurrency = 0)
 	{
@@ -156,7 +156,11 @@ abstract class CommonInvoice extends CommonObject
 			$this->db->free($resql);
 
 			if ($obj) {
-				if ($multicurrency) {
+				if ($multicurrency < 0) {
+					$this->sumpayed = $obj->amount;
+					$this->sumpayed_multicurrency = $obj->multicurrency_amount;
+					return array('alreadypaid'=>(float) $obj->amount, 'alreadypaid_multicurrency'=>(float) $obj->multicurrency_amount);
+				} elseif ($multicurrency) {
 					$this->sumpayed_multicurrency = $obj->multicurrency_amount;
 					return (float) $obj->multicurrency_amount;
 				} else {
@@ -584,7 +588,7 @@ abstract class CommonInvoice extends CommonObject
 	public function LibStatut($paye, $status, $mode = 0, $alreadypaid = -1, $type = -1)
 	{
 		// phpcs:enable
-		global $langs;
+		global $langs, $hookmanager;
 		$langs->load('bills');
 
 		if ($type == -1) {
@@ -634,6 +638,22 @@ abstract class CommonInvoice extends CommonObject
 			}
 		}
 
+		$parameters = array(
+			'status'      => $status,
+			'mode'        => $mode,
+			'paye'        => $paye,
+			'alreadypaid' => $alreadypaid,
+			'type'        => $type
+		);
+
+		$reshook = $hookmanager->executeHooks('LibStatut', $parameters, $this); // Note that $action and $object may have been modified by hook
+
+		if ($reshook > 0) {
+			return $hookmanager->resPrint;
+		}
+
+
+
 		return dolGetStatus($labelStatus, $labelStatusShort, '', $statusType, $mode);
 	}
 
@@ -643,7 +663,7 @@ abstract class CommonInvoice extends CommonObject
 	 *  conditions and billing date.
 	 *
 	 *	@param      integer	$cond_reglement   	Condition of payment (code or id) to use. If 0, we use current condition.
-	 *  @return     integer    			       	Date limite de reglement si ok, <0 si ko
+	 *  @return     integer    			       	Date limit of payment if OK, <0 if KO
 	 */
 	public function calculate_date_lim_reglement($cond_reglement = 0)
 	{
@@ -653,6 +673,9 @@ abstract class CommonInvoice extends CommonObject
 		}
 		if (!$cond_reglement) {
 			$cond_reglement = $this->cond_reglement_id;
+		}
+		if (!$cond_reglement) {
+			return $this->date;
 		}
 
 		$cdr_nbjour = 0;
@@ -756,7 +779,7 @@ abstract class CommonInvoice extends CommonObject
 			$bac->fetch(0, $this->socid);
 
 			$sql = "SELECT count(*)";
-			$sql .= " FROM ".$this->db->prefix()."prelevement_facture_demande";
+			$sql .= " FROM ".$this->db->prefix()."prelevement_demande";
 			if ($type == 'bank-transfer') {
 				$sql .= " WHERE fk_facture_fourn = ".((int) $this->id);
 			} else {
@@ -786,7 +809,7 @@ abstract class CommonInvoice extends CommonObject
 					}
 
 					if (is_numeric($amount) && $amount != 0) {
-						$sql = 'INSERT INTO '.$this->db->prefix().'prelevement_facture_demande(';
+						$sql = 'INSERT INTO '.$this->db->prefix().'prelevement_demande(';
 						if ($type == 'bank-transfer') {
 							$sql .= 'fk_facture_fourn, ';
 						} else {
@@ -883,7 +906,7 @@ abstract class CommonInvoice extends CommonObject
 			}
 
 			$sql = "SELECT rowid, date_demande, amount, fk_facture, fk_facture_fourn";
-			$sql .= " FROM ".$this->db->prefix()."prelevement_facture_demande";
+			$sql .= " FROM ".$this->db->prefix()."prelevement_demande";
 			$sql .= " WHERE rowid = ".((int) $did);
 
 			dol_syslog(get_class($this)."::makeStripeSepaRequest 1", LOG_DEBUG);
@@ -1572,7 +1595,7 @@ abstract class CommonInvoice extends CommonObject
 						$this->errors[] = "Remain to pay is null for the invoice " . $this->id . " " . $this->ref . ". Why is the invoice not classified 'Paid' ?";
 					}
 
-					$sql = "INSERT INTO '.MAIN_DB_PREFIX.'prelevement_facture_demande(";
+					$sql = "INSERT INTO ".MAIN_DB_PREFIX."prelevement_demande(";
 					$sql .= "fk_facture, ";
 					$sql .= " amount, date_demande, fk_user_demande, ext_payment_id, ext_payment_site, sourcetype, entity)";
 					$sql .= " VALUES (".$this->id;
@@ -1633,7 +1656,7 @@ abstract class CommonInvoice extends CommonObject
 	public function demande_prelevement_delete($fuser, $did)
 	{
 		// phpcs:enable
-		$sql = 'DELETE FROM '.$this->db->prefix().'prelevement_facture_demande';
+		$sql = 'DELETE FROM '.$this->db->prefix().'prelevement_demande';
 		$sql .= ' WHERE rowid = '.((int) $did);
 		$sql .= ' AND traite = 0';
 		if ($this->db->query($sql)) {
@@ -1740,33 +1763,48 @@ abstract class CommonInvoice extends CommonObject
 		if ($this->ref_client) {
 			$complementaryinfo .= '/20/'.$this->ref_client;
 		}
-		if ($this->thirdparty->vat_number) {
-			$complementaryinfo .= '/30/'.$this->thirdparty->vat_number;
+		if ($this->thirdparty->tva_intra) {
+			$complementaryinfo .= '/30/'.$this->thirdparty->tva_intra;
 		}
 
+		include_once DOL_DOCUMENT_ROOT.'/compta/bank/class/account.class.php';
+		$bankaccount = new Account($this->db);
+
 		// Header
+		$s = '';
 		$s .= "SPC\n";
 		$s .= "0200\n";
 		$s .= "1\n";
+		// Info Seller ("Compte / Payable à")
 		if ($this->fk_account > 0) {
-			// Bank BAN if country is LI or CH
-			// TODO Add
-			$bankaccount = new Account($this->db);
+			// Bank BAN if country is LI or CH.  TODO Add a test to check than IBAN start with CH or LI
 			$bankaccount->fetch($this->fk_account);
 			$s .= $bankaccount->iban."\n";
 		} else {
 			$s .= "\n";
 		}
-		// Seller
-		$s .= "S\n";
-		$s .= dol_trunc($mysoc->name, 70, 'right', 'UTF-8', 1)."\n";
-		$addresslinearray = explode("\n", $mysoc->address);
-		$s .= dol_trunc(empty($addresslinearray[1]) ? '' : $addresslinearray[1], 70, 'right', 'UTF-8', 1)."\n";		// address line 1
-		$s .= dol_trunc(empty($addresslinearray[2]) ? '' : $addresslinearray[2], 70, 'right', 'UTF-8', 1)."\n";		// address line 2
-		$s .= dol_trunc($mysoc->zip, 16, 'right', 'UTF-8', 1)."\n";
-		$s .= dol_trunc($mysoc->town, 35, 'right', 'UTF-8', 1)."\n";
-		$s .= dol_trunc($mysoc->country_code, 2, 'right', 'UTF-8', 1)."\n";
-		// Final seller
+		if ($bankaccount->id > 0 && getDolGlobalString('PDF_SWISS_QRCODE_USE_OWNER_OF_ACCOUNT_AS_CREDITOR')) {
+			// If a bank account is prodived and we ask to use it as creditor, we use the bank address
+			// TODO In a future, we may always use this address, and if name/address/zip/town/country differs from $mysoc, we can use the address of $mysoc into the final seller field ?
+			$s .= "S\n";
+			$s .= dol_trunc($bankaccount->proprio, 70, 'right', 'UTF-8', 1)."\n";
+			$addresslinearray = explode("\n", $bankaccount->owner_address);
+			$s .= dol_trunc(empty($addresslinearray[1]) ? '' : $addresslinearray[1], 70, 'right', 'UTF-8', 1)."\n";		// address line 1
+			$s .= dol_trunc(empty($addresslinearray[2]) ? '' : $addresslinearray[2], 70, 'right', 'UTF-8', 1)."\n";		// address line 2
+			/*$s .= dol_trunc($mysoc->zip, 16, 'right', 'UTF-8', 1)."\n";
+			$s .= dol_trunc($mysoc->town, 35, 'right', 'UTF-8', 1)."\n";
+			$s .= dol_trunc($mysoc->country_code, 2, 'right', 'UTF-8', 1)."\n";*/
+		} else {
+			$s .= "S\n";
+			$s .= dol_trunc($mysoc->name, 70, 'right', 'UTF-8', 1)."\n";
+			$addresslinearray = explode("\n", $mysoc->address);
+			$s .= dol_trunc(empty($addresslinearray[1]) ? '' : $addresslinearray[1], 70, 'right', 'UTF-8', 1)."\n";		// address line 1
+			$s .= dol_trunc(empty($addresslinearray[2]) ? '' : $addresslinearray[2], 70, 'right', 'UTF-8', 1)."\n";		// address line 2
+			$s .= dol_trunc($mysoc->zip, 16, 'right', 'UTF-8', 1)."\n";
+			$s .= dol_trunc($mysoc->town, 35, 'right', 'UTF-8', 1)."\n";
+			$s .= dol_trunc($mysoc->country_code, 2, 'right', 'UTF-8', 1)."\n";
+		}
+		// Final seller (Ultimate seller) ("Créancier final" = "En faveur de")
 		$s .= "\n";
 		$s .= "\n";
 		$s .= "\n";
@@ -1788,13 +1826,18 @@ abstract class CommonInvoice extends CommonObject
 		$s .= dol_trunc($this->thirdparty->country_code, 2, 'right', 'UTF-8', 1)."\n";
 		// ID of payment
 		$s .= "NON\n";			// NON or QRR
-		$s .= "\n";				// QR Code if previous field is QRR
+		$s .= "\n";				// QR Code reference if previous field is QRR
+		// Free text
 		if ($complementaryinfo) {
 			$s .= $complementaryinfo."\n";
 		} else {
 			$s .= "\n";
 		}
 		$s .= "EPD\n";
+		// More text, complementary info
+		if ($complementaryinfo) {
+			$s .= $complementaryinfo."\n";
+		}
 		$s .= "\n";
 		//var_dump($s);exit;
 		return $s;

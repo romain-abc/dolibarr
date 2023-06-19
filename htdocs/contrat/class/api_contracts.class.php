@@ -148,11 +148,10 @@ class Contracts extends DolibarrApi
 		// Add sql filters
 		if ($sqlfilters) {
 			$errormessage = '';
-			if (!DolibarrApi::_checkFilters($sqlfilters, $errormessage)) {
-				throw new RestException(503, 'Error when validating parameter sqlfilters -> '.$errormessage);
+			$sql .= forgeSQLFromUniversalSearchCriteria($sqlfilters, $errormessage);
+			if ($errormessage) {
+				throw new RestException(400, 'Error when validating parameter sqlfilters -> '.$errormessage);
 			}
-			$regexstring = '\(([^:\'\(\)]+:[^:\'\(\)]+:[^\(\)]+)\)';
-			$sql .= " AND (".preg_replace_callback('/'.$regexstring.'/', 'DolibarrApi::_forge_criteria_callback', $sqlfilters).")";
 		}
 
 		$sql .= $this->db->order($sortfield, $sortorder);
@@ -661,11 +660,6 @@ class Contracts extends DolibarrApi
 		$object = parent::_cleanObjectDatas($object);
 
 		unset($object->address);
-
-		unset($object->date_start);
-		unset($object->date_start_real);
-		unset($object->date_end);
-		unset($object->date_end_real);
 		unset($object->civility_id);
 
 		return $object;

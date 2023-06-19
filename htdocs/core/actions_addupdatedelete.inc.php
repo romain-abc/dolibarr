@@ -285,7 +285,7 @@ if ($action == 'update' && !empty($permissiontoadd)) {
 			$action = 'view';
 			$urltogo = $backtopage ? str_replace('__ID__', $result, $backtopage) : $backurlforlist;
 			$urltogo = preg_replace('/--IDFORBACKTOPAGE--/', $object->id, $urltogo); // New method to autoselect project after a New on another form object creation
-			if ($urltogo && !$noback) {
+			if ($urltogo && empty($noback)) {
 				header("Location: " . $urltogo);
 				exit;
 			}
@@ -435,7 +435,7 @@ if ($action == 'confirm_validate' && $confirm == 'yes' && $permissiontoadd) {
 					$newlang = GETPOST('lang_id', 'aZ09');
 				}
 				if (getDolGlobalInt('MAIN_MULTILANGS') && empty($newlang)) {
-					$newlang = $object->thirdparty->default_lang;
+					$newlang = !empty($object->thirdparty->default_lang) ? $object->thirdparty->default_lang : "";
 				}
 				if (!empty($newlang)) {
 					$outputlangs = new Translate("", $conf);

@@ -283,7 +283,7 @@ if ($action == 'create') {
 			print '<form action="'.$_SERVER["PHP_SELF"].'" method="post">';
 			print '<input type="hidden" name="token" value="'.newToken().'">';
 			print '<input type="hidden" name="action" value="update_extras_line">';
-			print '<input type="hidden" name="origin" value="'.$origin.'">';
+			print '<input type="hidden" name="origin" value="'.$object->origin.'">';
 			print '<input type="hidden" name="id" value="'.$object->id.'">';
 			print '<input type="hidden" name="ref" value="'.$object->ref.'">';
 
@@ -328,37 +328,25 @@ if ($action == 'create') {
 			$morehtmlref .= $form->editfieldval("RefCustomer", '', $expedition->ref_customer, $expedition, $user->rights->expedition->creer, 'string'.(isset($conf->global->THIRDPARTY_REF_INPUT_SIZE) ? ':'.$conf->global->THIRDPARTY_REF_INPUT_SIZE : ''), '', null, null, '', 1);
 			$morehtmlref .= '<br>'.$langs->trans("RefDeliveryReceipt").' : '.$object->ref;
 			// Thirdparty
-			$morehtmlref .= '<br>'.$langs->trans('ThirdParty').' : '.$expedition->thirdparty->getNomUrl(1);
+			$morehtmlref .= '<br>'.$expedition->thirdparty->getNomUrl(1);
 			// Project
 			if (isModEnabled('project')) {
 				$langs->load("projects");
-				$morehtmlref .= '<br>'.$langs->trans('Project').' ';
-				if (0) {    // Do not change on shipment
+				$morehtmlref .= '<br>';
+				if (0) {	// Do not change on shipment
+					$morehtmlref .= img_picto($langs->trans("Project"), 'project', 'class="pictofixedwidth"');
 					if ($action != 'classify') {
-						$morehtmlref .= '<a class="editfielda" href="'.$_SERVER['PHP_SELF'].'?action=classify&token='.newToken().'&id='.$expedition->id.'">'.img_edit($langs->transnoentitiesnoconv('SetProject')).'</a> : ';
+						$morehtmlref .= '<a class="editfielda" href="'.$_SERVER['PHP_SELF'].'?action=classify&token='.newToken().'&id='.$object->id.'">'.img_edit($langs->transnoentitiesnoconv('SetProject')).'</a> ';
 					}
-					if ($action == 'classify') {
-						// $morehtmlref.=$form->form_project($_SERVER['PHP_SELF'] . '?id=' . $expedition->id, $expedition->socid, $expedition->fk_project, 'projectid', 0, 0, 1, 1);
-						$morehtmlref .= '<form method="post" action="'.$_SERVER['PHP_SELF'].'?id='.$expedition->id.'">';
-						$morehtmlref .= '<input type="hidden" name="action" value="classin">';
-						$morehtmlref .= '<input type="hidden" name="token" value="'.newToken().'">';
-						$morehtmlref .= $formproject->select_projects($expedition->socid, $expedition->fk_project, 'projectid', $maxlength, 0, 1, 0, 1, 0, 0, '', 1);
-						$morehtmlref .= '<input type="submit" class="button button-edit" value="'.$langs->trans("Modify").'">';
-						$morehtmlref .= '</form>';
-					} else {
-						$morehtmlref .= $form->form_project($_SERVER['PHP_SELF'].'?id='.$expedition->id, $expedition->socid, $expedition->fk_project, 'none', 0, 0, 0, 1);
-					}
+					$morehtmlref .= $form->form_project($_SERVER['PHP_SELF'].'?id='.$object->id, $objectsrc->socid, $objectsrc->fk_project, ($action == 'classify' ? 'projectid' : 'none'), 0, 0, 0, 1, '', 'maxwidth300');
 				} else {
-					$morehtmlref .= ' : ';
 					if (!empty($objectsrc->fk_project)) {
 						$proj = new Project($db);
 						$proj->fetch($objectsrc->fk_project);
-						$morehtmlref .= ' : '.$proj->getNomUrl(1);
+						$morehtmlref .= $proj->getNomUrl(1);
 						if ($proj->title) {
-							$morehtmlref .= ' - '.$proj->title;
+							$morehtmlref .= '<span class="opacitymedium"> - '.dol_escape_htmltag($proj->title).'</span>';
 						}
-					} else {
-						$morehtmlref .= '';
 					}
 				}
 			}
@@ -577,11 +565,11 @@ if ($action == 'create') {
 						}
 						$text .= ' '.$object->lines[$i]->product_ref.'</a>';
 						$text .= ' - '.$label;
-						$description = (!empty($conf->global->PRODUIT_DESC_IN_FORM) ? '' : dol_htmlentitiesbr($object->lines[$i]->description));
+						$description = (getDolGlobalInt('PRODUIT_DESC_IN_FORM_ACCORDING_TO_DEVICE') ? '' : dol_htmlentitiesbr($object->lines[$i]->description));
 						//print $description;
 						print $form->textwithtooltip($text, $description, 3, '', '', $i);
-						print_date_range($object->lines[$i]->date_start, $object->lines[$i]->date_end);
-						if (!empty($conf->global->PRODUIT_DESC_IN_FORM)) {
+						//print_date_range($object->lines[$i]->date_start, $object->lines[$i]->date_end);
+						if (getDolGlobalInt('PRODUIT_DESC_IN_FORM_ACCORDING_TO_DEVICE')) {
 							print (!empty($object->lines[$i]->description) && $object->lines[$i]->description != $object->lines[$i]->product_label) ? '<br>'.dol_htmlentitiesbr($object->lines[$i]->description) : '';
 						}
 					} else {
@@ -599,7 +587,7 @@ if ($action == 'create') {
 							print $text.' '.nl2br($object->lines[$i]->description);
 						}
 
-						print_date_range($objp->date_start, $objp->date_end);
+						//print_date_range($objp->date_start, $objp->date_end);
 						print "</td>\n";
 					}
 

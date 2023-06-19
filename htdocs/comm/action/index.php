@@ -274,15 +274,15 @@ if (empty($conf->global->AGENDA_DISABLE_EXT)) {
 		$color = 'AGENDA_EXT_COLOR'.$i;
 		$default = 'AGENDA_EXT_ACTIVEBYDEFAULT'.$i;
 		$buggedfile = 'AGENDA_EXT_BUGGEDFILE'.$i;
-		if (!empty($conf->global->$source) && !empty($conf->global->$name)) {
+		if (getDolGlobalString($source) && getDolGlobalString($name)) {
 			// Note: $conf->global->buggedfile can be empty or 'uselocalandtznodaylight' or 'uselocalandtzdaylight'
 			$listofextcals[] = array(
 				'src' => getDolGlobalString($source),
-				'name' => getDolGlobalString($name),
-				'offsettz' => (!empty($conf->global->$offsettz) ? $conf->global->$offsettz : 0),
-				'color' => getDolGlobalString($color),
-				'default' => getDolGlobalString($default),
-				'buggedfile' => (isset($conf->global->buggedfile) ? $conf->global->buggedfile : 0)
+				'name' => dol_string_nohtmltag(getDolGlobalString($name)),
+				'offsettz' => (int) getDolGlobalInt($offsettz, 0),
+				'color' => dol_string_nohtmltag(getDolGlobalString($color)),
+				'default' => dol_string_nohtmltag(getDolGlobalString($default)),
+				'buggedfile' => dol_string_nohtmltag(getDolGlobalString('buggedfile', ''))
 			);
 		}
 	}
@@ -299,15 +299,15 @@ if (empty($user->conf->AGENDA_DISABLE_EXT)) {
 		$enabled = 'AGENDA_EXT_ENABLED_'.$user->id.'_'.$i;
 		$default = 'AGENDA_EXT_ACTIVEBYDEFAULT_'.$user->id.'_'.$i;
 		$buggedfile = 'AGENDA_EXT_BUGGEDFILE_'.$user->id.'_'.$i;
-		if (!empty($user->conf->$source) && !empty($user->conf->$name)) {
+		if (getDolUserString($source) && getDolUserString($name)) {
 			// Note: $conf->global->buggedfile can be empty or 'uselocalandtznodaylight' or 'uselocalandtzdaylight'
 			$listofextcals[] = array(
-				'src' => $user->conf->$source,
-				'name' => $user->conf->$name,
-				'offsettz' => (!empty($user->conf->$offsettz) ? $user->conf->$offsettz : 0),
-				'color' => $user->conf->$color,
-				'default' => $user->conf->$default,
-				'buggedfile' => (isset($user->conf->buggedfile) ? $user->conf->buggedfile : 0)
+				'src' => getDolUserString($source),
+				'name' => dol_string_nohtmltag(getDolUserString($name)),
+				'offsettz' => (int) (empty($user->conf->$offsettz) ? 0 : $user->conf->$offsettz),
+				'color' => dol_string_nohtmltag(getDolUserString($color)),
+				'default' => dol_string_nohtmltag(getDolUserString($default)),
+				'buggedfile' => dol_string_nohtmltag(isset($user->conf->buggedfile) ? $user->conf->buggedfile : '')
 			);
 		}
 	}
@@ -582,8 +582,16 @@ if (!empty($conf->use_javascript_ajax)) {	// If javascript on
 	// Local calendar
 	$s .= '<div class="nowrap inline-block minheight30"><input type="checkbox" id="check_mytasks" name="check_mytasks" value="1" checked disabled> '.$langs->trans("LocalAgenda").' &nbsp; </div>';
 
-	// Holiday calendar
-	$s .= '<div class="nowrap inline-block minheight30"><input type="checkbox" id="check_holiday" name="check_holiday" value="1" class="check_holiday"'.($check_holiday ? ' checked' : '').'><label for="check_holiday"> <span class="check_holiday_text">'.$langs->trans("Holidays").'</span></label> &nbsp; </div>';
+	if ($user->rights->holiday->read) {
+		// Holiday calendar
+		$s .= '
+            <div class="nowrap inline-block minheight30"><input type="checkbox" id="check_holiday" name="check_holiday" value="1" class="check_holiday"' . ($check_holiday
+					? ' checked' : '') . '>
+                <label for="check_holiday"> 
+                    <span class="check_holiday_text">' . $langs->trans("Holidays") . '</span>
+                </label> &nbsp; 
+            </div>';
+	}
 
 	// External calendars
 	if (is_array($showextcals) && count($showextcals) > 0) {
@@ -614,7 +622,7 @@ if (!empty($conf->use_javascript_ajax)) {	// If javascript on
 				$default = '';
 			}
 
-			$s .= '<div class="nowrap inline-block minheight30"><input type="checkbox" id="check_ext'.$htmlname.'" name="check_ext'.$htmlname.'" value="1" '.$default.'> <label for="check_ext'.$htmlname.'">'.$val['name'].'</label> &nbsp; </div>';
+			$s .= '<div class="nowrap inline-block minheight30"><input type="checkbox" id="check_ext'.$htmlname.'" name="check_ext'.$htmlname.'" value="1" '.$default.'> <label for="check_ext'.$htmlname.'">'.dol_escape_htmltag($val['name']).'</label> &nbsp; </div>';
 		}
 	}
 
@@ -637,8 +645,7 @@ if (!empty($conf->use_javascript_ajax)) {	// If javascript on
 	if (!preg_match('/showbirthday=/i', $newparam)) {
 		$newparam .= '&showbirthday=1';
 	}
-	$link = '<a href="'.dol_escape_htmltag($_SERVER['PHP_SELF']);
-	$link .= '?'.dol_escape_htmltag($newparam);
+	$link = '<a href="'.$_SERVER['PHP_SELF'].'?'.dol_escape_htmltag($newparam);
 	$link .= '">';
 	if (empty($showbirthday)) {
 		$link .= $langs->trans("AgendaShowBirthdayEvents");
@@ -999,76 +1006,78 @@ if ($showbirthday) {
 	}
 }
 
-// LEAVE CALENDAR
-$sql = "SELECT u.rowid as uid, u.lastname, u.firstname, u.statut, x.rowid, x.date_debut as date_start, x.date_fin as date_end, x.halfday, x.statut as status";
-$sql .= " FROM ".MAIN_DB_PREFIX."holiday as x, ".MAIN_DB_PREFIX."user as u";
-$sql .= " WHERE u.rowid = x.fk_user";
-$sql .= " AND u.statut = '1'"; // Show only active users  (0 = inactive user, 1 = active user)
-$sql .= " AND (x.statut = '2' OR x.statut = '3')"; // Show only public leaves (2 = leave wait for approval, 3 = leave approved)
+if ($user->rights->holiday->read) {
+	// LEAVE CALENDAR
+	$sql = "SELECT u.rowid as uid, u.lastname, u.firstname, u.statut, x.rowid, x.date_debut as date_start, x.date_fin as date_end, x.halfday, x.statut as status";
+	$sql .= " FROM ".MAIN_DB_PREFIX."holiday as x, ".MAIN_DB_PREFIX."user as u";
+	$sql .= " WHERE u.rowid = x.fk_user";
+	$sql .= " AND u.statut = '1'"; // Show only active users  (0 = inactive user, 1 = active user)
+	$sql .= " AND (x.statut = '2' OR x.statut = '3')"; // Show only public leaves (2 = leave wait for approval, 3 = leave approved)
 
-if ($mode == 'show_day') {
-	// Request only leaves for the current selected day
-	$sql .= " AND '".$db->escape($year)."-".$db->escape($month)."-".$db->escape($day)."' BETWEEN x.date_debut AND x.date_fin";	// date_debut and date_fin are date without time
-} elseif ($mode == 'show_week') {
-	// TODO: Add filter to reduce database request
-} elseif ($mode == 'show_month') {
-	// TODO: Add filter to reduce database request
-}
+	if ($mode == 'show_day') {
+		// Request only leaves for the current selected day
+		$sql .= " AND '".$db->escape($year)."-".$db->escape($month)."-".$db->escape($day)."' BETWEEN x.date_debut AND x.date_fin";	// date_debut and date_fin are date without time
+	} elseif ($mode == 'show_week') {
+		// TODO: Add filter to reduce database request
+	} elseif ($mode == 'show_month') {
+		// TODO: Add filter to reduce database request
+	}
 
-$resql = $db->query($sql);
-if ($resql) {
-	$num = $db->num_rows($resql);
-	$i   = 0;
+	$resql = $db->query($sql);
+	if ($resql) {
+		$num = $db->num_rows($resql);
+		$i   = 0;
 
-	while ($i < $num) {
-		$obj = $db->fetch_object($resql);
+		while ($i < $num) {
+			$obj = $db->fetch_object($resql);
 
-		$event = new ActionComm($db);
+			$event = new ActionComm($db);
 
-		// Need the id of the leave object for link to it
-		$event->id                      = $obj->rowid;
-		$event->ref                     = $event->id;
+			// Need the id of the leave object for link to it
+			$event->id                      = $obj->rowid;
+			$event->ref                     = $event->id;
 
-		$event->type_code = 'HOLIDAY';
-		$event->type_label = '';
-		$event->type_color = '';
-		$event->type = 'holiday';
-		$event->type_picto = 'holiday';
+			$event->type_code = 'HOLIDAY';
+			$event->type_label = '';
+			$event->type_color = '';
+			$event->type = 'holiday';
+			$event->type_picto = 'holiday';
 
-		$event->datep                   = $db->jdate($obj->date_start) + (empty($halfday) || $halfday == 1 ? 0 : 12 * 60 * 60 - 1);
-		$event->datef                   = $db->jdate($obj->date_end) + (empty($halfday) || $halfday == -1 ? 24 : 12) * 60 * 60 - 1;
-		$event->date_start_in_calendar  = $event->datep;
-		$event->date_end_in_calendar    = $event->datef;
+			$event->datep                   = $db->jdate($obj->date_start) + (empty($halfday) || $halfday == 1 ? 0 : 12 * 60 * 60 - 1);
+			$event->datef                   = $db->jdate($obj->date_end) + (empty($halfday) || $halfday == -1 ? 24 : 12) * 60 * 60 - 1;
+			$event->date_start_in_calendar  = $event->datep;
+			$event->date_end_in_calendar    = $event->datef;
 
-		if ($obj->status == 3) {
-			// Show no symbol for leave with state "leave approved"
-			$event->percentage = -1;
-		} elseif ($obj->status == 2) {
-			// Show TO-DO symbol for leave with state "leave wait for approval"
-			$event->percentage = 0;
+			if ($obj->status == 3) {
+				// Show no symbol for leave with state "leave approved"
+				$event->percentage = -1;
+			} elseif ($obj->status == 2) {
+				// Show TO-DO symbol for leave with state "leave wait for approval"
+				$event->percentage = 0;
+			}
+
+			if ($obj->halfday == 1) {
+				$event->label = $obj->lastname.' ('.$langs->trans("Morning").')';
+			} elseif ($obj->halfday == -1) {
+				$event->label = $obj->lastname.' ('.$langs->trans("Afternoon").')';
+			} else {
+				$event->label = $obj->lastname;
+			}
+
+			$daycursor = $event->date_start_in_calendar;
+			$annee = dol_print_date($daycursor, '%Y', 'tzuserrel');
+			$mois = dol_print_date($daycursor, '%m', 'tzuserrel');
+			$jour = dol_print_date($daycursor, '%d', 'tzuserrel');
+
+			$daykey = dol_mktime(0, 0, 0, $mois, $jour, $annee, 'gmt');
+			do {
+				$eventarray[$daykey][] = $event;
+
+				$daykey += 60 * 60 * 24;
+			} while ($daykey <= $event->date_end_in_calendar);
+
+			$i++;
 		}
-
-		if ($obj->halfday == 1) {
-			$event->label = $obj->lastname.' ('.$langs->trans("Morning").')';
-		} elseif ($obj->halfday == -1) {
-			$event->label = $obj->lastname.' ('.$langs->trans("Afternoon").')';
-		} else {
-			$event->label = $obj->lastname;
-		}
-
-		$daycursor = $event->date_start_in_calendar;
-		$annee = dol_print_date($daycursor, '%Y', 'tzuserrel');
-		$mois = dol_print_date($daycursor, '%m', 'tzuserrel');
-		$jour = dol_print_date($daycursor, '%d', 'tzuserrel');
-
-		$daykey = dol_mktime(0, 0, 0, $mois, $jour, $annee, 'gmt');
-		do {
-			$eventarray[$daykey][] = $event;
-
-			$daykey += 60 * 60 * 24;
-		} while ($daykey <= $event->date_end_in_calendar);
-
-		$i++;
 	}
 }
 
@@ -1272,9 +1281,9 @@ if (count($listofextcals)) {
 					$event->datef = $dateend + $usertime;
 
 					if ($icalevent['SUMMARY']) {
-						$event->label = $icalevent['SUMMARY'];
+						$event->label = dol_string_nohtmltag($icalevent['SUMMARY']);
 					} elseif ($icalevent['DESCRIPTION']) {
-						$event->label = dol_nl2br($icalevent['DESCRIPTION'], 1);
+						$event->label = dol_nl2br(dol_string_nohtmltag($icalevent['DESCRIPTION']), 1);
 					} else {
 						$event->label = $langs->trans("ExtSiteNoLabel");
 					}
@@ -1288,7 +1297,7 @@ if (count($listofextcals)) {
 					}
 
 					// Transparency (see https://www.kanzaki.com/docs/ical/transp.html)
-					if ($icalevent['TRANSP']) {
+					if (!empty($icalevent['TRANSP'])) {
 						if ($icalevent['TRANSP'] == "TRANSPARENT") {
 							$event->transparency = 0; // 0 = available / free
 						}
@@ -1985,7 +1994,7 @@ function show_day_events($db, $day, $month, $year, $monthshown, $style, &$eventa
 
 						// Show title
 						$titletoshow = $daterange;
-						$titletoshow .= ($titletoshow ? ' ' : '').($event->label ? $event->label : $event->libelle);
+						$titletoshow .= ($titletoshow ? ' ' : '').dol_escape_htmltag($event->label ? $event->label : $event->libelle);
 
 						if ($event->type_code != 'ICALEVENT') {
 							$savlabel = $event->label ? $event->label : $event->libelle;

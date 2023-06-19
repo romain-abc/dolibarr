@@ -75,7 +75,10 @@ class InterfaceWorkflowManager extends DolibarrTriggers
 			if (isModEnabled('commande') && !empty($conf->global->WORKFLOW_PROPAL_AUTOCREATE_ORDER)) {
 				$object->fetchObjectLinked();
 				if (!empty($object->linkedObjectsIds['commande'])) {
-					setEventMessages($langs->trans("OrderExists"), null, 'warnings');
+					if (empty($object->context['closedfromonlinesignature'])) {
+						$langs->load("orders");
+						setEventMessages($langs->trans("OrderExists"), null, 'warnings');
+					}
 					return $ret;
 				} else {
 					include_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
@@ -90,6 +93,9 @@ class InterfaceWorkflowManager extends DolibarrTriggers
 						$this->error = $newobject->error;
 						$this->errors[] = $newobject->error;
 					}
+
+					$object->clearObjectLinkedCache();
+
 					return $ret;
 				}
 			}
@@ -111,6 +117,9 @@ class InterfaceWorkflowManager extends DolibarrTriggers
 					$this->error = $newobject->error;
 					$this->errors[] = $newobject->error;
 				}
+
+				$object->clearObjectLinkedCache();
+
 				return $ret;
 			}
 		}
@@ -181,14 +190,23 @@ class InterfaceWorkflowManager extends DolibarrTriggers
 			}
 
 			if (isModEnabled("expedition") && !empty($conf->workflow->enabled) && !empty($conf->global->WORKFLOW_SHIPPING_CLASSIFY_CLOSED_INVOICE)) {
-				/** @var Facture $object */
 				$object->fetchObjectLinked('', 'shipping', $object->id, $object->element);
-
 				if (!empty($object->linkedObjects)) {
-					/** @var Expedition $shipment */
-					$shipment = array_shift($object->linkedObjects['shipping']);
-
-					$ret = $shipment->setClosed();
+					$totalonlinkedelements = 0;
+					foreach ($object->linkedObjects['shipping'] as $element) {
+						if ($element->statut == Expedition::STATUS_VALIDATED) {
+							$totalonlinkedelements += $element->total_ht;
+						}
+					}
+					dol_syslog("Amount of linked shipment = ".$totalonlinkedelements.", of invoice = ".$object->total_ht.", egality is ".($totalonlinkedelements == $object->total_ht), LOG_DEBUG);
+					if ($totalonlinkedelements == $object->total_ht) {
+						foreach ($object->linkedObjects['shipping'] as $element) {
+							$ret = $element->setClosed();
+							if ($ret < 0) {
+								return $ret;
+							}
+						}
+					}
 				}
 			}
 
@@ -244,8 +262,8 @@ class InterfaceWorkflowManager extends DolibarrTriggers
 				}
 			}
 
-			// Then set reception to "Billed" if WORKFLOW_BILL_ON_RECEPTION is set
-			if (isModEnabled("reception") && !empty($conf->global->WORKFLOW_BILL_ON_RECEPTION)) {
+			// Then set reception to "Billed" if WORKFLOW_EXPEDITION_CLASSIFY_CLOSED_INVOICE is set
+			if (isModEnabled("reception") && !empty($conf->workflow->enabled) && !empty($conf->global->WORKFLOW_EXPEDITION_CLASSIFY_CLOSED_INVOICE)) {
 				$object->fetchObjectLinked('', 'reception', $object->id, $object->element);
 				if (!empty($object->linkedObjects)) {
 					$totalonlinkedelements = 0;

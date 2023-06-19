@@ -194,7 +194,7 @@ $warehouse = new Entrepot($db);
 $now = dol_now();
 
 $help_url = 'EN:Module_Stocks_En|FR:Module_Stock|ES:M&oacute;dulo_Stocks';
-$title = $langs->trans("ListOfWarehouses");
+$title = $langs->trans("Warehouses");
 
 $totalarray = array();
 $totalarray['nbfield'] = 0;
@@ -268,13 +268,17 @@ if (!empty($searchCategoryWarehouseList)) {
 	$listofcategoryid = '';
 	foreach ($searchCategoryWarehouseList as $searchCategoryWarehouse) {
 		if (intval($searchCategoryWarehouse) == -2) {
-			$searchCategoryWarehouseSqlList[] = "NOT EXISTS (SELECT ck.fk_warehouse FROM ".MAIN_DB_PREFIX."categorie_warehouse as ck WHERE p.rowid = ck.fk_warehouse)";
+			$searchCategoryWarehouseSqlList[] = "NOT EXISTS (SELECT ck.fk_warehouse FROM ".MAIN_DB_PREFIX."categorie_warehouse as ck WHERE t.rowid = ck.fk_warehouse)";
 		} elseif (intval($searchCategoryWarehouse) > 0) {
-			$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryWarehouse);
+			if ($searchCategoryWarehouseOperator == 0) {
+				$searchCategoryWarehouseSqlList[] = " EXISTS (SELECT ck.fk_warehouse FROM ".MAIN_DB_PREFIX."categorie_warehouse as ck WHERE t.rowid = ck.fk_warehouse AND ck.fk_categorie = ".((int) $searchCategoryWarehouse).")";
+			} else {
+				$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryWarehouse);
+			}
 		}
 	}
 	if ($listofcategoryid) {
-		$searchCategoryWarehouseSqlList[] = " EXISTS (SELECT ck.fk_warehouse FROM ".MAIN_DB_PREFIX."categorie_warehouse as ck WHERE p.rowid = ck.fk_warehouse AND ck.fk_categorie IN (".$db->sanitize($listofcategoryid)."))";
+		$searchCategoryWarehouseSqlList[] = " EXISTS (SELECT ck.fk_warehouse FROM ".MAIN_DB_PREFIX."categorie_warehouse as ck WHERE t.rowid = ck.fk_warehouse AND ck.fk_categorie IN (".$db->sanitize($listofcategoryid)."))";
 	}
 	if ($searchCategoryWarehouseOperator == 1) {
 		if (!empty($searchCategoryWarehouseSqlList)) {
@@ -529,7 +533,7 @@ print $hookmanager->resPrint;
 // Status
 if (!empty($arrayfields['t.statut']['checked'])) {
 	print '<td class="liste_titre center">';
-	print $form->selectarray('search_status', $warehouse->statuts, $search_status, 1, 0, 0, '', 1);
+	print $form->selectarray('search_status', $warehouse->statuts, $search_status, 1, 0, 0, '', 1, 0, 0, '', 'onrightofpage');
 	print '</td>';
 }
 

@@ -196,7 +196,7 @@ if ($id > 0 || !empty($ref)) {
 			$morehtmlref .= $projectstatic->title;
 			// Thirdparty
 			if ($projectstatic->thirdparty->id > 0) {
-				$morehtmlref .= '<br>'.$langs->trans('ThirdParty').' : '.$projectstatic->thirdparty->getNomUrl(1, 'project');
+				$morehtmlref .= '<br>'.$projectstatic->thirdparty->getNomUrl(1, 'project');
 			}
 			$morehtmlref .= '</div>';
 
@@ -257,8 +257,15 @@ if ($id > 0 || !empty($ref)) {
 			}
 			print '</td></tr>';
 
-			// Date start - end
-			print '<tr><td>'.$langs->trans("DateStart").' - '.$langs->trans("DateEnd").'</td><td>';
+			// Budget
+			print '<tr><td>'.$langs->trans("Budget").'</td><td>';
+			if (strcmp($projectstatic->budget_amount, '')) {
+				print price($projectstatic->budget_amount, '', $langs, 1, 0, 0, $conf->currency);
+			}
+			print '</td></tr>';
+
+			// Date start - end project
+			print '<tr><td>'.$langs->trans("Dates").'</td><td>';
 			$start = dol_print_date($projectstatic->date_start, 'day');
 			print ($start ? $start : '?');
 			$end = dol_print_date($projectstatic->date_end, 'day');
@@ -266,13 +273,6 @@ if ($id > 0 || !empty($ref)) {
 			print ($end ? $end : '?');
 			if ($projectstatic->hasDelay()) {
 				print img_warning("Late");
-			}
-			print '</td></tr>';
-
-			// Budget
-			print '<tr><td>'.$langs->trans("Budget").'</td><td>';
-			if (strcmp($projectstatic->budget_amount, '')) {
-				print price($projectstatic->budget_amount, '', $langs, 1, 0, 0, $conf->currency);
 			}
 			print '</td></tr>';
 
@@ -411,7 +411,7 @@ if ($id > 0 || !empty($ref)) {
 			print $form->select_dolusers((GETPOSTISSET('userid') ? GETPOST('userid', 'int') : $user->id), 'userid', 0, '', 0, '', $contactsofproject, 0, 0, 0, '', 1, $langs->trans("ResourceNotAssignedToProject"));
 			print '</td>';
 			print '<td>';
-			$formcompany->selectTypeContact($object, '', 'type', 'internal', 'rowid');
+			$formcompany->selectTypeContact($object, '', 'type', 'internal', 'position');
 			print '</td>';
 			print '<td class="right" colspan="3" ><input type="submit" class="button button-add" value="'.$langs->trans("Add").'" name="addsourceinternal"></td>';
 			print '</tr>';
@@ -436,7 +436,7 @@ if ($id > 0 || !empty($ref)) {
 				$nbofcontacts = $form->num;
 				print '</td>';
 				print '<td>';
-				$formcompany->selectTypeContact($object, '', 'typecontact', 'external', 'rowid');
+				$formcompany->selectTypeContact($object, '', 'typecontact', 'external', 'position');
 				print '</td>';
 				print '<td class="right" colspan="3" ><input type="submit" class="button" id="add-customer-contact" name="addsourceexternal" value="'.$langs->trans("Add").'"';
 				if (!$nbofcontacts) {

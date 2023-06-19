@@ -104,7 +104,7 @@ class modProduct extends DolibarrModules
 		// Boxes
 		$this->boxes = array(
 			0=>array('file'=>'box_produits.php', 'enabledbydefaulton'=>'Home'),
-			1=>array('file'=>'box_produits_alerte_stock.php', 'enabledbydefaulton'=>''),
+			1=>array('file'=>'box_produits_alerte_stock.php', 'enabledbydefaulton'=>'Home'),
 			2=>array('file'=>'box_graph_product_distribution.php', 'enabledbydefaulton'=>'Home')
 		);
 
@@ -658,16 +658,7 @@ class modProduct extends DolibarrModules
 		}
 		// End add extra fields
 		$this->import_fieldshidden_array[$r] = array('extra.fk_object'=>'lastrowid-'.MAIN_DB_PREFIX.'product'); // aliastable.field => ('user->id' or 'lastrowid-'.tableparent)
-		$this->import_regex_array[$r] = array(
-			'p.ref'=>'[^ ]',
-			'p.price_base_type' => 'HT|TTC',
-			'p.tosell'=>'^[0|1]$',
-			'p.tobuy'=>'^[0|1]$',
-			'p.fk_product_type'=>'^[0|1]$',
-			'p.datec'=>'^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$',
-			'p.recuperableonly' => '^[0|1]$',
-			'p.finished' => '^[0|1]$'
-		);
+
 		// field order as per structure of table llx_product
 		$import_sample = array(
 			'p.ref' => "ref:PREF123456",
@@ -869,7 +860,7 @@ class modProduct extends DolibarrModules
 				));
 			}
 
-			$this->import_updatekeys_array[$r] = array('sp.fk_product'=>'ProductOrService', 'sp.ref_fourn'=>'SupplierRef', 'sp.fk_soc'=>'Supplier');
+			$this->import_updatekeys_array[$r] = array('sp.fk_product'=>'ProductOrService', 'sp.ref_fourn'=>'SupplierRef', 'sp.fk_soc'=>'Supplier', 'sp.quantity'=>"QtyMin");
 		}
 
 		if (!empty($conf->global->PRODUIT_MULTIPRICES)) {

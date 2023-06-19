@@ -222,7 +222,8 @@ if ($action == 'addtime' && $user->rights->projet->lire && GETPOST('assigntask')
 					$listofprojcontact = $project->liste_type_contact('internal');
 
 					if (count($listofprojcontact)) {
-						$typeforprojectcontact = reset(array_keys($listofprojcontact));
+						$tmparray = array_keys($listofprojcontact);
+						$typeforprojectcontact = reset($tmparray);
 						$result = $project->add_contact($idfortaskuser, $typeforprojectcontact, 'internal');
 					}
 				}
@@ -484,8 +485,8 @@ print img_picto('', 'projecttask', 'class="pictofixedwidth"');
 $formproject->selectTasks($socid ? $socid : -1, $taskid, 'taskid', 32, 0, '-- '.$langs->trans("ChooseANotYetAssignedTask").' --', 1, 0, 0, '', '', 'all', $usertoprocess);
 print '</div>';
 print ' ';
-print $formcompany->selectTypeContact($object, '', 'type', 'internal', 'rowid', 0, 'maxwidth150onsmartphone');
-print '<input type="submit" class="button valignmiddle smallonsmartphone" name="assigntask" value="'.dol_escape_htmltag($titleassigntask).'">';
+print $formcompany->selectTypeContact($object, '', 'type', 'internal', 'position', 0, 'maxwidth150onsmartphone');
+print '<input type="submit" class="button valignmiddle smallonsmartphone small" name="assigntask" value="'.dol_escape_htmltag($titleassigntask).'">';
 print '</div>';
 
 print '<div class="clearboth" style="padding-bottom: 20px;"></div>';
@@ -709,7 +710,7 @@ if (count($tasksarray) > 0) {
 
 	// Calculate total for all tasks
 	$listofdistinctprojectid = array(); // List of all distinct projects
-	if (is_array($tasksarraywithoutfilter) && count($tasksarraywithoutfilter)) {
+	if (!empty($tasksarraywithoutfilter) && is_array($tasksarraywithoutfilter) && count($tasksarraywithoutfilter)) {
 		foreach ($tasksarraywithoutfilter as $tmptask) {
 			$listofdistinctprojectid[$tmptask->fk_project] = $tmptask->fk_project;
 		}
@@ -795,12 +796,12 @@ print '</div>';
 
 print '</form>';
 
-$modeinput = 'hours';
-
-if ($conf->use_javascript_ajax) {
+if (!empty($conf->use_javascript_ajax)) {
+	$modeinput = 'hours';
 	print "\n<!-- JS CODE TO ENABLE Tooltips on all object with class classfortooltip -->\n";
 	print '<script type="text/javascript">'."\n";
 	print "jQuery(document).ready(function () {\n";
+	print "		updateTotal(0,\''.$modeinput.'\');\n";
 	print '		jQuery(".timesheetalreadyrecorded").tooltip({
 					show: { collision: "flipfit", effect:\'toggle\', delay:50 },
 					hide: { effect:\'toggle\', delay: 50 },
@@ -809,8 +810,7 @@ if ($conf->use_javascript_ajax) {
 						return \''.dol_escape_js($langs->trans("TimeAlreadyRecorded", $usertoprocess->getFullName($langs))).'\';
 					}
 				});'."\n";
-
-	print '    updateTotal(0,\''.$modeinput.'\');';
+	print " 	jQuery('.inputhour, .inputminute').bind('keyup', function(e) { updateTotal(0, '".$modeinput."') });";
 	print "\n});\n";
 	print '</script>';
 }

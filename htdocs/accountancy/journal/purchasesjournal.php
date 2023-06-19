@@ -3,7 +3,7 @@
  * Copyright (C) 2007-2010  Jean Heimburger         <jean@tiaris.info>
  * Copyright (C) 2011       Juanjo Menent           <jmenent@2byte.es>
  * Copyright (C) 2012       Regis Houssin           <regis.houssin@inodbox.com>
- * Copyright (C) 2013-2021  Alexandre Spangaro      <aspangaro@open-dsi.fr>
+ * Copyright (C) 2013-2023  Alexandre Spangaro      <aspangaro@open-dsi.fr>
  * Copyright (C) 2013-2016  Olivier Geffroy         <jeff@jeffinfo.com>
  * Copyright (C) 2013-2016  Florian Henry           <florian.henry@open-concept.pro>
  * Copyright (C) 2018       Frédéric France         <frederic.france@netlogic.fr>
@@ -104,7 +104,7 @@ if (!GETPOSTISSET('date_startmonth') && (empty($date_start) || empty($date_end))
 }
 
 $sql = "SELECT f.rowid, f.ref as ref, f.type, f.datef as df, f.libelle,f.ref_supplier, f.date_lim_reglement as dlr, f.close_code,";
-$sql .= " fd.rowid as fdid, fd.description, fd.product_type, fd.total_ht, fd.tva as total_tva, fd.total_localtax1, fd.total_localtax2, fd.tva_tx, fd.total_ttc, fd.vat_src_code,";
+$sql .= " fd.rowid as fdid, fd.description, fd.product_type, fd.total_ht, fd.tva as total_tva, fd.total_localtax1, fd.total_localtax2, fd.tva_tx, fd.total_ttc, fd.vat_src_code, fd.info_bits,";
 $sql .= " s.rowid as socid, s.nom as name, s.fournisseur, s.code_client, s.code_fournisseur,";
 if (!empty($conf->global->MAIN_COMPANY_PERENTITY_SHARED)) {
 	$sql .= " spe.accountancy_code_customer as code_compta,";
@@ -200,8 +200,8 @@ if ($result) {
 			$def_tva[$obj->rowid][$compta_tva][vatrate($obj->tva_tx).($obj->vat_src_code ? ' ('.$obj->vat_src_code.')' : '')] = (vatrate($obj->tva_tx).($obj->vat_src_code ? ' ('.$obj->vat_src_code.')' : ''));
 		}
 
-		$line = new SupplierInvoiceLine($db);
-		$line->fetch($obj->fdid);
+		//$line = new SupplierInvoiceLine($db);
+		//$line->fetch($obj->fdid);
 
 		$tabfac[$obj->rowid]["date"] = $db->jdate($obj->df);
 		$tabfac[$obj->rowid]["datereg"] = $db->jdate($obj->dlr);
@@ -233,7 +233,8 @@ if ($result) {
 		$tabttc[$obj->rowid][$compta_soc] += $obj->total_ttc;
 		$tabht[$obj->rowid][$compta_prod] += $obj->total_ht;
 		$tabtva[$obj->rowid][$compta_tva] += $obj->total_tva;
-		if (!empty($line->tva_npr)) {	// Add an entry for counterpart
+		$tva_npr = (($obj->info_bits & 1 == 1) ? 1 : 0);
+		if ($tva_npr) { // If NPR, we add an entry for counterpartWe into tabother
 			$tabother[$obj->rowid][$compta_counterpart_tva_npr] += $obj->total_tva;
 		}
 		$tablocaltax1[$obj->rowid][$compta_localtax1] += $obj->total_localtax1;
@@ -376,9 +377,10 @@ if ($action == 'writebookkeeping') {
 						setEventMessages($bookkeeping->error, $bookkeeping->errors, 'errors');
 					}
 				} else {
-					if (getDolGlobalInt('ACCOUNTING_ENABLE_LETTERING')) {
+					if (getDolGlobalInt('ACCOUNTING_ENABLE_LETTERING') && getDolGlobalInt('ACCOUNTING_ENABLE_AUTOLETTERING')) {
 						require_once DOL_DOCUMENT_ROOT . '/accountancy/class/lettering.class.php';
 						$lettering_static = new Lettering($db);
+
 						$nb_lettering = $lettering_static->bookkeepingLettering(array($bookkeeping->id));
 					}
 				}
@@ -756,9 +758,11 @@ if ($action == 'exportcsv') {		// ISO and not UTF8 !
 }
 
 if (empty($action) || $action == 'view') {
-	llxHeader('', $langs->trans("PurchasesJournal"));
+	$title = $langs->trans("GenerationOfAccountingEntries").' - '.$accountingjournalstatic->getNomUrl(0, 2, 1, '', 1);
 
-	$nom = $langs->trans("PurchasesJournal").' | '.$accountingjournalstatic->getNomUrl(0, 1, 1, '', 1);
+	llxHeader('', dol_string_nohtmltag($title));
+
+	$nom = $title;
 	$nomlink = '';
 	$periodlink = '';
 	$exportlink = '';
@@ -822,7 +826,6 @@ if (empty($action) || $action == 'view') {
 	 */
 	print '<br>';
 
-	$i = 0;
 	print '<div class="div-table-responsive">';
 	print "<table class=\"noborder\" width=\"100%\">";
 	print "<tr class=\"liste_titre\">";
@@ -831,11 +834,11 @@ if (empty($action) || $action == 'view') {
 	print "<td>".$langs->trans("AccountAccounting")."</td>";
 	print "<td>".$langs->trans("SubledgerAccount")."</td>";
 	print "<td>".$langs->trans("LabelOperation")."</td>";
-	print '<td class="center">'.$langs->trans("Debit")."</td>";
-	print '<td class="center">'.$langs->trans("Credit")."</td>";
+	print '<td class="center">'.$langs->trans("AccountingDebit")."</td>";
+	print '<td class="center">'.$langs->trans("AccountingCredit")."</td>";
 	print "</tr>\n";
 
-	$r = '';
+	$i = 0;
 
 	$invoicestatic = new FactureFournisseur($db);
 	$companystatic = new Fournisseur($db);
@@ -885,6 +888,7 @@ if (empty($action) || $action == 'view') {
 			print '<td class="right"></td>';
 			print "</tr>";
 
+			$i++;
 			continue;
 		}
 		if ($errorforinvoice[$key] == 'somelinesarenotbound') {
@@ -904,6 +908,8 @@ if (empty($action) || $action == 'view') {
 			print '<td class="right"></td>';
 			print '<td class="right"></td>';
 			print "</tr>";
+
+			$i++;
 		}
 
 		// Third party
@@ -934,6 +940,8 @@ if (empty($action) || $action == 'view') {
 			print '<td class="right nowraponall amount">'.($mt < 0 ? price(-$mt) : '')."</td>";
 			print '<td class="right nowraponall amount">'.($mt >= 0 ? price($mt) : '')."</td>";
 			print "</tr>";
+
+			$i++;
 		}
 
 		// Product / Service
@@ -970,6 +978,8 @@ if (empty($action) || $action == 'view') {
 			print '<td class="right nowraponall amount">'.($mt >= 0 ? price($mt) : '')."</td>";
 			print '<td class="right nowraponall amount">'.($mt < 0 ? price(-$mt) : '')."</td>";
 			print "</tr>";
+
+			$i++;
 		}
 
 		// VAT
@@ -1007,6 +1017,8 @@ if (empty($action) || $action == 'view') {
 					print '<td class="right nowraponall amount">'.($mt >= 0 ? price($mt) : '')."</td>";
 					print '<td class="right nowraponall amount">'.($mt < 0 ? price(-$mt) : '')."</td>";
 					print "</tr>";
+
+					$i++;
 				}
 			}
 		}
@@ -1035,9 +1047,15 @@ if (empty($action) || $action == 'view') {
 					print '<td class="right nowraponall amount">'.($mt < 0 ? price(-$mt) : '')."</td>";
 					print '<td class="right nowraponall amount">'.($mt >= 0 ? price($mt) : '')."</td>";
 					print "</tr>";
+
+					$i++;
 				}
 			}
 		}
+	}
+
+	if (!$i) {
+		print '<tr class="oddeven"><td colspan="7"><span class="opacitymedium">'.$langs->trans("NoRecordFound").'</span></td></tr>';
 	}
 
 	print "</table>";

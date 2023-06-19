@@ -1,6 +1,6 @@
 <?php
 /* Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
- * Copyright (C) 2004-2020 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2004-2022 Laurent Destailleur  <eldy@users.sourceforge.net>
  * Copyright (C) 2005-2010 Regis Houssin        <regis.houssin@inodbox.com>
  * Copyright (C) 2019      Nicolas ZABOURI      <info@inovea-conseil.com>
  *
@@ -193,9 +193,8 @@ print '<div class="fichecenter"><div class="fichethirdleft">';
  */
 include DOL_DOCUMENT_ROOT.'/projet/graph_opportunities.inc.php';
 
-
 // List of draft projects
-print_projecttasks_array($db, $form, $socid, $projectsListId, 0, 0, $listofoppstatus, array('projectlabel', 'plannedworkload', 'declaredprogress', 'prospectionstatus', 'projectstatus'));
+print_projecttasks_array($db, $form, $socid, $projectsListId, 0, 0, $listofoppstatus, array('projectlabel', 'plannedworkload', 'declaredprogress', 'prospectionstatus', 'projectstatus'), $max);
 
 
 print '</div><div class="fichetwothirdright">';

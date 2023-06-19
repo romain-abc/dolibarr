@@ -5,7 +5,7 @@
  * Copyright (C) 2005      Marc Barilley / Ocebo <marc@ocebo.com>
  * Copyright (C) 2005-2012 Regis Houssin         <regis.houssin@inodbox.com>
  * Copyright (C) 2006      Andre Cianfarani      <acianfa@free.fr>
- * Copyright (C) 2010-2016 Juanjo Menent         <jmenent@2byte.es>
+ * Copyright (C) 2010-2023 Juanjo Menent         <jmenent@2byte.es>
  * Copyright (C) 2010-2022 Philippe Grand        <philippe.grand@atoo-net.com>
  * Copyright (C) 2012-2013 Christophe Battarel   <christophe.battarel@altairis.fr>
  * Copyright (C) 2012      Cedric Salvador       <csalvador@gpcsolutions.fr>
@@ -131,7 +131,6 @@ $permissiontoedit = $usercancreate; // Used by the include of actions_lineupdown
 // Security check
 if (!empty($user->socid)) {
 	$socid = $user->socid;
-	$object->id = $user->socid;
 }
 restrictedArea($user, 'propal', $object->id);
 
@@ -607,6 +606,7 @@ if (empty($reshook)) {
 							$reshook = $hookmanager->executeHooks('createFrom', $parameters, $object, $action); // Note that $action and $object may have been
 																											   // modified by hook
 							if ($reshook < 0) {
+								setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 								$error++;
 							}
 						} else {
@@ -923,6 +923,8 @@ if (empty($reshook)) {
 		$price_ttc = '';
 		$price_ttc_devise = '';
 
+		// TODO Implement  if (getDolGlobalInt('MAIN_UNIT_PRICE_WITH_TAX_IS_FOR_ALL_TAXES'))
+
 		if (GETPOST('price_ht') !== '') {
 			$price_ht = price2num(GETPOST('price_ht'), 'MU', 2);
 		}
@@ -939,7 +941,7 @@ if (empty($reshook)) {
 		$prod_entry_mode = GETPOST('prod_entry_mode', 'aZ09');
 		if ($prod_entry_mode == 'free') {
 			$idprod = 0;
-			$tva_tx = (GETPOST('tva_tx', 'alpha') ? price2num(preg_replace('/\s*\(.*\)/', '', GETPOST('tva_tx', 'alpha'))) : 0);
+			$tva_tx = (GETPOSTISSET('tva_tx') ? GETPOST('tva_tx', 'alpha') : 0);
 		} else {
 			$idprod = GETPOST('idprod', 'int');
 			$tva_tx = '';
@@ -1234,6 +1236,20 @@ if (empty($reshook)) {
 			$date_start = dol_mktime(GETPOST('date_start'.$predef.'hour'), GETPOST('date_start'.$predef.'min'), GETPOST('date_start'.$predef.'sec'), GETPOST('date_start'.$predef.'month'), GETPOST('date_start'.$predef.'day'), GETPOST('date_start'.$predef.'year'));
 			$date_end = dol_mktime(GETPOST('date_end'.$predef.'hour'), GETPOST('date_end'.$predef.'min'), GETPOST('date_end'.$predef.'sec'), GETPOST('date_end'.$predef.'month'), GETPOST('date_end'.$predef.'day'), GETPOST('date_end'.$predef.'year'));
 
+			// Prepare a price equivalent for minimum price check
+			$pu_equivalent = $pu_ht;
+			$pu_equivalent_ttc = $pu_ttc;
+			$currency_tx = $object->multicurrency_tx;
+
+			// Check if we have a foreing currency
+			// If so, we update the pu_equiv as the equivalent price in base currency
+			if ($pu_ht == '' && $pu_ht_devise != '' && $currency_tx != '') {
+				$pu_equivalent = $pu_ht_devise * $currency_tx;
+			}
+			if ($pu_ttc == '' && $pu_ttc_devise != '' && $currency_tx != '') {
+				$pu_equivalent_ttc = $pu_ttc_devise * $currency_tx;
+			}
+
 			// Local Taxes
 			$localtax1_tx = get_localtax($tva_tx, 1, $object->thirdparty, $tva_npr);
 			$localtax2_tx = get_localtax($tva_tx, 2, $object->thirdparty, $tva_npr);
@@ -1247,11 +1263,11 @@ if (empty($reshook)) {
 			//var_dump(price2num($price_min_ttc)); var_dump(price2num($pu_ttc)); var_dump($remise_percent);exit;
 
 			if ($usermustrespectpricemin) {
-				if ($pu_ht && $price_min && ((price2num($pu_ht) * (1 - $remise_percent / 100)) < price2num($price_min))) {
+				if ($pu_equivalent && $price_min && ((price2num($pu_equivalent) * (1 - $remise_percent / 100)) < price2num($price_min))) {
 					$mesg = $langs->trans("CantBeLessThanMinPrice", price(price2num($price_min, 'MU'), 0, $langs, 0, 0, -1, $conf->currency));
 					setEventMessages($mesg, null, 'errors');
 					$error++;
-				} elseif ($pu_ttc && $price_min_ttc && ((price2num($pu_ttc) * (1 - $remise_percent / 100)) < price2num($price_min_ttc))) {
+				} elseif ($pu_equivalent_ttc && $price_min_ttc && ((price2num($pu_equivalent_ttc) * (1 - $remise_percent / 100)) < price2num($price_min_ttc))) {
 					$mesg = $langs->trans("CantBeLessThanMinPrice", price(price2num($price_min_ttc, 'MU'), 0, $langs, 0, 0, -1, $conf->currency));
 					setEventMessages($mesg, null, 'errors');
 					$error++;
@@ -1349,6 +1365,23 @@ if (empty($reshook)) {
 		$date_end = dol_mktime(GETPOST('date_endhour'), GETPOST('date_endmin'), GETPOST('date_endsec'), GETPOST('date_endmonth'), GETPOST('date_endday'), GETPOST('date_endyear'));
 
 		$remise_percent = price2num(GETPOST('remise_percent'), '', 2);
+		if (empty($remise_percent)) {
+			$remise_percent = 0;
+		}
+
+		// Prepare a price equivalent for minimum price check
+		$pu_equivalent = $pu_ht;
+		$pu_equivalent_ttc = $pu_ttc;
+		$currency_tx = $object->multicurrency_tx;
+
+		// Check if we have a foreing currency
+		// If so, we update the pu_equiv as the equivalent price in base currency
+		if ($pu_ht == '' && $pu_ht_devise != '' && $currency_tx != '') {
+			$pu_equivalent = $pu_ht_devise * $currency_tx;
+		}
+		if ($pu_ttc == '' && $pu_ttc_devise != '' && $currency_tx != '') {
+			$pu_equivalent_ttc = $pu_ttc_devise * $currency_tx;
+		}
 
 		// Extrafields
 		$extralabelsline = $extrafields->fetch_name_optionals_label($object->table_element_line);
@@ -1389,12 +1422,12 @@ if (empty($reshook)) {
 			//var_dump(price2num($price_min_ttc)); var_dump(price2num($pu_ttc)); var_dump($remise_percent);exit;
 
 			if ($usermustrespectpricemin) {
-				if ($pu_ht && $price_min && ((price2num($pu_ht) * (1 - $remise_percent / 100)) < price2num($price_min))) {
+				if ($pu_equivalent && $price_min && ((price2num($pu_equivalent) * (1 - $remise_percent / 100)) < price2num($price_min))) {
 					$mesg = $langs->trans("CantBeLessThanMinPrice", price(price2num($price_min, 'MU'), 0, $langs, 0, 0, -1, $conf->currency));
 					setEventMessages($mesg, null, 'errors');
 					$error++;
 					$action = 'editline';
-				} elseif ($pu_ttc && $price_min_ttc && ((price2num($pu_ttc) * (1 - $remise_percent / 100)) < price2num($price_min_ttc))) {
+				} elseif ($pu_equivalent_ttc && $price_min_ttc && ((price2num($pu_equivalent_ttc) * (1 - $remise_percent / 100)) < price2num($price_min_ttc))) {
 					$mesg = $langs->trans("CantBeLessThanMinPrice", price(price2num($price_min_ttc, 'MU'), 0, $langs, 0, 0, -1, $conf->currency));
 					setEventMessages($mesg, null, 'errors');
 					$error++;
@@ -1532,7 +1565,7 @@ if (empty($reshook)) {
 			$error++;
 		}
 		if (!$error) {
-			$result = $object->updateExtraField(GETPOST('attribute', 'restricthtml'), 'PROPAL_MODIFY', $user);
+			$result = $object->insertExtraFields('PROPAL_MODIFY');
 			if ($result < 0) {
 				setEventMessages($object->error, $object->errors, 'errors');
 				$error++;
@@ -1618,9 +1651,18 @@ if ($action == 'create') {
 
 	print load_fiche_titre($langs->trans("NewProp"), '', 'propal');
 
+	$cond_reglement_id = $mode_reglement_id = 0;
+
 	$soc = new Societe($db);
 	if ($socid > 0) {
 		$res = $soc->fetch($socid);
+
+		if (GETPOSTINT('cond_reglement_id') == 0) {
+			$cond_reglement_id = $soc->cond_reglement_id;
+		}
+		if (GETPOSTINT('mode_reglement_id') == 0) {
+			$mode_reglement_id = $soc->mode_reglement_id;
+		}
 	}
 
 	// Load objectsrc
@@ -1690,6 +1732,15 @@ if ($action == 'create') {
 		if (isModEnabled("multicurrency") && !empty($soc->multicurrency_code)) {
 			$currency_code = $soc->multicurrency_code;
 		}
+	}
+
+	// when payment term is empty (means not override by payment mode form a other object, like third-party), try to use default value
+	if (empty($cond_reglement_id)) {
+		$cond_reglement_id = GETPOST("cond_reglement_id", 'int');
+	}
+	// when payment mode is empty (means not override by payment mode form a other object, like third-party), try to use default value
+	if (empty($mode_reglement_id)) {
+		$mode_reglement_id = GETPOST("mode_reglement_id", 'int');
 	}
 
 	//Warehouse default if null
@@ -1792,13 +1843,13 @@ if ($action == 'create') {
 	// Terms of payment
 	print '<tr class="field_cond_reglement_id"><td class="nowrap">'.$langs->trans('PaymentConditionsShort').'</td><td>';
 	print img_picto('', 'paiment');
-	print $form->getSelectConditionsPaiements((GETPOSTISSET('cond_reglement_id') && GETPOST('cond_reglement_id') != 0) ? GETPOST('cond_reglement_id', 'int') : $soc->cond_reglement_id, 'cond_reglement_id', 1, 1, 0, '', (GETPOSTISSET('cond_reglement_id_deposit_percent') ? GETPOST('cond_reglement_id_deposit_percent', 'alpha') : $soc->deposit_percent));
+	print $form->getSelectConditionsPaiements($cond_reglement_id, 'cond_reglement_id', 1, 1, 0, '', (GETPOSTISSET('cond_reglement_id_deposit_percent') ? GETPOST('cond_reglement_id_deposit_percent', 'alpha') : $soc->deposit_percent));
 	print '</td></tr>';
 
 	// Mode of payment
 	print '<tr class="field_mode_reglement_id"><td class="titlefieldcreate">'.$langs->trans('PaymentMode').'</td><td class="valuefieldcreate">';
 	print img_picto('', 'bank', 'class="pictofixedwidth"');
-	print $form->select_types_paiements((GETPOSTISSET('mode_reglement_id') && GETPOST('mode_reglement_id') != 0) ? GETPOST('mode_reglement_id', 'int') : $soc->mode_reglement_id, 'mode_reglement_id', 'CRDT', 0, 1, 0, 0, 1, 'maxwidth200 widthcentpercentminusx', 1);
+	print $form->select_types_paiements($mode_reglement_id, 'mode_reglement_id', 'CRDT', 0, 1, 0, 0, 1, 'maxwidth200 widthcentpercentminusx', 1);
 	print '</td></tr>';
 
 	// Bank Account
@@ -1811,7 +1862,7 @@ if ($action == 'create') {
 	// Source / Channel - What trigger creation
 	print '<tr class="field_demand_reason_id"><td class="titlefieldcreate">'.$langs->trans('Source').'</td><td class="valuefieldcreate">';
 	print img_picto('', 'question', 'class="pictofixedwidth"');
-	$form->selectInputReason('', 'demand_reason_id', "SRC_PROP", 1, 'maxwidth200 widthcentpercentminusx');
+	$form->selectInputReason((GETPOSTISSET('demand_reason_id') ? GETPOST('demand_reason_id', 'int') : ''), 'demand_reason_id', "SRC_PROP", 1, 'maxwidth200 widthcentpercentminusx');
 	print '</td></tr>';
 
 	// Delivery delay
@@ -1821,7 +1872,7 @@ if ($action == 'create') {
 	}
 	print '</td><td class="valuefieldcreate">';
 	print img_picto('', 'clock', 'class="pictofixedwidth"');
-	$form->selectAvailabilityDelay('', 'availability_id', '', 1, 'maxwidth200 widthcentpercentminusx');
+	$form->selectAvailabilityDelay((GETPOSTISSET('availability_id') ? GETPOST('availability_id', 'int') : ''), 'availability_id', '', 1, 'maxwidth200 widthcentpercentminusx');
 	print '</td></tr>';
 
 	// Shipping Method
@@ -1831,7 +1882,7 @@ if ($action == 'create') {
 		}
 		print '<tr class="field_shipping_method_id"><td class="titlefieldcreate">'.$langs->trans('SendingMethod').'</td><td class="valuefieldcreate">';
 		print img_picto('', 'object_dollyrevert', 'class="pictofixedwidth"');
-		print $form->selectShippingMethod($shipping_method_id, 'shipping_method_id', '', 1, '', 0, 'maxwidth200 widthcentpercentminusx');
+		$form->selectShippingMethod((GETPOSTISSET('shipping_method_id') ? GETPOST('shipping_method_id', 'int') : $shipping_method_id), 'shipping_method_id', '', 1, '', 0, 'maxwidth200 widthcentpercentminusx');
 		print '</td></tr>';
 	}
 
@@ -2004,8 +2055,8 @@ if ($action == 'create') {
 			$i = 0;
 			while ($i < $num) {
 				$row = $db->fetch_row($resql);
-				$propalRefAndSocName = $row [1]." - ".$row [2];
-				$liste_propal [$row [0]] = $propalRefAndSocName;
+				$propalRefAndSocName = $row[1]." - ".$row[2];
+				$liste_propal[$row[0]] = $propalRefAndSocName;
 				$i++;
 			}
 			print $form->selectarray("copie_propal", $liste_propal, 0);
@@ -2218,9 +2269,9 @@ if ($action == 'create') {
 		}
 
 		if (empty($conf->global->PROPAL_SKIP_ACCEPT_REFUSE)) {
-			$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id, $langs->trans('SetAcceptedRefused'), $text, 'confirm_closeas', $formquestion, '', 1, 250);
+			$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id, $langs->trans('SetAcceptedRefused'), '', 'confirm_closeas', $formquestion, '', 1, 250);
 		} else {
-			$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"] . '?statut=3&id=' . $object->id, $langs->trans('Close'), $text, 'confirm_closeas', $formquestion, '', 1, 250);
+			$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"] . '?statut=3&id=' . $object->id, $langs->trans('Close'), '', 'confirm_closeas', $formquestion, '', 1, 250);
 		}
 	} elseif ($action == 'delete') {
 		// Confirm delete
@@ -2297,39 +2348,28 @@ if ($action == 'create') {
 	$morehtmlref .= $form->editfieldkey("RefCustomer", 'ref_client', $object->ref_client, $object, $usercancreate, 'string', '', 0, 1);
 	$morehtmlref .= $form->editfieldval("RefCustomer", 'ref_client', $object->ref_client, $object, $usercancreate, 'string'.(isset($conf->global->THIRDPARTY_REF_INPUT_SIZE) ? ':'.$conf->global->THIRDPARTY_REF_INPUT_SIZE : ''), '', null, null, '', 1);
 	// Thirdparty
-	$morehtmlref .= '<br><span class="hideonsmartphone">'.$langs->trans('ThirdParty').' : </span>'.$object->thirdparty->getNomUrl(1, 'customer');
+	$morehtmlref .= '<br>'.$object->thirdparty->getNomUrl(1, 'customer');
 	if (empty($conf->global->MAIN_DISABLE_OTHER_LINK) && $object->thirdparty->id > 0) {
 		$morehtmlref .= ' (<a href="'.DOL_URL_ROOT.'/comm/propal/list.php?socid='.$object->thirdparty->id.'&search_societe='.urlencode($object->thirdparty->name).'">'.$langs->trans("OtherProposals").'</a>)';
 	}
 	// Project
 	if (isModEnabled('project')) {
 		$langs->load("projects");
-		$morehtmlref .= '<br><span class="paddingrightonly">'.$langs->trans('Project').'</span>';
+		$morehtmlref .= '<br>';
 		if ($usercancreate) {
+			$morehtmlref .= img_picto($langs->trans("Project"), 'project', 'class="pictofixedwidth"');
 			if ($action != 'classify') {
-				$morehtmlref .= '<a class="editfielda" href="'.$_SERVER['PHP_SELF'].'?action=classify&token='.newToken().'&id='.$object->id.'">'.img_edit($langs->transnoentitiesnoconv('SetProject')).'</a> : ';
+				$morehtmlref .= '<a class="editfielda" href="'.$_SERVER['PHP_SELF'].'?action=classify&token='.newToken().'&id='.$object->id.'">'.img_edit($langs->transnoentitiesnoconv('SetProject')).'</a> ';
 			}
-			if ($action == 'classify') {
-				//$morehtmlref.=$form->form_project($_SERVER['PHP_SELF'] . '?id=' . $object->id, $object->socid, $object->fk_project, 'projectid', 0, 0, 1, 1);
-				$morehtmlref .= '<form method="post" action="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'">';
-				$morehtmlref .= '<input type="hidden" name="action" value="classin">';
-				$morehtmlref .= '<input type="hidden" name="token" value="'.newToken().'">';
-				$morehtmlref .= $formproject->select_projects($object->socid, $object->fk_project, 'projectid', $maxlength, 0, 1, 0, 1, 0, 0, '', 1);
-				$morehtmlref .= '<input type="submit" class="button valignmiddle" value="'.$langs->trans("Modify").'">';
-				$morehtmlref .= '</form>';
-			} else {
-				$morehtmlref .= $form->form_project($_SERVER['PHP_SELF'].'?id='.$object->id, $object->socid, $object->fk_project, 'none', 0, 0, 0, 1);
-			}
+			$morehtmlref .= $form->form_project($_SERVER['PHP_SELF'].'?id='.$object->id, $object->socid, $object->fk_project, ($action == 'classify' ? 'projectid' : 'none'), 0, 0, 0, 1, '', 'maxwidth300');
 		} else {
 			if (!empty($object->fk_project)) {
 				$proj = new Project($db);
 				$proj->fetch($object->fk_project);
-				$morehtmlref .= ': '.$proj->getNomUrl(1);
+				$morehtmlref .= $proj->getNomUrl(1);
 				if ($proj->title) {
-					$morehtmlref .= ' - '.$proj->title;
+					$morehtmlref .= '<span class="opacitymedium"> - '.dol_escape_htmltag($proj->title).'</span>';
 				}
-			} else {
-				$morehtmlref .= '';
 			}
 		}
 	}
@@ -2343,7 +2383,7 @@ if ($action == 'create') {
 	print '<div class="fichehalfleft">';
 	print '<div class="underbanner clearboth"></div>';
 
-	print '<table class="border tableforfield" width="100%">';
+	print '<table class="border tableforfield centpercent">';
 
 	// Link for thirdparty discounts
 	if (!empty($conf->global->FACTURE_DEPOSITS_ARE_JUST_PAYMENTS)) {
@@ -2403,7 +2443,7 @@ if ($action == 'create') {
 	// Date end proposal
 	print '<tr>';
 	print '<td>';
-	print '<table class="nobordernopadding" width="100%"><tr><td>';
+	print '<table class="nobordernopadding centpercent"><tr><td>';
 	print $langs->trans('DateEndPropal');
 	print '</td>';
 	if ($action != 'editecheance' && $usercancreate && $caneditfield) {
@@ -2788,7 +2828,7 @@ if ($action == 'create') {
 	}
 
 	if (!empty($object->lines)) {
-		$ret = $object->printObjectLines($action, $mysoc, $soc, $lineid, 1);
+		$object->printObjectLines($action, $mysoc, $soc, $lineid, 1);
 	}
 
 	// Form to add new line

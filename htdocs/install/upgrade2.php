@@ -4217,8 +4217,15 @@ function migrate_delete_old_dir($db, $langs, $conf)
  */
 function migrate_reload_modules($db, $langs, $conf, $listofmodule = array(), $force = 0)
 {
+	global $user;
+
 	if (count($listofmodule) == 0) {
 		return;
+	}
+
+	if (!is_object($user)) {
+		include_once DOL_DOCUMENT_ROOT.'/user/class/user.class.php';
+		$user = new User($db);	// To avoid error during migration
 	}
 
 	dolibarr_install_syslog("upgrade2::migrate_reload_modules force=".$force.", listofmodule=".join(',', array_keys($listofmodule)));
@@ -4485,7 +4492,7 @@ function migrate_reload_modules($db, $langs, $conf, $listofmodule = array(), $fo
  * @param	DoliDB		$db			Database handler
  * @param	Translate	$langs		Object langs
  * @param	Conf		$conf		Object conf
- * @return	void
+ * @return	int						<0 if KO, >0 if OK
  */
 function migrate_reload_menu($db, $langs, $conf)
 {
@@ -4515,6 +4522,8 @@ function migrate_reload_menu($db, $langs, $conf)
 
 		print '</td></tr>';
 	}
+
+	return 1;
 }
 
 /**
@@ -4532,7 +4541,6 @@ function migrate_user_photospath()
 
 	include_once DOL_DOCUMENT_ROOT.'/user/class/user.class.php';
 	$fuser = new User($db);
-
 	if (!is_object($user)) {
 		$user = $fuser; // To avoid error during migration
 	}
@@ -4619,7 +4627,6 @@ function migrate_user_photospath2()
 
 	include_once DOL_DOCUMENT_ROOT.'/user/class/user.class.php';
 	$fuser = new User($db);
-
 	if (!is_object($user)) {
 		$user = $fuser; // To avoid error during migration
 	}

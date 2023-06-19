@@ -157,7 +157,10 @@ function user_prepare_head(User $object)
 	if (empty($user->socid)) {
 		// Notes
 		$nbNote = 0;
-		if (!empty($object->note)) {
+		if (!empty($object->note_public)) {
+			$nbNote++;
+		}
+		if (!empty($object->note_private)) {
 			$nbNote++;
 		}
 		$head[$h][0] = DOL_URL_ROOT.'/user/note.php?id='.$object->id;
@@ -363,7 +366,7 @@ function showSkins($fuser, $edit = 0, $foruserprofile = false)
 		print '<tr>';
 		print '<td>'.$langs->trans("DefaultSkin").'</td>';
 		print '<td>'.$conf->global->MAIN_THEME.'</td>';
-		print '<td class="nowrap left"><input id="check_MAIN_THEME" name="check_MAIN_THEME"'.($edit ? '' : ' disabled').' type="checkbox" '.($selected_theme ? " checked" : "").'> '.$langs->trans("UsePersonalValue").'</td>';
+		print '<td class="nowrap left"><input id="check_MAIN_THEME" name="check_MAIN_THEME"'.($edit ? '' : ' disabled').' type="checkbox" '.($selected_theme ? " checked" : "").'> <label for="check_MAIN_THEME">'.$langs->trans("UsePersonalValue").'</label></td>';
 		print '<td>&nbsp;</td>';
 		print '</tr>';
 	} else {

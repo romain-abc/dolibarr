@@ -3,7 +3,7 @@
  * Copyright (C) 2013-2020 Laurent Destailleur	<eldy@users.sourceforge.net>
  * Copyright (C) 2012-2016 Regis Houssin	<regis.houssin@inodbox.com>
  * Copyright (C) 2018      Charlene Benke	<charlie@patas-monkey.com>
- * Copyright (C) 2019-2021 Frédéric France		<frederic.france@netlogic.fr>
+ * Copyright (C) 2019-2022 Frédéric France		<frederic.france@netlogic.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -126,7 +126,7 @@ $arrayfields = array(
 	'cp.date_debut'=>array('label'=>$langs->trans("DateStart"), 'checked'=>1, 'position'=>40),
 	'cp.date_fin'=>array('label'=>$langs->trans("DateEnd"), 'checked'=>1, 'position'=>42),
 	'cp.date_valid'=>array('label'=>$langs->trans("DateValidation"), 'checked'=>1, 'position'=>60),
-	'cp.date_approve'=>array('label'=>$langs->trans("DateApprove"), 'checked'=>1, 'position'=>70),
+	'cp.date_approval'=>array('label'=>$langs->trans("DateApprove"), 'checked'=>1, 'position'=>70),
 	'cp.date_create'=>array('label'=>$langs->trans("DateCreation"), 'checked'=>0, 'position'=>500),
 	'cp.tms'=>array('label'=>$langs->trans("DateModificationShort"), 'checked'=>0, 'position'=>501),
 	'cp.statut'=>array('label'=>$langs->trans("Status"), 'checked'=>1, 'position'=>1000),
@@ -271,6 +271,8 @@ $sql .= " cp.statut as status,";
 $sql .= " cp.fk_validator,";
 $sql .= " cp.date_valid,";
 $sql .= " cp.fk_user_valid,";
+$sql .= " cp.date_approval,";
+$sql .= " cp.fk_user_approve,";
 $sql .= " cp.date_refuse,";
 $sql .= " cp.fk_user_refuse,";
 $sql .= " cp.date_cancel,";
@@ -302,6 +304,9 @@ if (!empty($extrafields->attributes[$object->table_element]['label'])) {
 $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
+
+$sqlfields = $sql; // $sql fields to remove for count total
+
 $sql .= " FROM ".MAIN_DB_PREFIX."holiday as cp";
 if (isset($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element."_extrafields as ef on (cp.rowid = ef.fk_object)";
@@ -354,21 +359,32 @@ $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
 
-$sql .= $db->order($sortfield, $sortorder);
-
 // Count total nb of records
 $nbtotalofrecords = '';
 if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
-	$result = $db->query($sql);
-	$nbtotalofrecords = $db->num_rows($result);
+	/* The fast and low memory method to get and count full list converts the sql into a sql count */
+	$sqlforcount = preg_replace('/^'.preg_quote($sqlfields, '/').'/', 'SELECT COUNT(*) as nbtotalofrecords', $sql);
+	$sqlforcount = preg_replace('/GROUP BY .*$/', '', $sqlforcount);
+	$resql = $db->query($sqlforcount);
+	if ($resql) {
+		$objforcount = $db->fetch_object($resql);
+		$nbtotalofrecords = $objforcount->nbtotalofrecords;
+	} else {
+		dol_print_error($db);
+	}
+
 	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller then paging size (filtering), goto and load page 0
 		$page = 0;
 		$offset = 0;
 	}
+	$db->free($resql);
 }
 
-$sql .= $db->plimit($limit + 1, $offset);
-
+// Complete request and execute it with limit
+$sql .= $db->order($sortfield, $sortorder);
+if ($limit) {
+	$sql .= $db->plimit($limit + 1, $offset);
+}
 
 //print $sql;
 $resql = $db->query($sql);
@@ -538,7 +554,7 @@ if ($resql) {
 	}
 
 	$varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
-	$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
+	$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage, getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')); // This also change content of $arrayfields
 	$selectedfields .= (count($arrayofmassactions) ? $form->showCheckAddButtons('checkforselect', 1) : '');
 
 
@@ -553,7 +569,13 @@ if ($resql) {
 
 	// Filters
 	print '<tr class="liste_titre_filter">';
-
+	// Action column
+	if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+		print '<td class="liste_titre maxwidthsearch">';
+		$searchpicto = $form->showFilterButtons('left');
+		print $searchpicto;
+		print '</td>';
+	}
 	if (!empty($arrayfields['cp.ref']['checked'])) {
 		print '<td class="liste_titre">';
 		print '<input class="flat maxwidth50" type="text" name="search_ref" value="'.dol_escape_htmltag($search_ref).'">';
@@ -575,7 +597,7 @@ if ($resql) {
 		}
 
 		print '<td class="liste_titre maxwidthonsmartphone left">';
-		print $form->select_dolusers($search_employee, "search_employee", 1, "", $disabled, $include, '', 0, 0, 0, $morefilter, 0, '', 'maxwidth150');
+		print $form->select_dolusers($search_employee, "search_employee", 1, "", $disabled, $include, '', 0, 0, 0, $morefilter, 0, '', 'maxwidth125');
 		print '</td>';
 	}
 
@@ -585,12 +607,12 @@ if ($resql) {
 			print '<td class="liste_titre maxwidthonsmartphone left">';
 			$validator = new UserGroup($db);
 			$excludefilter = $user->admin ? '' : 'u.rowid <> '.$user->id;
-			$valideurobjects = $validator->listUsersForGroup($excludefilter);
+			$valideurobjects = $validator->listUsersForGroup($excludefilter, 1);
 			$valideurarray = array();
 			foreach ($valideurobjects as $val) {
 				$valideurarray[$val->id] = $val->id;
 			}
-			print $form->select_dolusers($search_valideur, "search_valideur", 1, "", 0, $valideurarray, '', 0, 0, 0, $morefilter, 0, '', 'maxwidth150');
+			print $form->select_dolusers($search_valideur, "search_valideur", 1, "", 0, $valideurarray, '', 0, 0, 0, $morefilter, 0, '', 'maxwidth125');
 			print '</td>';
 		} else {
 			print '<td class="liste_titre">&nbsp;</td>';
@@ -610,7 +632,7 @@ if ($resql) {
 				//$labeltoshow .= ($val['delay'] > 0 ? ' ('.$langs->trans("NoticePeriod").': '.$val['delay'].' '.$langs->trans("days").')':'');
 				$arraytypeleaves[$val['rowid']] = $labeltoshow;
 			}
-			print $form->selectarray('search_type', $arraytypeleaves, $search_type, 1, 0, 0, '', 0, 0, 0, '', '', 1);
+			print $form->selectarray('search_type', $arraytypeleaves, $search_type, 1, 0, 0, '', 0, 0, 0, '', 'maxwidth100', 1);
 		}
 		print '</td>';
 	}
@@ -636,8 +658,14 @@ if ($resql) {
 		print '</td>';
 	}
 
-	// End date
+	// Date validation
 	if (!empty($arrayfields['cp.date_valid']['checked'])) {
+		print '<td class="liste_titre center nowraponall">';
+		print '</td>';
+	}
+
+	// Date appoval
+	if (!empty($arrayfields['cp.date_approval']['checked'])) {
 		print '<td class="liste_titre center nowraponall">';
 		print '</td>';
 	}
@@ -673,14 +701,19 @@ if ($resql) {
 	}
 
 	// Action column
-	print '<td class="liste_titre maxwidthsearch">';
-	$searchpicto = $form->showFilterButtons();
-	print $searchpicto;
-	print '</td>';
+	if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+		print '<td class="liste_titre maxwidthsearch">';
+		$searchpicto = $form->showFilterButtons();
+		print $searchpicto;
+		print '</td>';
+	}
 
 	print "</tr>\n";
 
 	print '<tr class="liste_titre">';
+	if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+		print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'maxwidthsearch center ');
+	}
 	if (!empty($arrayfields['cp.ref']['checked'])) {
 		print_liste_field_titre($arrayfields['cp.ref']['label'], $_SERVER["PHP_SELF"], "cp.ref", "", $param, '', $sortfield, $sortorder);
 	}
@@ -705,6 +738,9 @@ if ($resql) {
 	if (!empty($arrayfields['cp.date_valid']['checked'])) {
 		print_liste_field_titre($arrayfields['cp.date_valid']['label'], $_SERVER["PHP_SELF"], "cp.date_valid", "", $param, '', $sortfield, $sortorder, 'center ');
 	}
+	if (!empty($arrayfields['cp.date_approval']['checked'])) {
+		print_liste_field_titre($arrayfields['cp.date_approval']['label'], $_SERVER["PHP_SELF"], "cp.date_approval", "", $param, '', $sortfield, $sortorder, 'center ');
+	}
 	// Extra fields
 	include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_title.tpl.php';
 	// Hook fields
@@ -720,7 +756,9 @@ if ($resql) {
 	if (!empty($arrayfields['cp.statut']['checked'])) {
 		print_liste_field_titre("Status", $_SERVER["PHP_SELF"], "cp.statut", "", $param, '', $sortfield, $sortorder, 'right ');
 	}
-	print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'maxwidthsearch center ');
+	if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+		print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'maxwidthsearch center ');
+	}
 	print "</tr>\n";
 
 	$listhalfday = array('morning'=>$langs->trans("Morning"), "afternoon"=>$langs->trans("Afternoon"));
@@ -778,7 +816,21 @@ if ($resql) {
 			$endhalfday = ($obj->halfday == 1 || $obj->halfday == 2) ? 'morning' : 'afternoon';
 
 			print '<tr class="oddeven">';
-
+			// Action column
+			if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+				print '<td class="nowrap center">';
+				if ($massactionbutton || $massaction) {   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
+					$selected = 0;
+					if (in_array($obj->rowid, $arrayofselected)) {
+						$selected = 1;
+					}
+					print '<input id="cb'.$obj->rowid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->rowid.'"'.($selected ? ' checked="checked"' : '').'>';
+				}
+				print '</td>';
+				if (!$i) {
+					$totalarray['nbfield']++;
+				}
+			}
 			if (!empty($arrayfields['cp.ref']['checked'])) {
 				print '<td class="nowraponall">';
 				print $holidaystatic->getNomUrl(1, 1);
@@ -800,8 +852,11 @@ if ($resql) {
 				}
 			}
 			if (!empty($arrayfields['cp.fk_type']['checked'])) {
-				$labeltypeleavetoshow = ($langs->trans($typeleaves[$obj->fk_type]['code']) != $typeleaves[$obj->fk_type]['code'] ? $langs->trans($typeleaves[$obj->fk_type]['code']) : $typeleaves[$obj->fk_type]['label']);
-				$labeltypeleavetoshow = empty($typeleaves[$obj->fk_type]['label']) ? $langs->trans("TypeWasDisabledOrRemoved", $obj->fk_type) : $labeltypeleavetoshow;
+				if (empty($typeleaves[$obj->fk_type])) {
+					$labeltypeleavetoshow = $langs->trans("TypeWasDisabledOrRemoved", $obj->fk_type);
+				} else {
+					$labeltypeleavetoshow = ($langs->trans($typeleaves[$obj->fk_type]['code']) != $typeleaves[$obj->fk_type]['code'] ? $langs->trans($typeleaves[$obj->fk_type]['code']) : $typeleaves[$obj->fk_type]['label']);
+				}
 
 				print '<td class="tdoverflowmax100" title="'.dol_escape_htmltag($labeltypeleavetoshow).'">';
 				print $labeltypeleavetoshow;
@@ -839,18 +894,20 @@ if ($resql) {
 					$totalarray['nbfield']++;
 				}
 			}
+			// Date validation
 			if (!empty($arrayfields['cp.date_valid']['checked'])) {		// date_valid is both date_valid but also date_approval
-				print '<td class="center">';
+				print '<td class="center" title="'.dol_print_date($db->jdate($obj->date_valid), 'dayhour').'">';
 				print dol_print_date($db->jdate($obj->date_valid), 'day');
 				print '</td>';
 				if (!$i) $totalarray['nbfield']++;
 			}
-			/*if (!empty($arrayfields['cp.date_approve']['checked'])) {
-				 print '<td class="center">';
-				 print dol_print_date($db->jdate($obj->date_approve), 'day');
-				 print '</td>';
-				 if (!$i) $totalarray['nbfield']++;
-			 }*/
+			// Date approval
+			if (!empty($arrayfields['cp.date_approval']['checked'])) {
+				print '<td class="center" title="'.dol_print_date($db->jdate($obj->date_approval), 'dayhour').'">';
+				print dol_print_date($db->jdate($obj->date_approval), 'day');
+				print '</td>';
+				if (!$i) $totalarray['nbfield']++;
+			}
 
 			// Extra fields
 			include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_print_fields.tpl.php';
@@ -880,17 +937,19 @@ if ($resql) {
 			}
 
 			// Action column
-			print '<td class="nowrap center">';
-			if ($massactionbutton || $massaction) {   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
-				$selected = 0;
-				if (in_array($obj->rowid, $arrayofselected)) {
-					$selected = 1;
+			if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+				print '<td class="nowrap center">';
+				if ($massactionbutton || $massaction) {   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
+					$selected = 0;
+					if (in_array($obj->rowid, $arrayofselected)) {
+						$selected = 1;
+					}
+					print '<input id="cb'.$obj->rowid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->rowid.'"'.($selected ? ' checked="checked"' : '').'>';
 				}
-				print '<input id="cb'.$obj->rowid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->rowid.'"'.($selected ? ' checked="checked"' : '').'>';
-			}
-			print '</td>';
-			if (!$i) {
-				$totalarray['nbfield']++;
+				print '</td>';
+				if (!$i) {
+					$totalarray['nbfield']++;
+				}
 			}
 
 			print '</tr>'."\n";
@@ -901,6 +960,9 @@ if ($resql) {
 		// Add a line for total if there is a total to show
 		if (!empty($arrayfields['duration']['checked'])) {
 			print '<tr class="total">';
+			if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+				print '<td></td>';
+			}
 			foreach ($arrayfields as $key => $val) {
 				if (!empty($val['checked'])) {
 					if ($key == 'duration') {
@@ -909,6 +971,10 @@ if ($resql) {
 						print '<td></td>';
 					}
 				}
+			}
+			// status
+			if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+				print '<td></td>';
 			}
 			print '</tr>';
 		}

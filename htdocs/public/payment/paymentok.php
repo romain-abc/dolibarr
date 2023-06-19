@@ -167,13 +167,24 @@ $error = 0;
 
 $now = dol_now();
 
-dol_syslog("Callback url when a payment was done. query_string=".(dol_escape_htmltag($_SERVER["QUERY_STRING"]) ?dol_escape_htmltag($_SERVER["QUERY_STRING"]) : '')." script_uri=".(dol_escape_htmltag($_SERVER["SCRIPT_URI"]) ?dol_escape_htmltag($_SERVER["SCRIPT_URI"]) : ''), LOG_DEBUG, 0, '_payment');
+dol_syslog("Callback url when a payment was done. query_string=".(empty($_SERVER["QUERY_STRING"]) ? '' : dol_escape_htmltag($_SERVER["QUERY_STRING"]))." script_uri=".(empty($_SERVER["SCRIPT_URI"]) ? '' : dol_escape_htmltag($_SERVER["SCRIPT_URI"])), LOG_DEBUG, 0, '_payment');
+dol_syslog("_SERVER[SERVER_NAME] = ".(empty($_SERVER["SERVER_NAME"]) ? '' : dol_escape_htmltag($_SERVER["SERVER_NAME"])), LOG_DEBUG, 0, '_payment');
+dol_syslog("_SERVER[SERVER_ADDR] = ".(empty($_SERVER["SERVER_ADDR"]) ? '' : dol_escape_htmltag($_SERVER["SERVER_ADDR"])), LOG_DEBUG, 0, '_payment');
 
 $tracepost = "";
 foreach ($_POST as $k => $v) {
-	$tracepost .= "{$k} - {$v}\n";
+	if (is_scalar($k) && is_scalar($v)) {
+		$tracepost .= "{$k} - {$v}\n";
+	}
 }
 dol_syslog("POST=".$tracepost, LOG_DEBUG, 0, '_payment');
+$tracesession = "";
+foreach ($_SESSION as $k => $v) {
+	if (is_scalar($k) && is_scalar($v)) {
+		$tracesession .= "{$k} - {$v}\n";
+	}
+}
+dol_syslog("SESSION=".$tracesession, LOG_DEBUG, 0, '_payment');
 
 $head = '';
 if (!empty($conf->global->ONLINE_PAYMENT_CSS_URL)) {
@@ -434,7 +445,7 @@ if ($ispaymentok) {
 			// Do action only if $FinalPaymentAmt is set (session variable is cleaned after this page to avoid duplicate actions when page is POST a second time)
 			if (!empty($FinalPaymentAmt) && $paymentTypeId > 0) {
 				// Security protection:
-				if (empty($conf->global->MEMBER_NEWFORM_EDITAMOUNT)) {	// If we didn't allow members to choose their membership amount (if free amount is allowed, no need to check)
+				if (empty($adht->caneditamount)) {	// If we didn't allow members to choose their membership amount (if the amount is allowed in edit mode, no need to check)
 					if ($object->status == $object::STATUS_DRAFT) {		// If the member is not yet validated, we check that the amount is the same as expected.
 						$typeid = $object->typeid;
 
@@ -1307,7 +1318,9 @@ if ($ispaymentok) {
 							if ($attendeetovalidate->email_company && $attendeetovalidate->email_company != $thirdparty->email) {
 								$cc = ($cc ? ', ' : '').$attendeetovalidate->email_company;
 							}
-							$from = $conf->global->MAILING_EMAIL_FROM;
+
+							$from = !empty($conf->global->MAILING_EMAIL_FROM) ? $conf->global->MAILING_EMAIL_FROM : getDolGlobalString("MAIN_MAIL_EMAIL_FROM");
+
 							$urlback = $_SERVER["REQUEST_URI"];
 
 							$ishtml = dol_textishtml($texttosend); // May contain urls
@@ -1604,7 +1617,7 @@ if ($ispaymentok) {
 		$companylangs->loadLangs(array('main', 'members', 'bills', 'paypal', 'paybox'));
 
 		$sendto = $sendemail;
-		$from = $conf->global->MAILING_EMAIL_FROM;
+		$from = !empty($conf->global->MAILING_EMAIL_FROM) ? $conf->global->MAILING_EMAIL_FROM : getDolGlobalString("MAIN_MAIL_EMAIL_FROM");
 		// Define $urlwithroot
 		$urlwithouturlroot = preg_replace('/'.preg_quote(DOL_URL_ROOT, '/').'$/i', '', trim($dolibarr_main_url_root));
 		$urlwithroot = $urlwithouturlroot.DOL_URL_ROOT; // This is to use external domain name found into config file
@@ -1732,7 +1745,7 @@ if ($ispaymentok) {
 		$companylangs->loadLangs(array('main', 'members', 'bills', 'paypal', 'paybox'));
 
 		$sendto = $sendemail;
-		$from = $conf->global->MAILING_EMAIL_FROM;
+		$from = !empty($conf->global->MAILING_EMAIL_FROM) ? $conf->global->MAILING_EMAIL_FROM : getDolGlobalString("MAIN_MAIL_EMAIL_FROM");
 		// Define $urlwithroot
 		$urlwithouturlroot = preg_replace('/'.preg_quote(DOL_URL_ROOT, '/').'$/i', '', trim($dolibarr_main_url_root));
 		$urlwithroot = $urlwithouturlroot.DOL_URL_ROOT; // This is to use external domain name found into config file

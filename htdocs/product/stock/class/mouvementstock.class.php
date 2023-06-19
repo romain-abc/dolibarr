@@ -119,12 +119,12 @@ class MouvementStock extends CommonObject
 		'fk_origin' =>array('type'=>'integer', 'label'=>'Fk origin', 'enabled'=>1, 'visible'=>-1, 'position'=>60),
 		'origintype' =>array('type'=>'varchar(32)', 'label'=>'Origintype', 'enabled'=>1, 'visible'=>-1, 'position'=>65),
 		'model_pdf' =>array('type'=>'varchar(255)', 'label'=>'Model pdf', 'enabled'=>1, 'visible'=>0, 'position'=>70),
-		'fk_projet' =>array('type'=>'integer:Project:projet/class/project.class.php:1:fk_statut=1', 'label'=>'Project', 'enabled'=>'$conf->project->enabled', 'visible'=>-1, 'notnull'=>1, 'position'=>75),
+		'fk_projet' =>array('type'=>'integer:Project:projet/class/project.class.php:1:(fk_statut:=:1)', 'label'=>'Project', 'enabled'=>'$conf->project->enabled', 'visible'=>-1, 'notnull'=>1, 'position'=>75),
 		'inventorycode' =>array('type'=>'varchar(128)', 'label'=>'InventoryCode', 'enabled'=>1, 'visible'=>-1, 'position'=>80),
 		'batch' =>array('type'=>'varchar(30)', 'label'=>'Batch', 'enabled'=>1, 'visible'=>-1, 'position'=>85),
 		'eatby' =>array('type'=>'date', 'label'=>'Eatby', 'enabled'=>1, 'visible'=>-1, 'position'=>90),
 		'sellby' =>array('type'=>'date', 'label'=>'Sellby', 'enabled'=>1, 'visible'=>-1, 'position'=>95),
-		'fk_project' =>array('type'=>'integer:Project:projet/class/project.class.php:1:fk_statut=1', 'label'=>'Fk project', 'enabled'=>1, 'visible'=>-1, 'position'=>100),
+		'fk_project' =>array('type'=>'integer:Project:projet/class/project.class.php:1:(fk_statut:=:1)', 'label'=>'Fk project', 'enabled'=>1, 'visible'=>-1, 'position'=>100),
 	);
 
 
@@ -977,10 +977,9 @@ class MouvementStock extends CommonObject
 					// Separate originetype with "@" : left part is class name, right part is module name
 					$origin_type_array = explode('@', $origin_type);
 					$classname = ucfirst($origin_type_array[0]);
-					$modulename = empty($origin_type_array[1]) ? $classname : $origin_type_array[1];
+					$modulename = empty($origin_type_array[1]) ? strtolower($classname) : $origin_type_array[1];
 					$result = dol_include_once('/'.$modulename.'/class/'.strtolower($classname).'.class.php');
 					if ($result) {
-						$classname = ucfirst($classname);
 						$origin = new $classname($this->db);
 					}
 				}
@@ -1095,6 +1094,13 @@ class MouvementStock extends CommonObject
 		$label .= '<div width="100%">';
 		$label .= '<b>'.$langs->trans('Label').':</b> '.$this->label;
 		$label .= '<br><b>'.$langs->trans('Qty').':</b> '.($this->qty > 0 ? '+' : '').$this->qty;
+		if ($this->batch) {
+			$label .= '<br><b>'.$langs->trans('Batch').':</b> '.$this->batch;
+		}
+		/* TODO Get also warehouse label in a property instead of id
+		if ($this->warehouse_id > 0) {
+			$label .= '<br><b>'.$langs->trans('Warehouse').':</b> '.$this->warehouse_id;
+		}*/
 		$label .= '</div>';
 
 		// Link to page of warehouse tab

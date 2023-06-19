@@ -62,6 +62,8 @@ $cancel = GETPOST('cancel', 'aZ09');
 
 $track_id = GETPOST('track_id', 'alpha');
 $email = strtolower(GETPOST('email', 'alpha'));
+$suffix = "";
+$moreforfilter = "";
 
 if (GETPOST('btn_view_ticket_list')) {
 	unset($_SESSION['track_id_customer']);
@@ -227,10 +229,13 @@ if ($action == "view_ticketlist") {
 		$search_array_options = $extrafields->getOptionalsFromPost($object->table_element, '', 'search_');
 
 		$filter = array();
+
 		$param = '&action=view_ticketlist';
 		if (!empty($entity) && isModEnabled('multicompany')) {
-			$param .= '&entity='.$entity;
+			$param .= '&entity='.((int) $entity);
 		}
+
+		$param .= '&token='.newToken();
 
 		// Definition of fields for list
 		$arrayfields = array(
@@ -259,7 +264,9 @@ if ($action == "view_ticketlist") {
 		if (isset($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 			foreach ($extrafields->attributes[$object->table_element]['label'] as $key => $val) {
 				if ($extrafields->attributes[$object->table_element]['type'][$key] != 'separate') {
-					$arrayfields["ef.".$key] = array('label' => $extrafields->attributes[$object->table_element]['label'][$key], 'checked' => ($extrafields->attributes[$object->table_element]['list'][$key] < 0) ? 0 : 1, 'position' => $extrafields->attributes[$object->table_element]['pos'][$key], 'enabled' =>(abs($extrafields->attributes[$object->table_element]['list'][$key]) != 3) && $extrafields->attributes[$object->table_element]['perms'][$key]);
+					$enabled = abs(dol_eval($extrafields->attributes[$object->table_element]['list'][$key], 1, 1, 0));
+					$enabled = (($enabled == 0 || $enabled == 3) ? 0 : $enabled);
+					$arrayfields["ef.".$key] = array('label' => $extrafields->attributes[$object->table_element]['label'][$key], 'checked' => ($extrafields->attributes[$object->table_element]['list'][$key] < 0) ? 0 : 1, 'position' => $extrafields->attributes[$object->table_element]['pos'][$key], 'enabled' => $enabled && $extrafields->attributes[$object->table_element]['perms'][$key]);
 				}
 			}
 		}
@@ -364,7 +371,7 @@ if ($action == "view_ticketlist") {
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."element_contact as ec ON ec.element_id = t.rowid";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_type_contact as tc ON ec.fk_c_type_contact = tc.rowid";
 		$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."socpeople sp ON ec.fk_socpeople = sp.rowid";
-		if (is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
+		if (isset($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 			$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."ticket_extrafields as ef on (t.rowid = ef.fk_object)";
 		}
 		$sql .= " WHERE t.entity IN (".getEntity('ticket').")";
@@ -405,11 +412,13 @@ if ($action == "view_ticketlist") {
 			$resql = $db->query($sql);
 			if ($resql) {
 				$num = $db->num_rows($resql);
-				print_barre_liste($langs->trans('TicketList'), $page, '/public/ticket/list.php', $param, $sortfield, $sortorder, '', $num, $num_total, 'ticket');
+
+				print_barre_liste($langs->trans('TicketList'), $page, 'list.php', $param, $sortfield, $sortorder, '', $num, $num_total, 'ticket');
 
 				// Search bar
 				print '<form method="POST" action="'.$_SERVER['PHP_SELF'].(!empty($entity) && isModEnabled('multicompany')?'?entity='.$entity:'').'" id="searchFormList" >'."\n";
 				print '<input type="hidden" name="formfilteraction" id="formfilteraction" value="list">';
+				print '<input type="hidden" name="token" value="'.newToken().'">';
 				print '<input type="hidden" name="action" value="view_ticketlist">';
 				print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
 				print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
@@ -736,7 +745,7 @@ if ($action == "view_ticketlist") {
 	print '</p>';
 
 	print '<p><label for="email" style="display: inline-block; width: 30%; "><span class="fieldrequired">'.$langs->trans('Email').'</span></label>';
-	print '<input size="30" id="email" name="email" value="'.(GETPOST('email', 'alpha') ? GETPOST('email', 'alpha') : $_SESSION['customer_email']).'" />';
+	print '<input size="30" id="email" name="email" value="'.(GETPOST('email', 'alpha') ? GETPOST('email', 'alpha') : (!empty($_SESSION['customer_email']) ? $_SESSION['customer_email'] : "")).'" />';
 	print '</p>';
 
 	print '<p style="text-align: center; margin-top: 1.5em;">';

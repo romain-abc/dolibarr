@@ -516,7 +516,7 @@ $tabcond[25] = isModEnabled('website');
 $tabcond[27] = isModEnabled("societe");
 $tabcond[28] = isModEnabled('holiday');
 $tabcond[29] = isModEnabled('project');
-$tabcond[30] = isModEnabled('label');
+$tabcond[30] = (isModEnabled('label') || isModEnabled('barcode') || isModEnabled('adherent'));	// stickers format dictionary
 //$tabcond[31]= isModEnabled('accounting');
 $tabcond[32] = (isModEnabled('holiday') || isModEnabled('hrm'));
 $tabcond[33] = isModEnabled('hrm');
@@ -1205,7 +1205,7 @@ if ($search_country_id > 0) {
 	$param .= '&search_country_id='.urlencode($search_country_id);
 }
 if ($search_code != '') {
-	$param .= '&search_code='.urlencode($search_country_id);
+	$param .= '&search_code='.urlencode($search_code);
 }
 if ($entity != '') {
 	$param .= '&entity='.(int) $entity;
@@ -1255,6 +1255,8 @@ if ($id > 0) {
 		$sql .= natural_search("f.code", $search_code);
 	} elseif ($search_code != '' && $id == 2) {
 		$sql .= natural_search("d.code_departement", $search_code);
+	} elseif ($search_code != '' && $id == 14) {
+		$sql .= natural_search("e.code", $search_code);
 	} elseif ($search_code != '' && $id != 9) {
 		$sql .= natural_search("code", $search_code);
 	}
@@ -1575,7 +1577,6 @@ if ($id > 0) {
 			unset($fieldlist[2]); // Remove field ??? if dictionary Regions
 		}
 
-
 		if (empty($reshook)) {
 			fieldList($fieldlist, $obj, $tabname[$id], 'add');
 		}
@@ -1641,7 +1642,7 @@ if ($id > 0) {
 			if ($showfield) {
 				if ($value == 'country') {
 					print '<td class="liste_titre">';
-					print $form->select_country($search_country_id, 'search_country_id', '', 28, 'maxwidth150 maxwidthonsmartphone');
+					print $form->select_country($search_country_id, 'search_country_id', '', 28, 'minwidth100 maxwidth150 maxwidthonsmartphone');
 					print '</td>';
 					$filterfound++;
 				} elseif ($value == 'code') {
@@ -1931,8 +1932,8 @@ if ($id > 0) {
 					if (!is_null($withentity)) {
 						print '<input type="hidden" name="entity" value="'.$withentity.'">';
 					}
-					print '<input type="submit" class="button button-edit" name="actionmodify" value="'.$langs->trans("Modify").'">';
-					print '<input type="submit" class="button button-cancel" name="actioncancel" value="'.$langs->trans("Cancel").'">';
+					print '<input type="submit" class="button button-edit small" name="actionmodify" value="'.$langs->trans("Modify").'">';
+					print '<input type="submit" class="button button-cancel small" name="actioncancel" value="'.$langs->trans("Cancel").'">';
 					print '</td>';
 				} else {
 					$tmpaction = 'view';
@@ -1970,7 +1971,7 @@ if ($id > 0) {
 									$valuetoshow = ($key != "Country".strtoupper($obj->country_code) ? $obj->country_code." - ".$key : $obj->country);
 								}
 							} elseif ($value == 'recuperableonly' || $value == 'deductible' || $value == 'category_type') {
-								$valuetoshow = yn($valuetoshow);
+								$valuetoshow = yn($valuetoshow ? 1 : 0);
 								$class = "center";
 							} elseif ($value == 'type_cdr') {
 								if (empty($valuetoshow)) {
@@ -2132,7 +2133,7 @@ if ($id > 0) {
 								$class .= ' right';
 							}
 							if (in_array($value, array('localtax1_type', 'localtax2_type'))) {
-								$class .= ' nowrap';
+								$class .= ' nowraponall';
 							}
 							if (in_array($value, array('use_default', 'fk_parent', 'sortorder'))) {
 								$class .= ' center';
@@ -2277,8 +2278,9 @@ if ($id > 0) {
 	print '<div class="div-table-responsive-no-min">';
 	print '<table class="noborder centpercent">';
 	print '<tr class="liste_titre">';
-	print '<td colspan="2">'.$langs->trans("Dictionary").'</td>';
+	print '<td>'.$langs->trans("Dictionary").'</td>';
 	print '<td></td>';
+	print '<td class="hideonsmartphone"></td>';
 	print '</tr>';
 
 	$showemptyline = '';
@@ -2289,13 +2291,13 @@ if ($id > 0) {
 
 		if ($i) {
 			if ($showemptyline) {
-				print '<tr class="oddeven"><td width="50%">&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';
+				print '<tr class="oddeven"><td></td><td></td><td class="hideonsmartphone"></td></tr>';
 				$showemptyline = 0;
 			}
 
 
 			$value = $tabname[$i];
-			print '<tr class="oddeven"><td width="50%">';
+			print '<tr class="oddeven"><td class="minwidth200">';
 			if (!empty($tabcond[$i])) {
 				$tabnamenoprefix = preg_replace('/'.MAIN_DB_PREFIX.'/', '', $tabname[$i]);
 				print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$i.'">';
@@ -2313,7 +2315,7 @@ if ($id > 0) {
 			print img_picto('Edit', 'edit', '');
 			print '</a>';
 			print '</td>';
-			print '<td class="right">';
+			print '<td class="right hideonsmartphone">';
 			print $form->textwithpicto('', $langs->trans("Table").': '.MAIN_DB_PREFIX.$tabname[$i]);
 			print '</td>';
 			print '</tr>';
@@ -2378,7 +2380,7 @@ function fieldList($fieldlist, $obj = '', $tabname = '', $context = '')
 			}	// For state page, we do not show the country input (we link to region, not country)
 			print '<td>';
 			$fieldname = 'country';
-			print $form->select_country((!empty($obj->country_code) ? $obj->country_code : (!empty($obj->country) ? $obj->country : '')), $fieldname, '', 28, 'maxwidth150 maxwidthonsmartphone');
+			print $form->select_country((!empty($obj->country_code) ? $obj->country_code : (!empty($obj->country) ? $obj->country : '')), $fieldname, '', 28, 'minwidth100 maxwidth150 maxwidthonsmartphone');
 			print '</td>';
 		} elseif ($value == 'country_id') {
 			if (!in_array('country', $fieldlist)) {	// If there is already a field country, we don't show country_id (avoid duplicate)
@@ -2513,11 +2515,11 @@ function fieldList($fieldlist, $obj = '', $tabname = '', $context = '')
 			print '</td>';
 		} elseif ($value == 'block_if_negative') {
 			print '<td>';
-			print $form->selectyesno("block_if_negative", (!empty($obj->{$value}) ? $obj->{$value}:''), 1);
+			print $form->selectyesno("block_if_negative", (empty($obj->block_if_negative) ? '' : $obj->block_if_negative), 1);
 			print '</td>';
 		} elseif ($value == 'type_duration') {
 			print '<td>';
-			print $form->selectTypeDuration('', $obj->{$value}, array('i','h'));
+			print $form->selectTypeDuration('', (empty($obj->type_duration) ? '' : $obj->type_duration), array('i','h'));
 			print '</td>';
 		} else {
 			$fieldValue = isset($obj->{$value}) ? $obj->{$value}: '';
@@ -2534,7 +2536,7 @@ function fieldList($fieldlist, $obj = '', $tabname = '', $context = '')
 				$classtd = 'right'; $class = 'maxwidth50 right';
 			}
 			if (in_array($fieldlist[$field], array('pos', 'position'))) {
-				$classtd = 'center'; $class = 'maxwidth50 center';
+				$classtd = 'right'; $class = 'maxwidth50 right';
 			}
 			if (in_array($fieldlist[$field], array('dayrule', 'day', 'month', 'year', 'use_default', 'affect', 'delay', 'public', 'sortorder', 'sens', 'category_type', 'fk_parent'))) {
 				$class = 'maxwidth50 center';

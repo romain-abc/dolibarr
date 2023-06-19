@@ -494,7 +494,7 @@ class DoliDBMysqli extends DoliDB
 	 */
 	public function escapeforlike($stringtoencode)
 	{
-		return str_replace(array('_', '\\', '%'), array('\_', '\\\\', '\%'), (string) $stringtoencode);
+		return str_replace(array('\\', '_', '%'), array('\\\\', '\_', '\%'), (string) $stringtoencode);
 	}
 
 	/**
@@ -715,7 +715,7 @@ class DoliDBMysqli extends DoliDB
 		}
 		$tmpdatabase = preg_replace('/[^a-z0-9\.\-\_]/i', '', $database);
 
-		$sql = "SHOW TABLES FROM ".$tmpdatabase." ".$like.";";
+		$sql = "SHOW TABLES FROM `".$tmpdatabase."` ".$like.";";
 		//print $sql;
 		$result = $this->query($sql);
 		if ($result) {

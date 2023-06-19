@@ -307,7 +307,7 @@ class Commande extends CommonOrder
 		'ref_ext' =>array('type'=>'varchar(255)', 'label'=>'RefExt', 'enabled'=>1, 'visible'=>0, 'position'=>26),
 		'ref_client' =>array('type'=>'varchar(255)', 'label'=>'RefCustomer', 'enabled'=>1, 'visible'=>-1, 'position'=>28),
 		'fk_soc' =>array('type'=>'integer:Societe:societe/class/societe.class.php', 'label'=>'ThirdParty', 'enabled'=>'$conf->societe->enabled', 'visible'=>-1, 'notnull'=>1, 'position'=>20),
-		'fk_projet' =>array('type'=>'integer:Project:projet/class/project.class.php:1:fk_statut=1', 'label'=>'Project', 'enabled'=>"isModEnabled('project')", 'visible'=>-1, 'position'=>25),
+		'fk_projet' =>array('type'=>'integer:Project:projet/class/project.class.php:1:(fk_statut:=:1)', 'label'=>'Project', 'enabled'=>"isModEnabled('project')", 'visible'=>-1, 'position'=>25),
 		'date_commande' =>array('type'=>'date', 'label'=>'Date', 'enabled'=>1, 'visible'=>1, 'position'=>60),
 		'date_valid' =>array('type'=>'datetime', 'label'=>'DateValidation', 'enabled'=>1, 'visible'=>-1, 'position'=>62),
 		'date_cloture' =>array('type'=>'datetime', 'label'=>'DateClosing', 'enabled'=>1, 'visible'=>-1, 'position'=>65),
@@ -1272,6 +1272,8 @@ class Commande extends CommonOrder
 				$action = '';
 				$reshook = $hookmanager->executeHooks('createFrom', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 				if ($reshook < 0) {
+					$this->errors += $hookmanager->errors;
+					$this->error = $hookmanager->error;
 					$error++;
 				}
 			}
@@ -1301,6 +1303,7 @@ class Commande extends CommonOrder
 	{
 		global $conf, $hookmanager;
 
+		dol_include_once('/multicurrency/class/multicurrency.class.php');
 		dol_include_once('/core/class/extrafields.class.php');
 
 		$error = 0;
@@ -1342,6 +1345,9 @@ class Commande extends CommonOrder
 			$line->marge_tx			= $marginInfos[1];
 			$line->marque_tx		= $marginInfos[2];
 
+			$line->origin           = $object->element;
+			$line->origin_id        = $object->lines[$i]->id;
+
 			// get extrafields from original line
 			$object->lines[$i]->fetch_optionals();
 			foreach ($object->lines[$i]->array_options as $options_key => $value) {
@@ -1376,6 +1382,29 @@ class Commande extends CommonOrder
 		$this->origin = $object->element;
 		$this->origin_id = $object->id;
 
+				// Multicurrency (test on $this->multicurrency_tx because we should take the default rate only if not using origin rate)
+		if (!empty($conf->multicurrency->enabled)) {
+			if (!empty($object->multicurrency_code)) {
+				$this->multicurrency_code = $object->multicurrency_code;
+			}
+			if (!empty($conf->global->MULTICURRENCY_USE_ORIGIN_TX) && !empty($object->multicurrency_tx)) {
+				$this->multicurrency_tx = $object->multicurrency_tx;
+			}
+
+			if (!empty($this->multicurrency_code) && empty($this->multicurrency_tx)) {
+					$tmparray = MultiCurrency::getIdAndTxFromCode($this->db, $this->multicurrency_code, $this->date_commande);
+					$this->fk_multicurrency = $tmparray[0];
+					$this->multicurrency_tx = $tmparray[1];
+			} else {
+					$this->fk_multicurrency = MultiCurrency::getIdFromCode($this->db, $this->multicurrency_code);
+			}
+			if (empty($this->fk_multicurrency)) {
+					$this->multicurrency_code = $conf->currency;
+					$this->fk_multicurrency = 0;
+					$this->multicurrency_tx = 1;
+			}
+		}
+
 		// get extrafields from original line
 		$object->fetch_optionals();
 
@@ -1403,6 +1432,8 @@ class Commande extends CommonOrder
 			$action = '';
 			$reshook = $hookmanager->executeHooks('createFrom', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
 			if ($reshook < 0) {
+				$this->errors += $hookmanager->errors;
+				$this->error = $hookmanager->error;
 				$error++;
 			}
 
@@ -3626,7 +3657,7 @@ class Commande extends CommonOrder
 	public function LibStatut($status, $billed, $mode, $donotshowbilled = 0)
 	{
 		// phpcs:enable
-		global $langs, $conf;
+		global $langs, $conf, $hookmanager;
 
 		$billedtext = '';
 		if (empty($donotshowbilled)) {
@@ -3656,8 +3687,8 @@ class Commande extends CommonOrder
 			}
 			$statusType = 'status4';
 		} elseif ($status == self::STATUS_CLOSED && (!$billed && empty($conf->global->WORKFLOW_BILL_ON_SHIPMENT))) {
-			$labelStatus = $langs->transnoentitiesnoconv('StatusOrderToBill');
-			$labelStatusShort = $langs->transnoentitiesnoconv('StatusOrderToBillShort');
+			$labelStatus = $langs->transnoentitiesnoconv('StatusOrderToBill'); // translated into Delivered
+			$labelStatusShort = $langs->transnoentitiesnoconv('StatusOrderToBillShort'); // translated into Delivered
 			$statusType = 'status4';
 		} elseif ($status == self::STATUS_CLOSED && ($billed && empty($conf->global->WORKFLOW_BILL_ON_SHIPMENT))) {
 			$labelStatus = $langs->transnoentitiesnoconv('StatusOrderProcessed').$billedtext;
@@ -3672,6 +3703,19 @@ class Commande extends CommonOrder
 			$labelStatusShort = '';
 			$statusType = '';
 			$mode = 0;
+		}
+
+		$parameters = array(
+			'status'          => $status,
+			'mode'            => $mode,
+			'billed'          => $billed,
+			'donotshowbilled' => $donotshowbilled
+		);
+
+		$reshook = $hookmanager->executeHooks('LibStatut', $parameters, $this); // Note that $action and $object may have been modified by hook
+
+		if ($reshook > 0) {
+			return $hookmanager->resPrint;
 		}
 
 		return dolGetStatus($labelStatus, $labelStatusShort, '', $statusType, $mode, '', array('tooltip' => $labelTooltip));
@@ -4076,7 +4120,7 @@ class Commande extends CommonOrder
 
 		$now = dol_now();
 
-		return max($this->date, $this->date_livraison) < ($now - $conf->commande->client->warning_delay);
+		return max($this->date, $this->delivery_date) < ($now - $conf->commande->client->warning_delay);
 	}
 
 	/**
@@ -4088,7 +4132,7 @@ class Commande extends CommonOrder
 	{
 		global $conf, $langs;
 
-		if (empty($this->date_livraison)) {
+		if (empty($this->delivery_date)) {
 			$text = $langs->trans("OrderDate").' '.dol_print_date($this->date_commande, 'day');
 		} else {
 			$text = $text = $langs->trans("DeliveryDate").' '.dol_print_date($this->date_livraison, 'day');
@@ -4200,6 +4244,12 @@ class OrderLine extends CommonOrderLine
 		$result = $this->db->query($sql);
 		if ($result) {
 			$objp = $this->db->fetch_object($result);
+
+			if (!$objp) {
+				$this->error = 'OrderLine with id '. $rowid .' not found sql='.$sql;
+				return 0;
+			}
+
 			$this->rowid            = $objp->rowid;
 			$this->id = $objp->rowid;
 			$this->fk_commande      = $objp->fk_commande;
@@ -4312,16 +4362,6 @@ class OrderLine extends CommonOrderLine
 		dol_syslog("OrderLine::delete", LOG_DEBUG);
 		$resql = $this->db->query($sql);
 		if ($resql) {
-			// Remove extrafields
-			if (!$error) {
-				$this->id = $this->rowid;
-				$result = $this->deleteExtraFields();
-				if ($result < 0) {
-					$error++;
-					dol_syslog(get_class($this)."::delete error -4 ".$this->error, LOG_ERR);
-				}
-			}
-
 			if (!$error && !$notrigger) {
 				// Call trigger
 				$result = $this->call_trigger('LINEORDER_DELETE', $user);
@@ -4329,6 +4369,15 @@ class OrderLine extends CommonOrderLine
 					$error++;
 				}
 				// End call triggers
+			}
+
+			// Remove extrafields
+			if (!$error) {
+				$result = $this->deleteExtraFields();
+				if ($result < 0) {
+					$error++;
+					dol_syslog(get_class($this)."::delete error -4 ".$this->error, LOG_ERR);
+				}
 			}
 
 			if (!$error) {
@@ -4563,6 +4612,9 @@ class OrderLine extends CommonOrderLine
 		}
 		if (empty($this->remise_percent)) {
 			$this->remise_percent = 0;
+		}
+		if (empty($this->remise)) {
+			$this->remise = 0;
 		}
 		if (empty($this->info_bits)) {
 			$this->info_bits = 0;

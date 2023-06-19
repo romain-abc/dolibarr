@@ -378,7 +378,7 @@ class Stripe extends CommonObject
 
 		$paymentintent = null;
 
-		if (is_object($object) && !empty($conf->global->STRIPE_REUSE_EXISTING_INTENT_IF_FOUND) && empty($conf->global->STRIPE_CARD_PRESENT)) {
+		if (is_object($object) && getDolGlobalInt('STRIPE_REUSE_EXISTING_INTENT_IF_FOUND') && !getDolGlobalInt('STRIPE_CARD_PRESENT')) {
 			// Warning. If a payment was tried and failed, a payment intent was created.
 			// But if we change something on object to pay (amount or other that does not change the idempotency key), reusing same payment intent is not allowed by Stripe.
 			// Recommended solution is to recreate a new payment intent each time we need one (old one will be automatically closed by Stripe after a delay), Stripe will
@@ -386,7 +386,7 @@ class Stripe extends CommonObject
 			// That's why we can comment the part of code to retrieve a payment intent with object id (never mind if we cumulate payment intent with old ones that will not be used)
 
 			$sql = "SELECT pi.ext_payment_id, pi.entity, pi.fk_facture, pi.sourcetype, pi.ext_payment_site";
-			$sql .= " FROM ".MAIN_DB_PREFIX."prelevement_facture_demande as pi";
+			$sql .= " FROM ".MAIN_DB_PREFIX."prelevement_demande as pi";
 			$sql .= " WHERE pi.fk_facture = ".((int) $object->id);
 			$sql .= " AND pi.sourcetype = '".$this->db->escape($object->element)."'";
 			$sql .= " AND pi.entity IN (".getEntity('societe').")";
@@ -435,26 +435,26 @@ class Stripe extends CommonObject
 			// list of payment method types
 			$paymentmethodtypes = array("card");
 			$descriptor = dol_trunc($tag, 10, 'right', 'UTF-8', 1);
-			if (!empty($conf->global->STRIPE_SEPA_DIRECT_DEBIT)) {
+			if (getDolGlobalInt('STRIPE_SEPA_DIRECT_DEBIT')) {
 				$paymentmethodtypes[] = "sepa_debit"; //&& ($object->thirdparty->isInEEC())
 				//$descriptor = preg_replace('/ref=[^:=]+/', '', $descriptor);	// Clean ref
 			}
-			if (!empty($conf->global->STRIPE_KLARNA)) {
+			if (getDolGlobalInt('STRIPE_KLARNA')) {
 				$paymentmethodtypes[] = "klarna";
 			}
-			if (!empty($conf->global->STRIPE_BANCONTACT)) {
+			if (getDolGlobalInt('STRIPE_BANCONTACT')) {
 				$paymentmethodtypes[] = "bancontact";
 			}
-			if (!empty($conf->global->STRIPE_IDEAL)) {
+			if (getDolGlobalInt('STRIPE_IDEAL')) {
 				$paymentmethodtypes[] = "ideal";
 			}
-			if (!empty($conf->global->STRIPE_GIROPAY)) {
+			if (getDolGlobalInt('STRIPE_GIROPAY')) {
 				$paymentmethodtypes[] = "giropay";
 			}
-			if (!empty($conf->global->STRIPE_SOFORT)) {
+			if (getDolGlobalInt('STRIPE_SOFORT')) {
 				$paymentmethodtypes[] = "sofort";
 			}
-			if (!empty($conf->global->STRIPE_CARD_PRESENT) && $mode == 'terminal') {
+			if (getDolGlobalInt('STRIPE_CARD_PRESENT') && $mode == 'terminal') {
 				$paymentmethodtypes = array("card_present");
 			}
 
@@ -465,12 +465,14 @@ class Stripe extends CommonObject
 				"currency" => $currency_code,
 				"payment_method_types" => $paymentmethodtypes,
 				"description" => $description,
-				"statement_descriptor_suffix" => $descriptor, // For card payment, 22 chars that appears on bank receipt (prefix into stripe setup + this suffix)
-				"statement_descriptor" => $descriptor, // For SEPA, it will take only statement_descriptor, not statement_descriptor_suffix
 				//"save_payment_method" => true,
 				"setup_future_usage" => "on_session",
 				"metadata" => $metadata
 			);
+			if ($descriptor) {
+				$dataforintent["statement_descriptor_suffix"] = $descriptor; // For card payment, 22 chars that appears on bank receipt (prefix into stripe setup + this suffix)
+				$dataforintent["statement_descriptor"] = $descriptor; 	// For SEPA, it will take only statement_descriptor, not statement_descriptor_suffix
+			}
 			if (!is_null($customer)) {
 				$dataforintent["customer"] = $customer;
 			}
@@ -484,13 +486,13 @@ class Stripe extends CommonObject
 				//$dataforintent["setup_future_usage"] = "off_session";
 				$dataforintent["off_session"] = true;
 			}
-			if (!empty($conf->global->STRIPE_GIROPAY)) {
+			if (getDolGlobalInt('STRIPE_GIROPAY')) {
 				unset($dataforintent['setup_future_usage']);
 			}
-			if (!empty($conf->global->STRIPE_KLARNA)) {
+			if (getDolGlobalInt('STRIPE_KLARNA')) {
 				unset($dataforintent['setup_future_usage']);
 			}
-			if (!empty($conf->global->STRIPE_CARD_PRESENT) && $mode == 'terminal') {
+			if (getDolGlobalInt('STRIPE_CARD_PRESENT') && $mode == 'terminal') {
 				unset($dataforintent['setup_future_usage']);
 				$dataforintent["capture_method"] = "manual";
 				$dataforintent["confirmation_method"] = "manual";
@@ -500,7 +502,7 @@ class Stripe extends CommonObject
 				$description .= ' - '.$payment_method;
 			}
 
-			if ($conf->entity != $conf->global->STRIPECONNECT_PRINCIPAL && $stripefee > 0) {
+			if ($conf->entity != getDolGlobalInt('STRIPECONNECT_PRINCIPAL') && $stripefee > 0) {
 				$dataforintent["application_fee_amount"] = $stripefee;
 			}
 			if ($usethirdpartyemailforreceiptemail && is_object($object) && $object->thirdparty->email) {
@@ -530,12 +532,12 @@ class Stripe extends CommonObject
 					$paymentintentalreadyexists = 0;
 					// Check that payment intent $paymentintent->id is not already recorded.
 					$sql = "SELECT pi.rowid";
-					$sql .= " FROM ".MAIN_DB_PREFIX."prelevement_facture_demande as pi";
+					$sql .= " FROM ".MAIN_DB_PREFIX."prelevement_demande as pi";
 					$sql .= " WHERE pi.entity IN (".getEntity('societe').")";
 					$sql .= " AND pi.ext_payment_site = '".$this->db->escape($service)."'";
 					$sql .= " AND pi.ext_payment_id = '".$this->db->escape($paymentintent->id)."'";
 
-					dol_syslog(get_class($this)."::getPaymentIntent search if payment intent already in prelevement_facture_demande", LOG_DEBUG);
+					dol_syslog(get_class($this)."::getPaymentIntent search if payment intent already in prelevement_demande", LOG_DEBUG);
 					$resql = $this->db->query($sql);
 					if ($resql) {
 						$num = $this->db->num_rows($resql);
@@ -552,7 +554,7 @@ class Stripe extends CommonObject
 					// If not, we create it.
 					if (!$paymentintentalreadyexists) {
 						$now = dol_now();
-						$sql = "INSERT INTO ".MAIN_DB_PREFIX."prelevement_facture_demande (date_demande, fk_user_demande, ext_payment_id, fk_facture, sourcetype, entity, ext_payment_site, amount)";
+						$sql = "INSERT INTO ".MAIN_DB_PREFIX."prelevement_demande (date_demande, fk_user_demande, ext_payment_id, fk_facture, sourcetype, entity, ext_payment_site, amount)";
 						$sql .= " VALUES ('".$this->db->idate($now)."', ".((int) $user->id).", '".$this->db->escape($paymentintent->id)."', ".((int) $object->id).", '".$this->db->escape($object->element)."', ".((int) $conf->entity).", '".$this->db->escape($service)."', ".((float) $amount).")";
 						$resql = $this->db->query($sql);
 						if (!$resql) {
@@ -696,12 +698,12 @@ class Stripe extends CommonObject
 					$setupintentalreadyexists = 0;
 					// Check that payment intent $setupintent->id is not already recorded.
 					$sql = "SELECT pi.rowid";
-					$sql.= " FROM " . MAIN_DB_PREFIX . "prelevement_facture_demande as pi";
+					$sql.= " FROM " . MAIN_DB_PREFIX . "prelevement_demande as pi";
 					$sql.= " WHERE pi.entity IN (".getEntity('societe').")";
 					$sql.= " AND pi.ext_payment_site = '" . $this->db->escape($service) . "'";
 					$sql.= " AND pi.ext_payment_id = '".$this->db->escape($setupintent->id)."'";
 
-					dol_syslog(get_class($this) . "::getPaymentIntent search if payment intent already in prelevement_facture_demande", LOG_DEBUG);
+					dol_syslog(get_class($this) . "::getPaymentIntent search if payment intent already in prelevement_demande", LOG_DEBUG);
 					$resql = $this->db->query($sql);
 					if ($resql) {
 						$num = $this->db->num_rows($resql);
@@ -717,7 +719,7 @@ class Stripe extends CommonObject
 					if (! $setupintentalreadyexists)
 					{
 						$now=dol_now();
-						$sql = "INSERT INTO " . MAIN_DB_PREFIX . "prelevement_facture_demande (date_demande, fk_user_demande, ext_payment_id, fk_facture, sourcetype, entity, ext_payment_site)";
+						$sql = "INSERT INTO " . MAIN_DB_PREFIX . "prelevement_demande (date_demande, fk_user_demande, ext_payment_id, fk_facture, sourcetype, entity, ext_payment_site)";
 						$sql .= " VALUES ('".$this->db->idate($now)."', ".((int) $user->id).", '".$this->db->escape($setupintent->id)."', ".((int) $object->id).", '".$this->db->escape($object->element)."', " . ((int) $conf->entity) . ", '" . $this->db->escape($service) . "', ".((float) $amount).")";
 						$resql = $this->db->query($sql);
 						if (! $resql)

@@ -9,7 +9,7 @@
  * Copyright (C) 2015-2018  Frédéric France         <frederic.france@netlogic.fr>
  * Copyright (C) 2015       Marcos García           <marcosgdf@gmail.com>
  * Copyright (C) 2015       Jean-François Ferry     <jfefe@aternatik.fr>
- * Copyright (C) 2016-2021  Ferran Marcet           <fmarcet@2byte.es>
+ * Copyright (C) 2016-2023  Ferran Marcet           <fmarcet@2byte.es>
  * Copyright (C) 2018       Charlene Benke	        <charlie@patas-monkey.com>
  * Copyright (C) 2021	   	Anthony Berton			<anthony.berton@bb2a.fr>
  *
@@ -105,7 +105,7 @@ $search_multicurrency_montant_ttc = GETPOST('search_multicurrency_montant_ttc', 
 $search_login = GETPOST('search_login', 'alpha');
 $search_categ_cus = GETPOST("search_categ_cus", 'int');
 $optioncss = GETPOST('optioncss', 'alpha');
-$search_billed = GETPOSTISSET('search_billed') ? GETPOST('search_billed', 'int') : GETPOST('billed', 'int');
+$search_billed = GETPOST('search_billed', 'int');
 $search_status = GETPOST('search_status', 'int');
 $search_btn = GETPOST('button_search', 'alpha');
 $search_remove_btn = GETPOST('button_removefilter', 'alpha');
@@ -201,10 +201,10 @@ $arrayfields = array(
 	'c.multicurrency_total_ttc'=>array('label'=>'MulticurrencyAmountTTC', 'checked'=>0, 'enabled'=>(!isModEnabled("multicurrency") ? 0 : 1), 'position'=>110),
 	'u.login'=>array('label'=>"Author", 'checked'=>1, 'position'=>115),
 	'sale_representative'=>array('label'=>"SaleRepresentativesOfThirdParty", 'checked'=>0, 'position'=>116),
-	'total_pa' => array('label' => (getDolGlobalString('MARGIN_TYPE') == '1' ? 'BuyingPrice' : 'CostPrice'), 'checked' => 0, 'position' => 300, 'enabled' => (!isModEnabled('margin') || !$user->rights->margins->liretous ? 0 : 1)),
-	'total_margin' => array('label' => 'Margin', 'checked' => 0, 'position' => 301, 'enabled' => (!isModEnabled('margin') || !$user->rights->margins->liretous ? 0 : 1)),
-	'total_margin_rate' => array('label' => 'MarginRate', 'checked' => 0, 'position' => 302, 'enabled' => (!isModEnabled('margin') || !$user->rights->margins->liretous || empty($conf->global->DISPLAY_MARGIN_RATES) ? 0 : 1)),
-	'total_mark_rate' => array('label' => 'MarkRate', 'checked' => 0, 'position' => 303, 'enabled' => (!isModEnabled('margin') || !$user->rights->margins->liretous || empty($conf->global->DISPLAY_MARK_RATES) ? 0 : 1)),
+	'total_pa' => array('label' => (getDolGlobalString('MARGIN_TYPE') == '1' ? 'BuyingPrice' : 'CostPrice'), 'checked' => 0, 'position' => 300, 'enabled' => (!isModEnabled('margin') || !$user->hasRight("margins", "liretous") ? 0 : 1)),
+	'total_margin' => array('label' => 'Margin', 'checked' => 0, 'position' => 301, 'enabled' => (!isModEnabled('margin') || !$user->hasRight("margins", "liretous") ? 0 : 1)),
+	'total_margin_rate' => array('label' => 'MarginRate', 'checked' => 0, 'position' => 302, 'enabled' => (!isModEnabled('margin') || !$user->hasRight("margins", "liretous") || empty($conf->global->DISPLAY_MARGIN_RATES) ? 0 : 1)),
+	'total_mark_rate' => array('label' => 'MarkRate', 'checked' => 0, 'position' => 303, 'enabled' => (!isModEnabled('margin') || !$user->hasRight("margins", "liretous") || empty($conf->global->DISPLAY_MARK_RATES) ? 0 : 1)),
 	'c.datec'=>array('label'=>"DateCreation", 'checked'=>0, 'position'=>120),
 	'c.tms'=>array('label'=>"DateModificationShort", 'checked'=>0, 'position'=>125),
 	'c.date_cloture'=>array('label'=>"DateClosing", 'checked'=>0, 'position'=>130),
@@ -222,6 +222,7 @@ include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_array_fields.tpl.php';
 $object->fields = dol_sort_array($object->fields, 'position');
 $arrayfields = dol_sort_array($arrayfields, 'position');
 
+$error = 0;
 
 
 /*
@@ -235,7 +236,7 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 	$massaction = '';
 }
 
-$parameters = array('socid'=>$socid);
+$parameters = array('socid'=>$socid, 'arrayfields'=>&$arrayfields);
 $reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
 if ($reshook < 0) {
 	setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
@@ -298,19 +299,19 @@ if (empty($reshook)) {
 	// Mass actions
 	$objectclass = 'Commande';
 	$objectlabel = 'Orders';
-	$permissiontoread = $user->rights->commande->lire;
-	$permissiontoadd = $user->rights->commande->creer;
-	$permissiontodelete = $user->rights->commande->supprimer;
+	$permissiontoread = $user->hasRight("commande", "lire");
+	$permissiontoadd = $user->hasRight("commande", "creer");
+	$permissiontodelete = $user->hasRight("commande", "supprimer");
 	if (!empty($conf->global->MAIN_USE_ADVANCED_PERMS)) {
-		$permissiontovalidate = $user->rights->commande->order_advance->validate;
-		$permissiontoclose = $user->rights->commande->order_advance->close;
-		$permissiontocancel = $user->rights->commande->order_advance->annuler;
-		$permissiontosendbymail = $user->rights->commande->order_advance->send;
+		$permissiontovalidate = $user->hasRight("commande", "order_advance", "validate");
+		$permissiontoclose = $user->hasRight("commande", "order_advance", "close");
+		$permissiontocancel = $user->hasRight("commande", "order_advance", "annuler");
+		$permissiontosendbymail = $user->hasRight("commande", "order_advance", "send");
 	} else {
-		$permissiontovalidate = $user->rights->commande->creer;
-		$permissiontoclose = $user->rights->commande->creer;
-		$permissiontocancel = $user->rights->commande->creer;
-		$permissiontosendbymail = $user->rights->commande->creer;
+		$permissiontovalidate = $user->hasRight("commande", "creer");
+		$permissiontoclose = $user->hasRight("commande", "creer");
+		$permissiontocancel = $user->hasRight("commande", "creer");
+		$permissiontosendbymail = $user->hasRight("commande", "creer");
 	}
 	$uploaddir = $conf->commande->multidir_output[$conf->entity];
 	$triggersendname = 'ORDER_SENTBYMAIL';
@@ -413,7 +414,7 @@ if (empty($reshook)) {
 							$desc = dol_concatdesc($desc, $langs->trans("Order").' '.$cmd->ref.' - '.dol_print_date($cmd->date, 'day'));
 						}
 
-						if ($lines[$i]->subprice < 0) {
+						if ($lines[$i]->subprice < 0 && empty($conf->global->INVOICE_KEEP_DISCOUNT_LINES_AS_IN_ORIGIN)) {
 							// Negative line, we create a discount line
 							$discount = new DiscountAbsolute($db);
 							$discount->fk_soc = $objecttmp->socid;
@@ -513,6 +514,7 @@ if (empty($reshook)) {
 							} else {
 								$lineid = 0;
 								$error++;
+								$errors[] = $objecttmp->error;
 								break;
 							}
 							// Defined the new fk_parent_line
@@ -679,14 +681,14 @@ if ($action == 'validate' && $permissiontoadd) {
 						$idwarehouse = 0;
 					}
 					if ($objecttmp->valid($user, $idwarehouse)) {
-						setEventMessage($langs->trans('hasBeenValidated', $objecttmp->ref), 'mesgs');
+						setEventMessages($langs->trans('hasBeenValidated', $objecttmp->ref), null, 'mesgs');
 					} else {
-						setEventMessage($objecttmp->error, $objecttmp->errors, 'errors');
+						setEventMessages($objecttmp->error, $objecttmp->errors, 'errors');
 						$error++;
 					}
 				} else {
 					$langs->load("errors");
-					setEventMessage($langs->trans('ErrorIsNotADraft', $objecttmp->ref), 'errors');
+					setEventMessages($langs->trans('ErrorIsNotADraft', $objecttmp->ref), null, 'errors');
 					$error++;
 				}
 			} else {
@@ -710,14 +712,14 @@ if ($action == 'shipped' && $permissiontoadd) {
 			if ($objecttmp->fetch($checked)) {
 				if ($objecttmp->statut == 1 || $objecttmp->statut == 2) {
 					if ($objecttmp->cloture($user)) {
-						setEventMessage($langs->trans('PassedInClosedStatus', $objecttmp->ref), 'mesgs');
+						setEventMessages($langs->trans('PassedInClosedStatus', $objecttmp->ref), null, 'mesgs');
 					} else {
-						setEventMessage($langs->trans('CantBeClosed'), 'errors');
+						setEventMessages($langs->trans('CantBeClosed'), null, 'errors');
 						$error++;
 					}
 				} else {
 					$langs->load("errors");
-					setEventMessage($langs->trans('ErrorIsNotADraft', $objecttmp->ref), 'errors');
+					setEventMessages($langs->trans('ErrorIsNotADraft', $objecttmp->ref), null, 'errors');
 					$error++;
 				}
 			} else {
@@ -789,11 +791,14 @@ $company_url_list = array();
 $formcompany = new FormCompany($db);
 $projectstatic = new Project($db);
 
+$varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
+$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
+
 $title = $langs->trans("Orders");
 $help_url = "EN:Module_Customers_Orders|FR:Module_Commandes_Clients|ES:Módulo_Pedidos_de_clientes";
 
 $sql = 'SELECT';
-if ($sall || $search_product_category > 0 || $search_user > 0) {
+if ($sall || $search_user > 0) {
 	$sql = 'SELECT DISTINCT';
 }
 $sql .= ' s.rowid as socid, s.nom as name, s.name_alias as alias, s.email, s.phone, s.fax, s.address, s.town, s.zip, s.fk_pays, s.client, s.fournisseur, s.code_client,';
@@ -823,8 +828,11 @@ if (!empty($extrafields->attributes[$object->table_element]['label'])) {
 
 // Add fields from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
+
+$sqlfields = $sql; // $sql fields to remove for count total
+
 $sql .= ' FROM '.MAIN_DB_PREFIX.'societe as s';
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s2 ON s2.rowid = s.parent";
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_country as country on (country.rowid = s.fk_pays)";
@@ -837,11 +845,8 @@ $sql .= ', '.MAIN_DB_PREFIX.'commande as c';
 if (!empty($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."commande_extrafields as ef on (c.rowid = ef.fk_object)";
 }
-if ($sall || $search_product_category > 0) {
+if ($sall) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commandedet as pd ON c.rowid=pd.fk_commande';
-}
-if ($search_product_category > 0) {
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'categorie_product as cp ON cp.fk_product=pd.fk_product';
 }
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."projet as p ON p.rowid = c.fk_projet";
 $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'user as u ON c.fk_user_author = u.rowid';
@@ -857,14 +862,11 @@ if ($search_user > 0) {
 
 // Add table from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListFrom', $parameters, $object); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListFrom', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
 
 $sql .= ' WHERE c.fk_soc = s.rowid';
 $sql .= ' AND c.entity IN ('.getEntity('commande').')';
-if ($search_product_category > 0) {
-	$sql .= " AND cp.fk_categorie = ".((int) $search_product_category);
-}
 if ($socid > 0) {
 	$sql .= ' AND s.rowid = '.((int) $socid);
 }
@@ -888,19 +890,19 @@ if ($search_status <> '') {
 		if ($search_status == 1 && empty($conf->expedition->enabled)) {
 			$sql .= ' AND c.fk_statut IN (1,2)'; // If module expedition disabled, we include order with status 'sending in process' into 'validated'
 		} else {
-			$sql .= ' AND c.fk_statut = '.((int) $search_status); // brouillon, validee, en cours, annulee
+			$sql .= ' AND c.fk_statut = '.((int) $search_status); // draft, validated, in process or canceled
 		}
 	}
-	if ($search_status == -2) {	// To process
+	if ($search_status == -2) {	// "validated + in process"
 		//$sql.= ' AND c.fk_statut IN (1,2,3) AND c.facture = 0';
-		$sql .= " AND ((c.fk_statut IN (1,2)) OR (c.fk_statut = 3 AND c.facture = 0))"; // If status is 2 and facture=1, it must be selected
+		$sql .= " AND (c.fk_statut IN (1,2))";
 	}
-	if ($search_status == -3) {	// To bill
+	if ($search_status == -3) {	// "validated + in process + delivered"
 		//$sql.= ' AND c.fk_statut in (1,2,3)';
 		//$sql.= ' AND c.facture = 0'; // invoice not created
-		$sql .= ' AND ((c.fk_statut IN (1,2)) OR (c.fk_statut = 3 AND c.facture = 0))'; // validated, in process or closed but not billed
+		$sql .= ' AND (c.fk_statut IN (1,2,3))'; // validated, in process or closed
 	}
-	if ($search_status == -4) {	//  "validate and in progress"
+	if ($search_status == -4) {	//  "validate + in progress"
 		$sql .= ' AND (c.fk_statut IN (1,2))'; // validated, in process
 	}
 }
@@ -938,11 +940,15 @@ if ($search_country) {
 if ($search_type_thirdparty && $search_type_thirdparty != '-1') {
 	$sql .= " AND s.fk_typent IN (".$db->sanitize($search_type_thirdparty).')';
 }
-if ($search_company) {
-	$sql .= natural_search('s.nom', $search_company);
-}
-if ($search_company_alias) {
-	$sql .= natural_search('s.name_alias', $search_company_alias);
+if (empty($arrayfields['s.name_alias']['checked']) && $search_company) {
+	$sql .= natural_search(array("s.nom", "s.name_alias"), $search_company);
+} else {
+	if ($search_company) {
+		$sql .= natural_search('s.nom', $search_company);
+	}
+	if ($search_company_alias) {
+		$sql .= natural_search('s.name_alias', $search_company_alias);
+	}
 }
 if ($search_parent_name) {
 	$sql .= natural_search('s2.nom', $search_parent_name);
@@ -1007,34 +1013,73 @@ if ($search_fk_mode_reglement > 0) {
 if ($search_fk_input_reason > 0) {
 	$sql .= " AND c.fk_input_reason = ".((int) $search_fk_input_reason);
 }
-
+// Search for tag/category ($searchCategoryProductList is an array of ID)
+$searchCategoryProductOperator = -1;
+$searchCategoryProductList = array($search_product_category);
+if (!empty($searchCategoryProductList)) {
+	$searchCategoryProductSqlList = array();
+	$listofcategoryid = '';
+	foreach ($searchCategoryProductList as $searchCategoryProduct) {
+		if (intval($searchCategoryProduct) == -2) {
+			$searchCategoryProductSqlList[] = "NOT EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."commandedet as cd WHERE cd.fk_commande = c.rowid AND cd.fk_product = ck.fk_product)";
+		} elseif (intval($searchCategoryProduct) > 0) {
+			if ($searchCategoryProductOperator == 0) {
+				$searchCategoryProductSqlList[] = " EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."commandedet as cd WHERE cd.fk_commande = c.rowid AND cd.fk_product = ck.fk_product AND ck.fk_categorie = ".((int) $searchCategoryProduct).")";
+			} else {
+				$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryProduct);
+			}
+		}
+	}
+	if ($listofcategoryid) {
+		$searchCategoryProductSqlList[] = " EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."commandedet as cd WHERE cd.fk_commande = c.rowid AND cd.fk_product = ck.fk_product AND ck.fk_categorie IN (".$db->sanitize($listofcategoryid)."))";
+	}
+	if ($searchCategoryProductOperator == 1) {
+		if (!empty($searchCategoryProductSqlList)) {
+			$sql .= " AND (".implode(' OR ', $searchCategoryProductSqlList).")";
+		}
+	} else {
+		if (!empty($searchCategoryProductSqlList)) {
+			$sql .= " AND (".implode(' AND ', $searchCategoryProductSqlList).")";
+		}
+	}
+}
 // Add where from extra fields
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_sql.tpl.php';
 // Add where from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
 
 // Add HAVING from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListHaving', $parameters, $object); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListHaving', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= empty($hookmanager->resPrint) ? "" : " HAVING 1=1 ".$hookmanager->resPrint;
-
-$sql .= $db->order($sortfield, $sortorder);
 
 // Count total nb of records
 $nbtotalofrecords = '';
 if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
-	$result = $db->query($sql);
-	$nbtotalofrecords = $db->num_rows($result);
+	/* The fast and low memory method to get and count full list converts the sql into a sql count */
+	$sqlforcount = preg_replace('/^'.preg_quote($sqlfields, '/').'/', 'SELECT COUNT(*) as nbtotalofrecords', $sql);
+	$sqlforcount = preg_replace('/GROUP BY .*$/', '', $sqlforcount);
+	$resql = $db->query($sqlforcount);
+	if ($resql) {
+		$objforcount = $db->fetch_object($resql);
+		$nbtotalofrecords = $objforcount->nbtotalofrecords;
+	} else {
+		dol_print_error($db);
+	}
 
 	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller then paging size (filtering), goto and load page 0
 		$page = 0;
 		$offset = 0;
 	}
+	$db->free($resql);
 }
 
-$sql .= $db->plimit($limit + 1, $offset);
+$sql .= $db->order($sortfield, $sortorder);
+if ($limit) {
+	$sql .= $db->plimit($limit + 1, $offset);
+}
 //print $sql;
 
 $resql = $db->query($sql);
@@ -1224,7 +1269,7 @@ if ($resql) {
 
 	// Add $param from hooks
 	$parameters = array();
-	$reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	$param .= $hookmanager->resPrint;
 
 	// List of mass actions available
@@ -1244,7 +1289,7 @@ if ($resql) {
 	if ($permissiontocancel) {
 		$arrayofmassactions['cancelorders'] = img_picto('', 'close_title', 'class="pictofixedwidth"').$langs->trans("Cancel");
 	}
-	if (isModEnabled('facture') && $user->rights->facture->creer) {
+	if (isModEnabled('facture') && $user->hasRight("facture", "creer")) {
 		$arrayofmassactions['createbills'] = img_picto('', 'bill', 'class="pictofixedwidth"').$langs->trans("CreateInvoiceForThisCustomer");
 	}
 	if ($permissiontoclose) {
@@ -1351,7 +1396,7 @@ if ($resql) {
 	$moreforfilter = '';
 
 	// If the user can view prospects? sales other than his own
-	if ($user->rights->user->user->lire) {
+	if ($user->hasRight("user", "user", "lire")) {
 		$langs->load("commercial");
 		$moreforfilter .= '<div class="divsearchfield">';
 		$tmptitle = $langs->trans('ThirdPartiesOfSaleRepresentative');
@@ -1359,7 +1404,7 @@ if ($resql) {
 		$moreforfilter .= '</div>';
 	}
 	// If the user can view other users
-	if ($user->rights->user->user->lire) {
+	if ($user->hasRight("user", "user", "lire")) {
 		$moreforfilter .= '<div class="divsearchfield">';
 		$tmptitle = $langs->trans('LinkedToSpecificUsers');
 		$moreforfilter .= img_picto($tmptitle, 'user', 'class="pictofixedwidth"').$form->select_dolusers($search_user, 'search_user', $tmptitle, '', 0, '', '', 0, 0, 0, '', 0, '', 'maxwidth250 widthcentpercentminusx');
@@ -1367,7 +1412,7 @@ if ($resql) {
 	}
 
 	// If the user can view other products/services than his own
-	if (isModEnabled('categorie') && $user->rights->categorie->lire && ($user->rights->produit->lire || $user->rights->service->lire)) {
+	if (isModEnabled('categorie') && $user->hasRight("categorie", "lire") && ($user->hasRight("produit", "lire") || $user->hasRight("service", "lire"))) {
 		include_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
 		$moreforfilter .= '<div class="divsearchfield">';
 		$tmptitle = $langs->trans('IncludingProductWithTag');
@@ -1376,7 +1421,7 @@ if ($resql) {
 		$moreforfilter .= '</div>';
 	}
 	// If Categories are enabled & user has rights to see
-	if (isModEnabled('categorie') && $user->rights->categorie->lire) {
+	if (isModEnabled('categorie') && $user->hasRight("categorie", "lire")) {
 		require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
 		$moreforfilter .= '<div class="divsearchfield">';
 		$tmptitle = $langs->trans('CustomersProspectsCategoriesShort');
@@ -1393,7 +1438,7 @@ if ($resql) {
 		$moreforfilter .= '</div>';
 	}
 	$parameters = array();
-	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	if (empty($reshook)) {
 		$moreforfilter .= $hookmanager->resPrint;
 	} else {
@@ -1472,16 +1517,16 @@ if ($resql) {
 	}
 	// Town
 	if (!empty($arrayfields['s.town']['checked'])) {
-		print '<td class="liste_titre"><input class="flat" type="text" size="4" name="search_town" value="'.dol_escape_htmltag($search_town).'"></td>';
+		print '<td class="liste_titre"><input class="flat width50" type="text" name="search_town" value="'.dol_escape_htmltag($search_town).'"></td>';
 	}
 	// Zip
 	if (!empty($arrayfields['s.zip']['checked'])) {
-		print '<td class="liste_titre"><input class="flat" type="text" size="4" name="search_zip" value="'.dol_escape_htmltag($search_zip).'"></td>';
+		print '<td class="liste_titre"><input class="flat width50" type="text" name="search_zip" value="'.dol_escape_htmltag($search_zip).'"></td>';
 	}
 	// State
 	if (!empty($arrayfields['state.nom']['checked'])) {
 		print '<td class="liste_titre">';
-		print '<input class="flat" size="4" type="text" name="search_state" value="'.dol_escape_htmltag($search_state).'">';
+		print '<input class="flat width50" type="text" name="search_state" value="'.dol_escape_htmltag($search_state).'">';
 		print '</td>';
 	}
 	// Country
@@ -1621,7 +1666,7 @@ if ($resql) {
 
 	// Fields from hook
 	$parameters = array('arrayfields'=>$arrayfields);
-	$reshook = $hookmanager->executeHooks('printFieldListOption', $parameters); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldListOption', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	print $hookmanager->resPrint;
 
 	// Date creation
@@ -1669,18 +1714,18 @@ if ($resql) {
 	}
 	// Status billed
 	if (!empty($arrayfields['c.facture']['checked'])) {
-		print '<td class="liste_titre maxwidthonsmartphone" align="center">';
+		print '<td class="liste_titre maxwidthonsmartphone center">';
 		print $form->selectyesno('search_billed', $search_billed, 1, 0, 1, 1);
 		print '</td>';
 	}
 	// Import key
 	if (!empty($arrayfields['c.import_key']['checked'])) {
-		print '<td class="liste_titre maxwidthonsmartphone" align="center">';
+		print '<td class="liste_titre maxwidthonsmartphone center">';
 		print '</td>';
 	}
 	// Status
 	if (!empty($arrayfields['c.fk_statut']['checked'])) {
-		print '<td class="liste_titre maxwidthonsmartphone center">';
+		print '<td class="liste_titre right parentonrightofpage">';
 		$liststatus = array(
 			Commande::STATUS_DRAFT=>$langs->trans("StatusOrderDraftShort"),
 			Commande::STATUS_VALIDATED=>$langs->trans("StatusOrderValidated"),
@@ -1690,7 +1735,7 @@ if ($resql) {
 			-2=>$langs->trans("StatusOrderValidatedShort").'+'.$langs->trans("StatusOrderSentShort"),
 			Commande::STATUS_CANCELED=>$langs->trans("StatusOrderCanceledShort")
 		);
-		print $form->selectarray('search_status', $liststatus, $search_status, -5, 0, 0, '', 0, 0, 0, '', 'maxwidth125', 1);
+		print $form->selectarray('search_status', $liststatus, $search_status, -5, 0, 0, '', 0, 0, 0, '', 'maxwidth125 onrightofpage', 1);
 		print '</td>';
 	}
 	// Action column
@@ -1826,7 +1871,7 @@ if ($resql) {
 		'sortorder' => $sortorder,
 		'totalarray' => &$totalarray,
 	);
-	$reshook = $hookmanager->executeHooks('printFieldListTitle', $parameters); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	print $hookmanager->resPrint;
 	if (!empty($arrayfields['c.datec']['checked'])) {
 		print_liste_field_titre($arrayfields['c.datec']['label'], $_SERVER["PHP_SELF"], "c.date_creation", "", $param, '', $sortfield, $sortorder, 'center nowrap ');
@@ -1853,7 +1898,7 @@ if ($resql) {
 		print_liste_field_titre($arrayfields['c.import_key']['label'], $_SERVER["PHP_SELF"], "c.import_key", "", $param, '', $sortfield, $sortorder, 'center ');
 	}
 	if (!empty($arrayfields['c.fk_statut']['checked'])) {
-		print_liste_field_titre($arrayfields['c.fk_statut']['label'], $_SERVER["PHP_SELF"], "c.fk_statut", "", $param, '', $sortfield, $sortorder, 'center ');
+		print_liste_field_titre($arrayfields['c.fk_statut']['label'], $_SERVER["PHP_SELF"], "c.fk_statut", "", $param, '', $sortfield, $sortorder, 'right ');
 	}
 	if (empty($conf->global->MAIN_CHECKBOX_LEFT_COLUMN)) {
 		print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', $param, '', $sortfield, $sortorder, 'maxwidthsearch center ');
@@ -1910,7 +1955,7 @@ if ($resql) {
 		$companystatic->town = $obj->town;
 		$companystatic->country_code = $obj->country_code;
 		if (!isset($getNomUrl_cache[$obj->socid])) {
-			$getNomUrl_cache[$obj->socid] = $companystatic->getNomUrl(1, 'customer');
+			$getNomUrl_cache[$obj->socid] = $companystatic->getNomUrl(1, 'customer', 100, 0, 1, empty($arrayfields['s.name_alias']['checked']) ? 0 : 1);
 		}
 
 		$generic_commande->id = $obj->rowid;
@@ -1950,6 +1995,10 @@ if ($resql) {
 				}
 				print '<input id="cb'.$obj->rowid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->rowid.'"'.($selected ? ' checked="checked"' : '').'>';
 			}
+			if (!$i) {
+				$totalarray['nbfield']++;
+			}
+			print '</td>';
 		}
 
 		// Ref
@@ -2169,7 +2218,7 @@ if ($resql) {
 
 		// Amount HT/net
 		if (!empty($arrayfields['c.total_ht']['checked'])) {
-			  print '<td class="nowrap right"><span class="amount">'.price($obj->total_ht)."</span></td>\n";
+			print '<td class="nowrap right"><span class="amount">'.price($obj->total_ht)."</span></td>\n";
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
@@ -2192,7 +2241,11 @@ if ($resql) {
 			if (!$i) {
 				$totalarray['pos'][$totalarray['nbfield']] = 'c.total_tva';
 			}
-			$totalarray['val']['c.total_tva'] += $obj->total_tva;
+			if (isset($totalarray['val']['c.total_tva'])) {
+				$totalarray['val']['c.total_tva'] += $obj->total_tva;
+			} else {
+				$totalarray['val']['c.total_tva'] = $obj->total_tva;
+			}
 		}
 
 		// Amount TTC / gross
@@ -2204,7 +2257,11 @@ if ($resql) {
 			if (!$i) {
 				$totalarray['pos'][$totalarray['nbfield']] = 'c.total_ttc';
 			}
-			$totalarray['val']['c.total_ttc'] += $obj->total_ttc;
+			if (isset($totalarray['val']['c.total_ttc'])) {
+				$totalarray['val']['c.total_ttc'] += $obj->total_ttc;
+			} else {
+				$totalarray['val']['c.total_ttc'] = $obj->total_ttc;
+			}
 		}
 
 		// Currency
@@ -2372,7 +2429,7 @@ if ($resql) {
 		include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_print_fields.tpl.php';
 		// Fields from hook
 		$parameters = array('arrayfields'=>$arrayfields, 'obj'=>$obj, 'i'=>$i, 'totalarray'=>&$totalarray);
-		$reshook = $hookmanager->executeHooks('printFieldListValue', $parameters); // Note that $action and $object may have been modified by hook
+		$reshook = $hookmanager->executeHooks('printFieldListValue', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 		print $hookmanager->resPrint;
 
 		// Date creation
@@ -2446,7 +2503,7 @@ if ($resql) {
 
 							// Get local and virtual stock and store it into cache
 							if (empty($productstat_cache[$generic_commande->lines[$lig]->fk_product])) {
-								$generic_product->load_stock('nobatch'); // ->load_virtual_stock() is already included into load_stock()
+								$generic_product->load_stock('nobatch,warehouseopen'); // ->load_virtual_stock() is already included into load_stock()
 								$productstat_cache[$generic_commande->lines[$lig]->fk_product]['stock_reel'] = $generic_product->stock_reel;
 								$productstat_cachevirtual[$generic_commande->lines[$lig]->fk_product]['stock_reel'] = $generic_product->stock_theorique;
 							} else {
@@ -2549,7 +2606,7 @@ if ($resql) {
 
 		// Status
 		if (!empty($arrayfields['c.fk_statut']['checked'])) {
-			print '<td class="nowrap center">'.$generic_commande->LibStatut($obj->fk_statut, $obj->billed, 5, 1).'</td>';
+			print '<td class="nowrap right">'.$generic_commande->LibStatut($obj->fk_statut, $obj->billed, 5, 1).'</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
@@ -2565,10 +2622,10 @@ if ($resql) {
 				}
 				print '<input id="cb'.$obj->rowid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->rowid.'"'.($selected ? ' checked="checked"' : '').'>';
 			}
-		}
-		print '</td>';
-		if (!$i) {
-			$totalarray['nbfield']++;
+			print '</td>';
+			if (!$i) {
+				$totalarray['nbfield']++;
+			}
 		}
 
 		print "</tr>\n";
@@ -2595,7 +2652,7 @@ if ($resql) {
 	$db->free($resql);
 
 	$parameters = array('arrayfields'=>$arrayfields, 'sql'=>$sql);
-	$reshook = $hookmanager->executeHooks('printFieldListFooter', $parameters); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldListFooter', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	print $hookmanager->resPrint;
 
 	print '</table>'."\n";

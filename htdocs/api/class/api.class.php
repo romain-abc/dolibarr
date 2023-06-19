@@ -113,9 +113,8 @@ class DolibarrApi
 		unset($object->pass);
 		unset($object->pass_indatabase);
 
-		// Remove linkedObjects. We should already have linkedObjectsIds that avoid huge responses
+		// Remove linkedObjects. We should already have and keep only linkedObjectsIds that avoid huge responses
 		unset($object->linkedObjects);
-		unset($object->linkedObjectsFullLoaded);
 		//unset($object->lines[$i]->linked_objects);		// This is the array to create linked object during create
 
 		unset($object->fields);
@@ -303,6 +302,7 @@ class DolibarrApi
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.PublicUnderscore
 	/**
 	 * Return if a $sqlfilters parameter is valid
+	 * Function no more used. Kept for backward compatibility with old APIs of modules
 	 *
 	 * @param  	string   		$sqlfilters     sqlfilter string
 	 * @param	string			$error			Error message
@@ -318,7 +318,8 @@ class DolibarrApi
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.ScopeNotCamelCaps
 	// phpcs:disable PEAR.NamingConventions.ValidFunctionName.PublicUnderscore
 	/**
-	 * Function to forge a SQL criteria from a Generic filter string
+	 * Function to forge a SQL criteria from a Generic filter string.
+	 * Function no more used. Kept for backward compatibility with old APIs of modules
 	 *
 	 * @param  array    $matches    Array of found string by regex search.
 	 * 								Each entry is 1 and only 1 criteria.

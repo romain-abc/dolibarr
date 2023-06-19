@@ -109,8 +109,9 @@ if ($user->rights->adherent->cotisation->creer && $action == 'update' && !$cance
 			$object->dateh = dol_mktime(GETPOST('datesubhour', 'int'), GETPOST('datesubmin', 'int'), 0, GETPOST('datesubmonth', 'int'), GETPOST('datesubday', 'int'), GETPOST('datesubyear', 'int'));
 			$object->datef = dol_mktime(GETPOST('datesubendhour', 'int'), GETPOST('datesubendmin', 'int'), 0, GETPOST('datesubendmonth', 'int'), GETPOST('datesubendday', 'int'), GETPOST('datesubendyear', 'int'));
 			$object->fk_type = $typeid;
-			$object->note = $note;
+			$object->note_public = $note;
 			$object->note_private = $note;
+
 			$object->amount = $amount;
 
 			$result = $object->update($user);
@@ -288,7 +289,7 @@ if ($rowid && $action != 'edit') {
 
 	print '<div class="underbanner clearboth"></div>';
 
-	print '<table class="border centpercent">';
+	print '<table class="border centpercent tableforfield">';
 
 	// Member
 	$adh->ref = $adh->getFullName($langs);
@@ -320,7 +321,7 @@ if ($rowid && $action != 'edit') {
 	print '</tr>';
 
 	// Amount
-	print '<tr><td>'.$langs->trans("Amount").'</td><td class="valeur">'.price($object->amount).'</td></tr>';
+	print '<tr><td>'.$langs->trans("Amount").'</td><td class="valeur"><span class="amount">'.price($object->amount).'</span></td></tr>';
 
 	// Label
 	print '<tr><td>'.$langs->trans("Label").'</td><td class="valeur">'.$object->note.'</td></tr>';
@@ -350,11 +351,11 @@ if ($rowid && $action != 'edit') {
 	 */
 	print '<div class="tabsAction">';
 
-	if ($user->rights->adherent->cotisation->creer) {
-		if (!empty($bankline->rappro)) {
+	if ($user->hasRight('adherent', 'cotisation', 'creer')) {
+		if (!empty($bankline->rappro) || empty($bankline)) {
 			print '<div class="inline-block divButAction"><a class="butAction" href="'.$_SERVER["PHP_SELF"]."?rowid=".$object->id.'&action=edit&token='.newToken().'">'.$langs->trans("Modify")."</a></div>";
 		} else {
-			print '<div class="inline-block divButAction"><a class="butActionRefused classfortooltip" title="'.$langs->trans("BankLineConciliated")."\" href=\"#\">".$langs->trans("Modify")."</a></div>";
+			print '<div class="inline-block divButAction"><a class="butActionRefused classfortooltip" title="'.$langs->trans("BankLineConciliated").'" href="#">'.$langs->trans("Modify")."</a></div>";
 		}
 	}
 

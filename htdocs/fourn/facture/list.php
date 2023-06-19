@@ -345,7 +345,7 @@ if (empty($reshook)) {
 					$rsql .= " , pfd.date_traite as date_traite";
 					$rsql .= " , pfd.amount";
 					$rsql .= " , u.rowid as user_id, u.lastname, u.firstname, u.login";
-					$rsql .= " FROM ".MAIN_DB_PREFIX."prelevement_facture_demande as pfd";
+					$rsql .= " FROM ".MAIN_DB_PREFIX."prelevement_demande as pfd";
 					$rsql .= " , ".MAIN_DB_PREFIX."user as u";
 					$rsql .= " WHERE fk_facture_fourn = ".((int) $objecttmp->id);
 					$rsql .= " AND pfd.fk_user_demande = u.rowid";
@@ -404,8 +404,11 @@ $facturestatic = new FactureFournisseur($db);
 $formcompany = new FormCompany($db);
 $thirdparty = new Societe($db);
 
+$varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
+$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
+
 $sql = "SELECT";
-if ($search_all || $search_product_category > 0) {
+if ($search_all) {
 	$sql = 'SELECT DISTINCT';
 }
 $sql .= " f.rowid as facid, f.ref, f.ref_supplier, f.type, f.datef, f.date_lim_reglement as datelimite, f.fk_mode_reglement, f.fk_cond_reglement,";
@@ -433,8 +436,11 @@ if (!empty($extrafields->attributes[$object->table_element]['label'])) {
 }
 // Add fields from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
+
+$sqlfields = $sql; // $sql fields to remove for count total
+
 $sql .= ' FROM '.MAIN_DB_PREFIX.'societe as s';
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_country as country on (country.rowid = s.fk_pays)";
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_typent as typent on (typent.id = s.fk_typent)";
@@ -446,7 +452,7 @@ if (isset($extrafields->attributes[$object->table_element]['label']) && is_array
 if (!$search_all) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'paiementfourn_facturefourn as pf ON pf.fk_facturefourn = f.rowid';
 }
-if ($search_all || $search_product_category > 0) {
+if ($search_all) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facture_fourn_det as pd ON f.rowid=pd.fk_facture_fourn';
 }
 $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'user AS u ON f.fk_user_author = u.rowid';
@@ -503,11 +509,15 @@ if ($search_type != '' && $search_type >= 0) {
 if ($search_project) {
 	$sql .= natural_search('p.ref', $search_project);
 }
-if ($search_company) {
-	$sql .= natural_search('s.nom', $search_company);
-}
-if ($search_company_alias) {
-	$sql .= natural_search('s.name_alias', $search_company_alias);
+if (empty($arrayfields['s.name_alias']['checked']) && $search_company) {
+	$sql .= natural_search(array("s.nom", "s.name_alias"), $search_company);
+} else {
+	if ($search_company) {
+		$sql .= natural_search('s.nom', $search_company);
+	}
+	if ($search_company_alias) {
+		$sql .= natural_search('s.name_alias', $search_company_alias);
+	}
 }
 if ($search_town) {
 	$sql .= natural_search('s.town', $search_town);
@@ -594,7 +604,11 @@ if (!empty($searchCategorySupplierList)) {
 		if (intval($searchCategorySupplier) == -2) {
 			$searchCategorySupplierSqlList[] = "NOT EXISTS (SELECT ck.fk_soc FROM ".MAIN_DB_PREFIX."categorie_fournisseur as ck WHERE s.rowid = ck.fk_soc)";
 		} elseif (intval($searchCategorySupplier) > 0) {
-			$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategorySupplier);
+			if ($searchCategorySupplierOperator == 0) {
+				$searchCategorySupplierSqlList[] = " EXISTS (SELECT ck.fk_soc FROM ".MAIN_DB_PREFIX."categorie_fournisseur as ck WHERE s.rowid = ck.fk_soc AND ck.fk_categorie = ".((int) $searchCategorySupplier).")";
+			} else {
+				$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategorySupplier);
+			}
 		}
 	}
 	if ($listofcategoryid) {
@@ -612,19 +626,23 @@ if (!empty($searchCategorySupplierList)) {
 }
 // Search for tag/category ($searchCategoryProductList is an array of ID)
 $searchCategoryProductList = $search_product_category ? array($search_product_category) : array();
-$searchCategorySupplierOperator = 0;
+$searchCategoryProductOperator = 0;
 if (!empty($searchCategoryProductList)) {
 	$searchCategoryProductSqlList = array();
 	$listofcategoryid = '';
 	foreach ($searchCategoryProductList as $searchCategoryProduct) {
 		if (intval($searchCategoryProduct) == -2) {
-			$searchCategoryProductSqlList[] = "NOT EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck WHERE p.rowid = ck.fk_product)";
+			$searchCategoryProductSqlList[] = "NOT EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."facture_fourn_det as fd WHERE fd.fk_facture_fourn = f.rowid AND p.rowid = ck.fk_product)";
 		} elseif (intval($searchCategoryProduct) > 0) {
-			$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryProduct);
+			if ($searchCategoryProductOperator == 0) {
+				$searchCategoryProductSqlList[] = " EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."facture_fourn_det as fd WHERE fd.fk_facture_fourn = f.rowid AND p.rowid = ck.fk_product AND ck.fk_categorie = ".((int) $searchCategoryProduct).")";
+			} else {
+				$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryProduct);
+			}
 		}
 	}
 	if ($listofcategoryid) {
-		$searchCategoryProductSqlList[] = " EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck WHERE p.rowid = ck.fk_product AND ck.fk_categorie IN (".$db->sanitize($listofcategoryid)."))";
+		$searchCategoryProductSqlList[] = " EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."facture_fourn_det as fd WHERE fd.fk_facture_fourn = f.rowid AND p.rowid = ck.fk_product AND ck.fk_categorie IN (".$db->sanitize($listofcategoryid)."))";
 	}
 	if ($searchCategoryProductOperator == 1) {
 		if (!empty($searchCategoryProductSqlList)) {
@@ -656,7 +674,7 @@ if ($search_user > 0) {
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_sql.tpl.php';
 // Add where from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= $hookmanager->resPrint;
 
 if (!$search_all) {
@@ -680,7 +698,7 @@ if (!$search_all) {
 	}
 	// Add GroupBy from hooks
 	$parameters = array('all' => $search_all, 'fieldstosearchall' => $fieldstosearchall);
-	$reshook = $hookmanager->executeHooks('printFieldListGroupBy', $parameters, $object); // Note that $action and $object may have been modified by hook
+	$reshook = $hookmanager->executeHooks('printFieldListGroupBy', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 	$sql .= $hookmanager->resPrint;
 } else {
 	$sql .= natural_search(array_keys($fieldstosearchall), $search_all);
@@ -688,22 +706,35 @@ if (!$search_all) {
 
 // Add HAVING from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListHaving', $parameters, $object); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListHaving', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $sql .= empty($hookmanager->resPrint) ? "" : " HAVING 1=1 ".$hookmanager->resPrint;
 
-$sql .= $db->order($sortfield, $sortorder);
-
+// Count total nb of records
 $nbtotalofrecords = '';
 if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
-	$result = $db->query($sql);
-	$nbtotalofrecords = $db->num_rows($result);
+	/* The fast and low memory method to get and count full list converts the sql into a sql count */
+	$sqlforcount = preg_replace('/^'.preg_quote($sqlfields, '/').'/', 'SELECT COUNT(*) as nbtotalofrecords', $sql);
+	$sqlforcount = preg_replace('/GROUP BY .*$/', '', $sqlforcount);
+	$resql = $db->query($sqlforcount);
+	if ($resql) {
+		$objforcount = $db->fetch_object($resql);
+		$nbtotalofrecords = $objforcount->nbtotalofrecords;
+	} else {
+		dol_print_error($db);
+	}
+
 	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller then paging size (filtering), goto and load page 0
 		$page = 0;
 		$offset = 0;
 	}
+	$db->free($resql);
 }
 
-$sql .= $db->plimit($limit + 1, $offset);
+// Complete request and execute it with limit
+$sql .= $db->order($sortfield, $sortorder);
+if ($limit) {
+	$sql .= $db->plimit($limit + 1, $offset);
+}
 //print $sql;
 
 $resql = $db->query($sql);
@@ -860,7 +891,7 @@ if ($search_type_thirdparty != '' && $search_type_thirdparty > 0) {
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_param.tpl.php';
 // Add $param from hooks
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $param .= $hookmanager->resPrint;
 
 // List of mass actions available
@@ -950,7 +981,7 @@ if (isModEnabled('categorie')) {
 	$moreforfilter .= '</div>';
 }
 $parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 if (empty($reshook)) {
 	$moreforfilter .= $hookmanager->resPrint;
 } else {
@@ -964,7 +995,7 @@ if ($moreforfilter) {
 }
 
 $varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
-$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage); // This also change content of $arrayfields
+$selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage, getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')); // This also change content of $arrayfields
 if ($massactionbutton) {
 	$selectedfields .= $form->showCheckAddButtons('checkforselect', 1);
 }
@@ -974,6 +1005,13 @@ print '<table class="tagtable liste'.($moreforfilter ? " listwithfilterbefore" :
 
 // Line for filters
 print '<tr class="liste_titre_filter">';
+// Action column
+if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+	print '<td class="liste_titre middle">';
+	$searchpicto = $form->showFilterButtons('left');
+	print $searchpicto;
+	print '</td>';
+}
 // Ref
 if (!empty($arrayfields['f.ref']['checked'])) {
 	print '<td class="liste_titre left">';
@@ -990,17 +1028,17 @@ if (!empty($arrayfields['f.ref_supplier']['checked'])) {
 if (!empty($arrayfields['f.type']['checked'])) {
 	print '<td class="liste_titre maxwidthonsmartphone">';
 	$listtype = array(
-			FactureFournisseur::TYPE_STANDARD=>$langs->trans("InvoiceStandard"),
-			FactureFournisseur::TYPE_REPLACEMENT=>$langs->trans("InvoiceReplacement"),
-			FactureFournisseur::TYPE_CREDIT_NOTE=>$langs->trans("InvoiceAvoir"),
-			FactureFournisseur::TYPE_DEPOSIT=>$langs->trans("InvoiceDeposit"),
+		FactureFournisseur::TYPE_STANDARD=>$langs->trans("InvoiceStandard"),
+		FactureFournisseur::TYPE_REPLACEMENT=>$langs->trans("InvoiceReplacement"),
+		FactureFournisseur::TYPE_CREDIT_NOTE=>$langs->trans("InvoiceAvoir"),
+		FactureFournisseur::TYPE_DEPOSIT=>$langs->trans("InvoiceDeposit"),
 	);
 	/*
-	if (!empty($conf->global->INVOICE_USE_SITUATION))
-	{
-		$listtype[Facture::TYPE_SITUATION] = $langs->trans("InvoiceSituation");
-	}
-	*/
+	 if (!empty($conf->global->INVOICE_USE_SITUATION))
+	 {
+	 $listtype[Facture::TYPE_SITUATION] = $langs->trans("InvoiceSituation");
+	 }
+	 */
 	//$listtype[Facture::TYPE_PROFORMA]=$langs->trans("InvoiceProForma");     // A proformat invoice is not an invoice but must be an order.
 	print $form->selectarray('search_type', $listtype, $search_type, 1, 0, 0, '', 0, 0, 0, 'ASC', 'maxwidth100');
 	print '</td>';
@@ -1027,11 +1065,11 @@ if (!empty($arrayfields['f.date_lim_reglement']['checked'])) {
 	print '<td class="liste_titre center">';
 	print '<div class="nowrap">';
 	/*
-	print $langs->trans('From').' ';
-	print $form->selectDate($search_datelimit_start ? $search_datelimit_start : -1, 'search_datelimit_start', 0, 0, 1);
-	print '</div>';
-	print '<div class="nowrap">';
-	print $langs->trans('to').' ';*/
+	 print $langs->trans('From').' ';
+	 print $form->selectDate($search_datelimit_start ? $search_datelimit_start : -1, 'search_datelimit_start', 0, 0, 1);
+	 print '</div>';
+	 print '<div class="nowrap">';
+	 print $langs->trans('to').' ';*/
 	print $form->selectDate($search_datelimit_end ? $search_datelimit_end : -1, 'search_datelimit_end', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans("Before"));
 	print '<br><input type="checkbox" name="search_option" value="late"'.($option == 'late' ? ' checked' : '').'> '.$langs->trans("Alert");
 	print '</div>';
@@ -1174,7 +1212,7 @@ include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_input.tpl.php';
 
 // Fields from hook
 $parameters = array('arrayfields'=>$arrayfields);
-$reshook = $hookmanager->executeHooks('printFieldListOption', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListOption', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 // Date creation
 if (!empty($arrayfields['f.datec']['checked'])) {
@@ -1190,18 +1228,23 @@ if (!empty($arrayfields['f.tms']['checked'])) {
 if (!empty($arrayfields['f.fk_statut']['checked'])) {
 	print '<td class="liste_titre maxwidthonsmartphone right">';
 	$liststatus = array('0'=>$langs->trans("Draft"), '1'=>$langs->trans("Unpaid"), '2'=>$langs->trans("Paid"));
-	print $form->selectarray('search_status', $liststatus, $search_status, 1, 0, 0, '', 0, 0, 0, '', '', 1);
+	print $form->selectarray('search_status', $liststatus, $search_status, 1, 0, 0, '', 0, 0, 0, '', 'onrightofpage', 1);
 	print '</td>';
 }
 // Action column
-print '<td class="liste_titre middle">';
-$searchpicto = $form->showFilterButtons();
-print $searchpicto;
-print '</td>';
+if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+	print '<td class="liste_titre middle">';
+	$searchpicto = $form->showFilterButtons();
+	print $searchpicto;
+	print '</td>';
+}
 
 print "</tr>\n";
 
 print '<tr class="liste_titre">';
+if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+	print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'center maxwidthsearch ');
+}
 if (!empty($arrayfields['f.ref']['checked'])) {
 	print_liste_field_titre($arrayfields['f.ref']['label'], $_SERVER['PHP_SELF'], 'f.ref,f.rowid', '', $param, '', $sortfield, $sortorder);
 }
@@ -1302,7 +1345,7 @@ if (!empty($arrayfields['multicurrency_rtp']['checked'])) {
 include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_title.tpl.php';
 // Hook fields
 $parameters = array('arrayfields'=>$arrayfields, 'param'=>$param, 'sortfield'=>$sortfield, 'sortorder'=>$sortorder);
-$reshook = $hookmanager->executeHooks('printFieldListTitle', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 if (!empty($arrayfields['f.datec']['checked'])) {
 	print_liste_field_titre($arrayfields['f.datec']['label'], $_SERVER["PHP_SELF"], "f.datec", "", $param, '', $sortfield, $sortorder, 'center nowrap ');
@@ -1313,7 +1356,9 @@ if (!empty($arrayfields['f.tms']['checked'])) {
 if (!empty($arrayfields['f.fk_statut']['checked'])) {
 	print_liste_field_titre($arrayfields['f.fk_statut']['label'], $_SERVER["PHP_SELF"], "fk_statut,paye,type", "", $param, '', $sortfield, $sortorder, 'right ');
 }
-print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'center maxwidthsearch ');
+if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+	print_liste_field_titre($selectedfields, $_SERVER["PHP_SELF"], "", '', '', '', $sortfield, $sortorder, 'center maxwidthsearch ');
+}
 print "</tr>\n";
 
 $facturestatic = new FactureFournisseur($db);
@@ -1387,6 +1432,18 @@ if ($num > 0) {
 		}
 
 		print '<tr class="oddeven">';
+		// Action column
+		if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+			print '<td class="nowrap center">';
+			if ($massactionbutton || $massaction) {   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
+				$selected = 0;
+				if (in_array($obj->facid, $arrayofselected)) {
+					$selected = 1;
+				}
+				print '<input id="cb'.$obj->facid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->facid.'"'.($selected ? ' checked="checked"' : '').'>';
+			}
+			print '</td>';
+		}
 		if (!empty($arrayfields['f.ref']['checked'])) {
 			print '<td class="nowraponall">';
 
@@ -1430,7 +1487,7 @@ if ($num > 0) {
 		// Label
 		if (!empty($arrayfields['f.label']['checked'])) {
 			print '<td class="nowrap">';
-			print $obj->label;
+			print dol_escape_htmltag($obj->label);
 			print '</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
@@ -1476,7 +1533,7 @@ if ($num > 0) {
 
 		// Third party
 		if (!empty($arrayfields['s.nom']['checked'])) {
-			print '<td class="tdoverflowmax200">';
+			print '<td class="tdoverflowmax150">';
 			print $thirdparty->getNomUrl(1, 'supplier', 0, 0, -1, empty($arrayfields['s.name_alias']['checked']) ? 0 : 1);
 			print '</td>';
 			if (!$i) {
@@ -1485,8 +1542,8 @@ if ($num > 0) {
 		}
 		// Alias
 		if (!empty($arrayfields['s.name_alias']['checked'])) {
-			print '<td class="tdoverflowmax200">';
-			print $thirdparty->name_alias;
+			print '<td class="tdoverflowmax150">';
+			print dol_escape_htmltag($thirdparty->name_alias);
 			print '</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
@@ -1494,8 +1551,8 @@ if ($num > 0) {
 		}
 		// Town
 		if (!empty($arrayfields['s.town']['checked'])) {
-			print '<td class="nocellnopadd">';
-			print $obj->town;
+			print '<td class="tdoverflowmax100" title="'.dol_escape_htmltag($obj->town).'">';
+			print dol_escape_htmltag($obj->town);
 			print '</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
@@ -1503,7 +1560,7 @@ if ($num > 0) {
 		}
 		// Zip
 		if (!empty($arrayfields['s.zip']['checked'])) {
-			print '<td class="nocellnopadd center tdoverflowmax100" title="'.dol_escape_htmltag($obj->zip).'">';
+			print '<td class="tdoverflowmax100" title="'.dol_escape_htmltag($obj->zip).'">';
 			print dol_escape_htmltag($obj->zip);
 			print '</td>';
 			if (!$i) {
@@ -1512,7 +1569,9 @@ if ($num > 0) {
 		}
 		// State
 		if (!empty($arrayfields['state.nom']['checked'])) {
-			print "<td>".$obj->state_name."</td>\n";
+			print '<td class="tdoverflowmax100" title="'.dol_escape_htmltag($obj->state_name).'">';
+			print dol_escape_htmltag($obj->state_name);
+			print "</td>\n";
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
@@ -1542,8 +1601,9 @@ if ($num > 0) {
 
 		// Payment condition
 		if (!empty($arrayfields['f.fk_cond_reglement']['checked'])) {
-			print '<td class="tdoverflowmax100">';
-			$form->form_conditions_reglement($_SERVER['PHP_SELF'], $obj->fk_cond_reglement, 'none', 1);
+			$s = $form->form_conditions_reglement($_SERVER['PHP_SELF'], $obj->fk_cond_reglement, 'none', 1, '', -1, -1, 1);
+			print '<td class="tdoverflowmax100" title="'.dol_escape_htmltag($s).'">';
+			print dol_escape_htmltag($s);
 			print '</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
@@ -1551,8 +1611,9 @@ if ($num > 0) {
 		}
 		// Payment mode
 		if (!empty($arrayfields['f.fk_mode_reglement']['checked'])) {
-			print '<td class="tdoverflowmax100">';
-			$form->form_modes_reglement($_SERVER['PHP_SELF'], $obj->fk_mode_reglement, 'none', '', -1);
+			$s = $form->form_modes_reglement($_SERVER['PHP_SELF'], $obj->fk_mode_reglement, 'none', '', -1, 0, '', 1);
+			print '<td class="tdoverflowmax100" title="'.dol_escape_htmltag($s).'">';
+			print dol_escape_htmltag($s);
 			print '</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
@@ -1561,14 +1622,14 @@ if ($num > 0) {
 
 		// Amount HT
 		if (!empty($arrayfields['f.total_ht']['checked'])) {
-			  print '<td class="right nowrap"><span class="amount">'.price($obj->total_ht)."</span></td>\n";
+			print '<td class="right nowrap"><span class="amount">'.price($obj->total_ht)."</span></td>\n";
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
 			if (!$i) {
 				$totalarray['pos'][$totalarray['nbfield']] = 'f.total_ht';
 			}
-			  $totalarray['val']['f.total_ht'] += $obj->total_ht;
+			$totalarray['val']['f.total_ht'] += $obj->total_ht;
 		}
 		// Amount VAT
 		if (!empty($arrayfields['f.total_vat']['checked'])) {
@@ -1631,7 +1692,7 @@ if ($num > 0) {
 
 		// Author
 		if (!empty($arrayfields['u.login']['checked'])) {
-			print '<td class="tdoverflowmax200">';
+			print '<td class="tdoverflowmax150">';
 			if ($userstatic->id) {
 				print $userstatic->getLoginUrl(-1);
 			} else {
@@ -1667,7 +1728,7 @@ if ($num > 0) {
 
 		// Currency
 		if (!empty($arrayfields['f.multicurrency_code']['checked'])) {
-			  print '<td class="nowrap">'.$obj->multicurrency_code.' - '.$langs->trans('Currency'.$obj->multicurrency_code)."</td>\n";
+			print '<td class="nowrap">'.$obj->multicurrency_code.' - '.$langs->trans('Currency'.$obj->multicurrency_code)."</td>\n";
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
@@ -1675,16 +1736,16 @@ if ($num > 0) {
 
 		// Currency rate
 		if (!empty($arrayfields['f.multicurrency_tx']['checked'])) {
-			  print '<td class="nowrap">';
-			  $form->form_multicurrency_rate($_SERVER['PHP_SELF'].'?id='.$obj->rowid, $obj->multicurrency_tx, 'none', $obj->multicurrency_code);
-			  print "</td>\n";
+			print '<td class="nowrap">';
+			$form->form_multicurrency_rate($_SERVER['PHP_SELF'].'?id='.$obj->rowid, $obj->multicurrency_tx, 'none', $obj->multicurrency_code);
+			print "</td>\n";
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
 		}
 		// Amount HT
 		if (!empty($arrayfields['f.multicurrency_total_ht']['checked'])) {
-			  print '<td class="right nowrap"><span class="amount">'.price($obj->multicurrency_total_ht)."</span></td>\n";
+			print '<td class="right nowrap"><span class="amount">'.price($obj->multicurrency_total_ht)."</span></td>\n";
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
@@ -1725,7 +1786,7 @@ if ($num > 0) {
 		include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_print_fields.tpl.php';
 		// Fields from hook
 		$parameters = array('arrayfields'=>$arrayfields, 'obj'=>$obj, 'i'=>$i, 'totalarray'=>&$totalarray);
-		$reshook = $hookmanager->executeHooks('printFieldListValue', $parameters); // Note that $action and $object may have been modified by hook
+		$reshook = $hookmanager->executeHooks('printFieldListValue', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 		print $hookmanager->resPrint;
 
 		// Date creation
@@ -1757,15 +1818,17 @@ if ($num > 0) {
 		}
 
 		// Action column
-		print '<td class="nowrap center">';
-		if ($massactionbutton || $massaction) {   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
-			$selected = 0;
-			if (in_array($obj->facid, $arrayofselected)) {
-				$selected = 1;
+		if (!getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
+			print '<td class="nowrap center">';
+			if ($massactionbutton || $massaction) {   // If we are in select mode (massactionbutton defined) or if we have already selected and sent an action ($massaction) defined
+				$selected = 0;
+				if (in_array($obj->facid, $arrayofselected)) {
+					$selected = 1;
+				}
+				print '<input id="cb'.$obj->facid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->facid.'"'.($selected ? ' checked="checked"' : '').'>';
 			}
-			print '<input id="cb'.$obj->facid.'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$obj->facid.'"'.($selected ? ' checked="checked"' : '').'>';
+			print '</td>';
 		}
-		print '</td>';
 		if (!$i) {
 			$totalarray['nbfield']++;
 		}
@@ -1793,7 +1856,7 @@ if ($num == 0) {
 $db->free($resql);
 
 $parameters = array('arrayfields'=>$arrayfields, 'sql'=>$sql);
-$reshook = $hookmanager->executeHooks('printFieldListFooter', $parameters); // Note that $action and $object may have been modified by hook
+$reshook = $hookmanager->executeHooks('printFieldListFooter', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 
 print "</table>\n";

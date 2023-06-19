@@ -167,7 +167,8 @@ if ($action == 'addtime' && $user->rights->projet->lire && GETPOST('assigntask')
 					$listofprojcontact = $project->liste_type_contact('internal');
 
 					if (count($listofprojcontact)) {
-						$typeforprojectcontact = reset(array_keys($listofprojcontact));
+						$tmparray = array_keys($listofprojcontact);
+						$typeforprojectcontact = reset($tmparray);
 						$result = $project->add_contact($idfortaskuser, $typeforprojectcontact, 'internal');
 					}
 				}
@@ -396,8 +397,8 @@ print img_picto('', 'projecttask', 'class="pictofixedwidth"');
 $formproject->selectTasks($socid ? $socid : -1, $taskid, 'taskid', 32, 0, '-- '.$langs->trans("ChooseANotYetAssignedTask").' --', 1);
 print '</div>';
 print ' ';
-print $formcompany->selectTypeContact($object, '', 'type', 'internal', 'rowid', 0, 'maxwidth150onsmartphone');
-print '<input type="submit" class="button valignmiddle smallonsmartphone" name="assigntask" value="'.dol_escape_htmltag($titleassigntask).'">';
+print $formcompany->selectTypeContact($object, '', 'type', 'internal', 'position', 0, 'maxwidth150onsmartphone');
+print '<input type="submit" class="button valignmiddle smallonsmartphone small" name="assigntask" value="'.dol_escape_htmltag($titleassigntask).'">';
 print '</div>';
 
 print '<div class="clearboth" style="padding-bottom: 20px;"></div>';
@@ -419,7 +420,7 @@ if (!empty($conf->categorie->enabled))
 // If the user can view user other than himself
 $moreforfilter .= '<div class="divsearchfield">';
 $moreforfilter .= '<div class="inline-block hideonsmartphone"></div>';
-$includeonly = 'hierachyme';
+$includeonly = 'hierarchyme';
 if (empty($user->rights->user->user->lire)) {
 	$includeonly = array($user->id);
 }
@@ -524,7 +525,7 @@ if (count($tasksarray) > 0) {
 
 	// Calculate total for all tasks
 	$listofdistinctprojectid = array(); // List of all distinct projects
-	if (is_array($tasksarraywithoutfilter) && count($tasksarraywithoutfilter)) {
+	if (!empty($tasksarraywithoutfilter) && is_array($tasksarraywithoutfilter) && count($tasksarraywithoutfilter)) {
 		foreach ($tasksarraywithoutfilter as $tmptask) {
 			$listofdistinctprojectid[$tmptask->fk_project] = $tmptask->fk_project;
 		}
