@@ -1780,8 +1780,7 @@ class Societe extends CommonObject
 		$sql .= ' WHERE s.entity IN ('.getEntity($this->element).')';
 		if ($code_client) {
 			$sql .= " AND s.code_client = '".$this->db->escape($code_client)."'";
-		}
-		else {
+		} else {
 			if ($rowid) {
 				$sql .= ' AND s.rowid = '.((int) $rowid);
 			}
