@@ -1694,19 +1694,20 @@ class Societe extends CommonObject
 	/**
 	 *    Load a third party from database into memory
 	 *
-	 *    @param	int		$rowid			Id of third party to load
-	 *    @param    string	$ref			Reference of third party, name (Warning, this can return several records)
-	 *    @param    string	$ref_ext       	External reference of third party (Warning, this information is a free field not provided by Dolibarr)
-	 *    @param    string	$barcode       	Barcode of third party to load
-	 *    @param    string	$idprof1		Prof id 1 of third party (Warning, this can return several records)
-	 *    @param    string	$idprof2		Prof id 2 of third party (Warning, this can return several records)
-	 *    @param    string	$idprof3		Prof id 3 of third party (Warning, this can return several records)
-	 *    @param    string	$idprof4		Prof id 4 of third party (Warning, this can return several records)
-	 *    @param    string	$idprof5		Prof id 5 of third party (Warning, this can return several records)
-	 *    @param    string	$idprof6		Prof id 6 of third party (Warning, this can return several records)
-	 *    @param    string	$email   		Email of third party (Warning, this can return several records)
-	 *    @param    string	$ref_alias 		Name_alias of third party (Warning, this can return several records)
-	 *    @return   int						>0 if OK, <0 if KO or if two records found for same ref or idprof, 0 if not found.
+	 * @param int $rowid Id of third party to load
+	 * @param string $ref Reference of third party, name (Warning, this can return several records)
+	 * @param string $ref_ext External reference of third party (Warning, this information is a free field not provided by Dolibarr)
+	 * @param string $barcode Barcode of third party to load
+	 * @param string $idprof1 Prof id 1 of third party (Warning, this can return several records)
+	 * @param string $idprof2 Prof id 2 of third party (Warning, this can return several records)
+	 * @param string $idprof3 Prof id 3 of third party (Warning, this can return several records)
+	 * @param string $idprof4 Prof id 4 of third party (Warning, this can return several records)
+	 * @param string $idprof5 Prof id 5 of third party (Warning, this can return several records)
+	 * @param string $idprof6 Prof id 6 of third party (Warning, this can return several records)
+	 * @param string $email Email of third party (Warning, this can return several records)
+	 * @param string $ref_alias Name_alias of third party (Warning, this can return several records)
+	 * @return   int                        >0 if OK, <0 if KO or if two records found for same ref or idprof, 0 if not found.
+	 * @throws Exception
 	 */
 	public function fetch($rowid, $ref = '', $ref_ext = '', $barcode = '', $idprof1 = '', $idprof2 = '', $idprof3 = '', $idprof4 = '', $idprof5 = '', $idprof6 = '', $email = '', $ref_alias = '', $code_client = '')
 	{
@@ -1779,7 +1780,7 @@ class Societe extends CommonObject
 		if ($code_client) {
 			$sql .= " AND s.code_client = '".$this->db->escape($code_client)."'";
 		}
-		else{
+		else {
 			if ($rowid) {
 				$sql .= ' AND s.rowid = '.((int) $rowid);
 			}

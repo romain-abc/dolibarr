@@ -4504,7 +4504,11 @@ class Facture extends CommonInvoice
 		}
 	}
 
-	public function getLastSentEmail($id)
+	/**
+	 * @param $id
+	 * @return Object
+	 */
+	public function getLastSentEmail($id): object
 	{
 
 		$sql = "SELECT a.datec";

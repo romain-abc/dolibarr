@@ -58,7 +58,7 @@ $nowmonth = strftime("%m", dol_now());
 $startmonth = $conf->global->SOCIETE_FISCAL_MONTH_START?($conf->global->SOCIETE_FISCAL_MONTH_START) : 1;
 if (empty($conf->global->GRAPH_USE_FISCAL_YEAR)) $startmonth = 1;
 
-if($nowmonth>=$startmonth){
+if ($nowmonth>=$startmonth) {
 	$nowyear = $nowyear + 1;
 }
 $year = GETPOST('year') > 0 ? GETPOST('year', 'int') : $nowyear;
@@ -136,12 +136,10 @@ if (!$mesg) {
 	$legend = array();
 	while ($i <= $endyear) {
 		//$legend[] = $i;
-		if ($startmonth != 1)
-		{
+		if ($startmonth != 1) {
 			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
 		}
-		else
-		{
+		else {
 			$legend[]=$i;
 		}
 		$i++;
@@ -180,12 +178,10 @@ if (!$mesg) {
 	$legend = array();
 	while ($i <= $endyear) {
 		//$legend[] = $i;
-		if ($startmonth != 1)
-		{
+		if ($startmonth != 1) {
 			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
 		}
-		else
-		{
+		else {
 			$legend[]=$i;
 		}
 		$i++;
@@ -233,12 +229,10 @@ if (!$mesg) {
 	$legend = array();
 	while ($i <= $endyear) {
 		//$legend[] = $i;
-		if ($startmonth != 1)
-		{
+		if ($startmonth != 1) {
 			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
 		}
-		else
-		{
+		else {
 			$legend[]=$i;
 		}
 		$i++;
@@ -351,10 +345,10 @@ print '</tr>';
 
 $oldyear = 0;
 foreach ($data as $val) {
-	if($val['year']==$oldyear){
+	if ($val['year']==$oldyear) {
 		$year = $val['year']-1;
 	}
-	else{
+	else {
 		$year = $val['year'];
 	}
 	$nextperiod = $year+1;

@@ -2029,7 +2029,7 @@ if ($resql) {
 			if (!empty($arrayfields['f.last_sent_email_date']['checked'])) {
 				print '<td align="center" class="nowrap">';
 				$lastemail = $objecttmp->getLastSentEmail($obj->id);
-				if($lastemail){
+				if ($lastemail) {
 					print dol_print_date($db->jdate($lastemail->datec), 'dayhour', 'tzuser');
 				}
 				//print_r($obj->id);

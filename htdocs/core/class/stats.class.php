@@ -244,9 +244,10 @@ abstract class Stats
 	/**
 	 * Return average of entity by month for several years
 	 *
-	 * @param	int		$endyear		Start year
-	 * @param	int		$startyear		End year
-	 * @return 	array					Array of values
+	 * @param int $endyear Start year
+	 * @param int $startyear End year
+	 * @param int $startmonth
+	 * @return    array                    Array of values
 	 */
 	public function getAverageByMonthWithPrevYear($endyear, $startyear, $startmonth = 1)
 	{

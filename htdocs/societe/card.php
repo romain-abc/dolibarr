@@ -118,10 +118,10 @@ $socialnetworks = getArrayOfSocialNetworks();
 // Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
 $hookmanager->initHooks(array('thirdpartycard', 'globalcard'));
 
-if($code_client){
-	$object->fetch(0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $code_client);
+if ($code_client) {
+	$object->fetch(0, null, null, null, null, null, null, null, null, null, null, null, $code_client);
 }
-else{
+else {
 	if ($socid > 0) {
 		$object->fetch($socid);
 	}
