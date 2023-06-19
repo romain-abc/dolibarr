@@ -4505,7 +4505,7 @@ class Facture extends CommonInvoice
 	}
 
 	/**
-	 * @param $id
+	 * @param  int		$id		Id of object to load
 	 * @return Object
 	 */
 	public function getLastSentEmail($id): object

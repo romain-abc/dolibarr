@@ -120,8 +120,7 @@ $hookmanager->initHooks(array('thirdpartycard', 'globalcard'));
 
 if ($code_client) {
 	$object->fetch(0, null, null, null, null, null, null, null, null, null, null, null, $code_client);
-}
-else {
+} else {
 	if ($socid > 0) {
 		$object->fetch($socid);
 	}

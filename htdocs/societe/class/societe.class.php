@@ -1706,10 +1706,11 @@ class Societe extends CommonObject
 	 * @param string $idprof6 Prof id 6 of third party (Warning, this can return several records)
 	 * @param string $email Email of third party (Warning, this can return several records)
 	 * @param string $ref_alias Name_alias of third party (Warning, this can return several records)
+	 * @param string $code_client Code_client of third party (Warning, this can return several records)
 	 * @return   int                        >0 if OK, <0 if KO or if two records found for same ref or idprof, 0 if not found.
 	 * @throws Exception
 	 */
-	public function fetch($rowid, $ref = '', $ref_ext = '', $barcode = '', $idprof1 = '', $idprof2 = '', $idprof3 = '', $idprof4 = '', $idprof5 = '', $idprof6 = '', $email = '', $ref_alias = '', $code_client = '')
+	public function fetch($rowid, $ref = '', $ref_ext = '', $barcode = '', $idprof1 = '', $idprof2 = '', $idprof3 = '', $idprof4 = '', $idprof5 = '', $idprof6 = '', $email = '', $ref_alias = '', $code_client = ''): int
 	{
 		global $langs;
 		global $conf;

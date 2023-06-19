@@ -138,8 +138,7 @@ if (!$mesg) {
 		//$legend[] = $i;
 		if ($startmonth != 1) {
 			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
-		}
-		else {
+		} else {
 			$legend[]=$i;
 		}
 		$i++;
@@ -180,8 +179,7 @@ if (!$mesg) {
 		//$legend[] = $i;
 		if ($startmonth != 1) {
 			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
-		}
-		else {
+		} else {
 			$legend[]=$i;
 		}
 		$i++;
@@ -231,8 +229,7 @@ if (!$mesg) {
 		//$legend[] = $i;
 		if ($startmonth != 1) {
 			$legend[]=sprintf("%d/%d", $i-2001, $i-2000);
-		}
-		else {
+		} else {
 			$legend[]=$i;
 		}
 		$i++;
@@ -347,8 +344,7 @@ $oldyear = 0;
 foreach ($data as $val) {
 	if ($val['year']==$oldyear) {
 		$year = $val['year']-1;
-	}
-	else {
+	} else {
 		$year = $val['year'];
 	}
 	$nextperiod = $year+1;

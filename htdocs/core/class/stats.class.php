@@ -246,7 +246,7 @@ abstract class Stats
 	 *
 	 * @param int $endyear Start year
 	 * @param int $startyear End year
-	 * @param int $startmonth
+	 * @param int $startmonth Start month
 	 * @return    array                    Array of values
 	 */
 	public function getAverageByMonthWithPrevYear($endyear, $startyear, $startmonth = 1)
