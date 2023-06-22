@@ -2030,8 +2030,9 @@ if ($resql) {
 				print '<td align="center" class="nowrap">';
 				$lastemail = $objecttmp->getLastSentEmail($obj->id);
 				if ($lastemail) {
-					if($lastemail->datec)
+					if ($lastemail->datec) {
 						print dol_print_date($db->jdate($lastemail->datec), 'dayhour', 'tzuser');
+					}
 				}
 				print '</td>';
 				if (!$i) {

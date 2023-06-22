@@ -4527,7 +4527,7 @@ class Facture extends CommonInvoice
 				$obj = $this->db->fetch_object($result);
 				//var_dump($obj);
 			}
-			else{
+			else { 
 				$obj = new stdClass();
 			}
 			$this->db->free($result);
