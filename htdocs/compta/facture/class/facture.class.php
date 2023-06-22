@@ -1132,11 +1132,11 @@ class Facture extends CommonInvoice
 		$this->fetch_optionals();
 
 		if (!empty($this->array_options)) {
-					$facture->array_options = $this->array_options;
+			$facture->array_options = $this->array_options;
 		}
 
 		foreach ($this->lines as &$line) {
-					$line->fetch_optionals(); //fetch extrafields
+			$line->fetch_optionals(); //fetch extrafields
 		}
 
 		$facture->fk_facture_source = $this->fk_facture_source;
@@ -1680,7 +1680,7 @@ class Facture extends CommonInvoice
 				0,
 				0,
 				0
-				//,$langs->trans('Deposit') //Deprecated
+			//,$langs->trans('Deposit') //Deprecated
 			);
 
 			if ($addlineResult < 0) {
@@ -2245,7 +2245,7 @@ class Facture extends CommonInvoice
 				if ($invoice->fetch($objp->rowid) > 0) {
 					if ($objp->situation_counter < $this->situation_counter
 						|| ($objp->situation_counter == $this->situation_counter && $objp->rowid < $this->id) // This case appear when there are credit notes
-					   ) {
+					) {
 						$this->tab_previous_situation_invoice[] = $invoice;
 					} else {
 						$this->tab_next_situation_invoice[] = $invoice;
@@ -3010,7 +3010,7 @@ class Facture extends CommonInvoice
 			return -1;
 		}
 		if ((empty($conf->global->MAIN_USE_ADVANCED_PERMS) && empty($user->rights->facture->creer))
-		|| (!empty($conf->global->MAIN_USE_ADVANCED_PERMS) && empty($user->rights->facture->invoice_advance->validate))) {
+			|| (!empty($conf->global->MAIN_USE_ADVANCED_PERMS) && empty($user->rights->facture->invoice_advance->validate))) {
 			$this->error = 'Permission denied';
 			dol_syslog(get_class($this)."::validate ".$this->error.' MAIN_USE_ADVANCED_PERMS='.$conf->global->MAIN_USE_ADVANCED_PERMS, LOG_ERR);
 			return -1;
@@ -4510,7 +4510,6 @@ class Facture extends CommonInvoice
 	 */
 	public function getLastSentEmail($id): object
 	{
-
 		$sql = "SELECT a.datec";
 		$sql .= " FROM ".MAIN_DB_PREFIX."actioncomm as a";
 		/*$sql .= " WHERE a.entity IN (".getEntity('agenda').")";
@@ -4527,6 +4526,9 @@ class Facture extends CommonInvoice
 			if ($this->db->num_rows($result)) {
 				$obj = $this->db->fetch_object($result);
 				//var_dump($obj);
+			}
+			else{
+				$obj = new stdClass();
 			}
 			$this->db->free($result);
 		} else {

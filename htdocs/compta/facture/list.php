@@ -1800,11 +1800,11 @@ if ($resql) {
 
 		$with_margin_info = false;
 		if (isModEnabled('margin') && (
-			!empty($arrayfields['total_pa']['checked'])
-			|| !empty($arrayfields['total_margin']['checked'])
-			|| !empty($arrayfields['total_margin_rate']['checked'])
-			|| !empty($arrayfields['total_mark_rate']['checked'])
-		)
+				!empty($arrayfields['total_pa']['checked'])
+				|| !empty($arrayfields['total_margin']['checked'])
+				|| !empty($arrayfields['total_margin_rate']['checked'])
+				|| !empty($arrayfields['total_mark_rate']['checked'])
+			)
 		) {
 			$with_margin_info = true;
 		}
@@ -2030,11 +2030,9 @@ if ($resql) {
 				print '<td align="center" class="nowrap">';
 				$lastemail = $objecttmp->getLastSentEmail($obj->id);
 				if ($lastemail) {
-					print dol_print_date($db->jdate($lastemail->datec), 'dayhour', 'tzuser');
+					if($lastemail->datec)
+						print dol_print_date($db->jdate($lastemail->datec), 'dayhour', 'tzuser');
 				}
-				//print_r($obj->id);
-				//print $obj->getLastSentEmail($obj->id);
-				//print dol_print_date($db->jdate($obj->date_closing), 'dayhour', 'tzuser');
 				print '</td>';
 				if (!$i) {
 					$totalarray['nbfield']++;
