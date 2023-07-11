@@ -116,7 +116,7 @@ if ($object_status != '' && $object_status >= 0) {
 }
 
 // Build graphic number of object
-$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear);
+$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear, 0, 0, $startmonth);
 // $data = array(array('Lib',val1,val2,val3),...)
 
 
@@ -158,7 +158,7 @@ if (!$mesg) {
 }
 
 // Build graphic amount of object
-$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear, 0, $startmonth);
+$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear, 0, 0, $startmonth);
 // $data = array(array('Lib',val1,val2,val3),...)
 
 if (empty($user->rights->societe->client->voir) || $user->socid) {

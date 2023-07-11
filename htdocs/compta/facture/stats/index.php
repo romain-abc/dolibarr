@@ -77,7 +77,6 @@ $year = GETPOST('year') > 0 ? GETPOST('year', 'int') : $nowyear;
 $startyear = $year - (empty($conf->global->MAIN_STATS_GRAPHS_SHOW_N_YEARS) ? 2 : max(1, min(10, $conf->global->MAIN_STATS_GRAPHS_SHOW_N_YEARS)));
 $endyear = $year;
 
-
 /*
  * View
  */
@@ -127,7 +126,7 @@ if ($mode == 'supplier') {
 
 // Build graphic number of object
 // $data = array(array('Lib',val1,val2,val3),...)
-$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear, 0, $startmonth);
+$data = $stats->getNbByMonthWithPrevYear($endyear, $startyear, 0, 0, $startmonth);
 //var_dump($data);
 
 $filenamenb = $dir."/invoicesnbinyear-".$year.".png";
@@ -140,6 +139,7 @@ if ($mode == 'supplier') {
 
 $px1 = new DolGraph();
 $mesg = $px1->isGraphKo();
+
 if (!$mesg) {
 	$px1->SetData($data);
 	$i = $startyear;
@@ -167,7 +167,7 @@ if (!$mesg) {
 }
 
 // Build graphic amount of object
-$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear, 0, $startmonth);
+$data = $stats->getAmountByMonthWithPrevYear($endyear, $startyear, 0, 0, $startmonth);
 //var_dump($data);
 // $data = array(array('Lib',val1,val2,val3),...)
 
@@ -209,7 +209,7 @@ if (!$mesg) {
 }
 
 
-$data = $stats->getAverageByMonthWithPrevYear($endyear, $startyear);
+$data = $stats->getAverageByMonthWithPrevYear($endyear, $startyear, $startmonth);
 
 if (empty($user->rights->societe->client->voir) || $user->socid) {
 	$filename_avg = $dir.'/ordersaverage-'.$user->id.'-'.$year.'.png';
@@ -268,7 +268,6 @@ foreach ($data as $val) {
 if (!count($arrayyears)) {
 	$arrayyears[$nowyear] = $nowyear;
 }
-
 
 $h = 0;
 $head = array();
