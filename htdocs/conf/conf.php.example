@@ -36,6 +36,7 @@ $dolibarr_main_url_root='';
 // Examples:
 // $dolibarr_main_document_root='/var/www/dolibarr/htdocs';
 // $dolibarr_main_document_root='C:/My web sites/dolibarr/htdocs';
+// $dolibarr_main_document_root=realpath(__DIR__.'/..');
 //
 $dolibarr_main_document_root='';
 
@@ -44,7 +45,7 @@ $dolibarr_main_document_root='';
 // ==========================
 // This parameter defines the relative sub URLs to add to $dolibarr_main_url_root to
 // forge alternative root directories (used by modules developers).
-// You can put several values, separated by a coma, but number of entries must match
+// You can put several values, separated by a comma, but number of entries must match
 // number of entries into $dolibarr_main_document_root_alt.
 //
 // Examples:
@@ -57,7 +58,7 @@ $dolibarr_main_document_root='';
 // dolibarr_main_document_root_alt
 // ===============================
 // This parameter contains absolute alternative root file system directories (used by modules developers).
-// You can put several values, separated by a coma, but number of entries must match
+// You can put several values, separated by a comma, but number of entries must match
 // number of entries into $dolibarr_main_url_root_alt.
 //
 // Examples:
@@ -75,6 +76,7 @@ $dolibarr_main_document_root='';
 // Examples:
 // $dolibarr_main_data_root='/var/www/dolibarr/documents';
 // $dolibarr_main_data_root='E:/My web sites/dolibarr/documents';
+// $dolibarr_main_data_root=realpath(__DIR__.'/../../documents');
 //
 $dolibarr_main_data_root='';
 
@@ -128,6 +130,8 @@ $dolibarr_main_db_user='';
 // dolibarr_main_db_pass
 // =====================
 // This parameter contains password used to read and write into Dolibarr database.
+// If content is 'crypted:...', the password is encrypted/decrypted with dol_encode/dol_decode.  
+// If content is 'dolcrypt:...', the password is encrypted/decrypted with dolEncrypt/dolDecrypt.  
 //
 // Examples:
 // $dolibarr_main_db_pass='myadminpass';
@@ -173,7 +177,7 @@ $dolibarr_main_db_collation='utf8_unicode_ci';
 
 // dolibarr_main_db_readonly
 // =========================
-// Set this to 1 to have the application working in readonly mode. All SQL commands INSERT/UPDATE/DELETE/CREATE/ALTER/TRUNCATE/DROP will be disabled. 
+// Set this to 1 to have the application working in readonly mode. All SQL commands INSERT/UPDATE/DELETE/CREATE/ALTER/TRUNCATE/DROP will be disabled.
 // Default value: 0
 // Examples:
 // $dolibarr_main_db_readonly='0';
@@ -215,6 +219,8 @@ $dolibarr_main_instance_unique_id='84b5bc91f83b56e458db71e0adac2b62';
 // $dolibarr_main_authentication='ldap,dolibarr';  // You can set several mode using a comma as a separator.
 // $dolibarr_main_authentication='forceuser';      // This need to add also $dolibarr_auto_user='loginforuser';
 // $dolibarr_main_authentication='twofactor';      // To use Google Authenticator. This need the non official external module "Two Factor" available on www.dolistore.com
+// $dolibarr_main_authentication='openid_connect'; // See https://wiki.dolibarr.org/index.php?title=Authentication,_SSO_and_SSL
+// $dolibarr_main_authentication='googleoauth';    // See https://wiki.dolibarr.org/index.php?title=Authentication,_SSO_and_SSL
 //
 $dolibarr_main_authentication='dolibarr';
 
@@ -256,8 +262,8 @@ $dolibarr_main_authentication='dolibarr';
 // 'https://my.domain.com' = Force redirect to https using this domain name.
 // Warning: If you enable this parameter, your web server must be configured to respond URL with https protocol.
 // According to your web server setup, some values may works and other not. Try different values (1,2 or 'https://my.domain.com') if you experience problems.
-// Even if a redirect to HTTPS is forced by the webserver, it is recommanded to set this value to another value than 0, so your session cookies will be 
-// flagged as secured. 
+// Even if a redirect to HTTPS is forced by the webserver, it is recommended to set this value to another value than 0, so your session cookies will be
+// flagged as secured.
 // Default value: 0
 // Possible values: 0, 1, 2 or 'https://my.domain.com'
 // Examples:
@@ -361,7 +367,7 @@ $dolibarr_cron_allow_cli='0';
 // =========================
 // If this value is set to a value, it forces the creation of a file install.lock once an upgrade process into a new version end.
 // The value is the octal value of permission to set on created file.
-// The file install.lock prevents the use of the migration process another time. You will have to delete it manually for 
+// The file install.lock prevents the use of the migration process another time. You will have to delete it manually for
 // next upgrade.
 // Default value: '0'
 // Example: '444';
@@ -375,7 +381,7 @@ $dolibarr_cron_allow_cli='0';
 
 // dolibarr_main_db_prefix
 // =======================
-// This parameter contains prefix of Dolibarr database. 
+// This parameter contains prefix of Dolibarr database.
 // Default value: 'llx_' if not defined
 // Examples:
 // $dolibarr_main_db_prefix='llx_';

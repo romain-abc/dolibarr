@@ -160,6 +160,13 @@ class modStock extends DolibarrModules
 		$this->rights[6][4] = 'inventory_advance'; // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
 		$this->rights[6][5] = 'write'; // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
 
+		$this->rights[6][0] = 1013;
+		$this->rights[6][1] = 'inventoryDeletePermission'; // Permission label
+		$this->rights[6][3] = 0; // Permission by default for new user (0/1)
+		$this->rights[6][4] = 'inventory_advance'; // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
+		$this->rights[6][5] = 'delete'; // In php code, permission will be checked by test if ($user->rights->permkey->level1->level2)
+
+
 		if ($conf->global->MAIN_FEATURES_LEVEL >= 2) {
 			$this->rights[8][0] = 1014;
 			$this->rights[8][1] = 'inventoryValidatePermission'; // Permission label
@@ -210,7 +217,7 @@ class modStock extends DolibarrModules
 			'e.phone'=>'Text', 'e.fax'=>'Text', 'e.statut'=>'Text', 'pe.rowid'=>'List:entrepot:ref:rowid:stock', 'pe.ref'=>'Text'
 		);
 		$this->export_entities_array[$r] = array();	// We define here only fields that use another icon that the one defined into export_icon
-		$this->export_aggregate_array[$r] = array();
+		$this->export_aggregate_array[$r] = array();	// TODO Not used yet
 		$keyforselect = 'warehouse';
 		$keyforelement = 'warehouse';
 		$keyforaliasextra = 'extra';

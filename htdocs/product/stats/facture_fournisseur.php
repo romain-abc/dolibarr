@@ -132,12 +132,12 @@ if ($id > 0 || !empty($ref)) {
 		print "</table>";
 
 		print '</div>';
-		print '<div style="clear:both"></div>';
+		print '<div class="clearboth"></div>';
 
 		print dol_get_fiche_end();
 
 
-		if ($user->rights->fournisseur->facture->lire) {
+		if ($user->hasRight('fournisseur', 'facture', 'lire')) {
 			$sql = "SELECT DISTINCT s.nom as name, s.rowid as socid, s.code_client, d.rowid, d.total_ht as line_total_ht,";
 			$sql .= " f.rowid as facid, f.ref, f.ref_supplier, f.datef, f.libelle as label, f.total_ht, f.total_ttc, f.total_tva, f.paye, f.fk_statut as statut, d.qty";
 			if (empty($user->rights->societe->client->voir) && !$socid) {
@@ -173,7 +173,7 @@ if ($id > 0 || !empty($ref)) {
 
 			// Count total nb of records
 			$totalofrecords = '';
-			if (empty($conf->global->MAIN_DISABLE_FULL_SCANLIST)) {
+			if (!getDolGlobalInt('MAIN_DISABLE_FULL_SCANLIST')) {
 				$result = $db->query($sql);
 				$totalofrecords = $db->num_rows($result);
 			}
@@ -187,7 +187,7 @@ if ($id > 0 || !empty($ref)) {
 				$option .= '&id='.$product->id;
 
 				if ($limit > 0 && $limit != $conf->liste_limit) {
-					$option .= '&limit='.urlencode($limit);
+					$option .= '&limit='.((int) $limit);
 				}
 				if (!empty($search_month)) {
 					$option .= '&search_month='.urlencode($search_month);
@@ -264,7 +264,7 @@ if ($id > 0 || !empty($ref)) {
 						print dol_print_date($db->jdate($objp->datef), 'dayhour')."</td>";
 						print '<td class="center">'.$objp->qty."</td>\n";
 						print '<td align="right">'.price($objp->line_total_ht)."</td>\n";
-						print '<td align="right">'.$supplierinvoicestatic->LibStatut($objp->paye, $objp->statut, 5).'</td>';
+						print '<td align="right">'.$supplierinvoicestatic->LibStatut($objp->paye, $objp->statut, 5, $supplierinvoicestatic->getSommePaiement()).'</td>';
 						print "</tr>\n";
 						$i++;
 					}

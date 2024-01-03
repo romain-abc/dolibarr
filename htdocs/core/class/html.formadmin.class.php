@@ -36,7 +36,7 @@ class FormAdmin
 	/**
 	 *  Constructor
 	 *
-	 *  @param      DoliDB      $db      Database handler
+	 *  @param      DoliDB|null      $db      Database handler
 	 */
 	public function __construct($db)
 	{
@@ -51,7 +51,7 @@ class FormAdmin
 	 *  @param      string			$htmlname       Name of HTML select
 	 *  @param      int				$showauto       Show 'auto' choice
 	 *  @param      array			$filter         Array of keys to exclude in list (opposite of $onlykeys)
-	 *  @param		string			$showempty		'1'=Add empty value or 'string to show'
+	 *  @param		int|string		$showempty		'1'=Add empty value or 'string to show'
 	 *  @param      int				$showwarning    Show a warning if language is not complete
 	 *  @param		int				$disabled		Disable edit of select
 	 *  @param		string			$morecss		Add more css styles
@@ -62,12 +62,15 @@ class FormAdmin
 	 *  @param		int				$mainlangonly	1=Show only main languages ('fr_FR' no' fr_BE', 'es_ES' not 'es_MX', ...)
 	 *  @return		string							Return HTML select string with list of languages
 	 */
-	public function select_language($selected = '', $htmlname = 'lang_id', $showauto = 0, $filter = null, $showempty = '', $showwarning = 0, $disabled = 0, $morecss = '', $showcode = 0, $forcecombo = 0, $multiselect = 0, $onlykeys = null, $mainlangonly = 0)
+	public function select_language($selected = '', $htmlname = 'lang_id', $showauto = 0, $filter = array(), $showempty = '', $showwarning = 0, $disabled = 0, $morecss = '', $showcode = 0, $forcecombo = 0, $multiselect = 0, $onlykeys = array(), $mainlangonly = 0)
 	{
 		// phpcs:enable
 		global $conf, $langs;
 
 		if (!empty($conf->global->MAIN_DEFAULT_LANGUAGE_FILTER)) {
+			if (!is_array($filter)) {
+				$filter = array();
+			}
 			$filter[$conf->global->MAIN_DEFAULT_LANGUAGE_FILTER] = 1;
 		}
 
@@ -93,7 +96,11 @@ class FormAdmin
 
 		$out .= '<select '.($multiselect ? 'multiple="multiple" ' : '').'class="flat'.($morecss ? ' '.$morecss : '').'" id="'.$htmlname.'" name="'.$htmlname.($multiselect ? '[]' : '').'"'.($disabled ? ' disabled' : '').'>';
 		if ($showempty && !$multiselect) {
-			$out .= '<option value="0"';
+			if (is_numeric($showempty)) {
+				$out .= '<option value="0"';
+			} else {
+				$out .= '<option value="-1"';
+			}
 			if ($selected === '') {
 				$out .= ' selected';
 			}
@@ -239,10 +246,10 @@ class FormAdmin
 		foreach ($menuarray as $key => $val) {
 			$tab = explode('_', $key);
 			$newprefix = $tab[0];
-			if ($newprefix == '1' && ($conf->global->MAIN_FEATURES_LEVEL < 1)) {
+			if ($newprefix == '1' && (getDolGlobalInt('MAIN_FEATURES_LEVEL') < 1)) {
 				continue;
 			}
-			if ($newprefix == '2' && ($conf->global->MAIN_FEATURES_LEVEL < 2)) {
+			if ($newprefix == '2' && (getDolGlobalInt('MAIN_FEATURES_LEVEL') < 2)) {
 				continue;
 			}
 			if ($newprefix != $oldprefix) {	// Add separators
