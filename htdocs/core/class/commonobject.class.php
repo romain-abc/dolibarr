@@ -5043,7 +5043,7 @@ abstract class CommonObject
 					$label = $line->product_label;
 				}
 
-				$text .= ' - '.(!empty($line->label) ? $line->label : $label);
+				$text .= '<strong> - '.(!empty($line->label) ? $line->label : $label).'</strong>';
 				$description .= (getDolGlobalInt('PRODUIT_DESC_IN_FORM_ACCORDING_TO_DEVICE') ? '' : (!empty($line->description) ? dol_htmlentitiesbr($line->description) : '')); // Description is what to show on popup. We shown nothing if already into desc.
 			}
 
