@@ -70,6 +70,8 @@ insert into llx_c_action_trigger (code,label,description,elementtype,rang) value
 insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PARTNERSHIP_SENTBYMAIL','Mails sent from partnership file','Executed when you send email from partnership file','partnership',58004);
 insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PARTNERSHIP_DELETE','Partnership deleted','Executed when a partnership is deleted','partnership',58006);
 
+insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PROPAL_CLOSE_SIGNED_WEB','Customer proposal closed signed on portal','Executed when a customer proposal is closed signed on portal','propal',2);
+insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PROPAL_CLOSE_REFUSED_WEB','Customer proposal closed refused on portal','Executed when a customer proposal is closed refused on portal','propal',2);
 
 -- amount was removed in v12
 ALTER TABLE llx_facture DROP COLUMN amount;

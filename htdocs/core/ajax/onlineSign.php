@@ -230,6 +230,10 @@ if ($action == "importSignature") {
 						} else {
 							$response = "success";
 						}
+						$result = $object->call_trigger('PROPAL_CLOSE_SIGNED_WEB', $user);
+						if ($result < 0) {
+							$error++;
+						}
 					} else {
 						$response = "success";
 					}
