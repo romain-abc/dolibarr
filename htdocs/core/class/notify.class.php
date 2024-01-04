@@ -664,11 +664,12 @@ class Notify
 						if($signed){
 							$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output));
 							foreach($files as $f){
-								if (!dol_is_file($f)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+								$fichier = $dir_output."/".$f;
+								if (!dol_is_file($fichier)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
 									// We can't add PDF as it is not generated yet.
 									$filepdf = '';
 								} else {
-									$filepdf = $f;
+									$filepdf = $fichier;
 									$filename_list[] = $filepdf;
 									$mimetype_list[] = mime_content_type($filepdf);
 									$mimefilename_list[] = $f;
@@ -940,11 +941,12 @@ class Notify
 				if($signed){
 					$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output . "/" . $ref));
 					foreach($files as $f){
-						if (!dol_is_file($f)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+						$fichier = $dir_output . "/" . $ref."/".$f;
+						if (!dol_is_file($fichier)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
 							// We can't add PDF as it is not generated yet.
 							$filepdf = '';
 						} else {
-							$filepdf = $f;
+							$filepdf = $fichier;
 							$filename_list[] = $filepdf;
 							$mimetype_list[] = mime_content_type($filepdf);
 							$mimefilename_list[] = $f;
