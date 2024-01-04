@@ -2590,7 +2590,7 @@ if ($action == 'create' && $usercancreate) {
 		print '</tr>';
 
 		// Delivery date planed
-		print '<tr><td>';
+		/*print '<tr><td>';
 		$editenable = $usercancreate;
 		print $form->editfieldkey("DateDeliveryPlanned", 'date_livraison', '', $object, $editenable);
 		print '</td><td class="valuefield">';
@@ -2609,7 +2609,7 @@ if ($action == 'create' && $usercancreate) {
 			}
 		}
 		print '</td>';
-		print '</tr>';
+		print '</tr>';*/
 
 		// Delivery delay
 		print '<tr class="fielddeliverydelay"><td>';
@@ -2730,6 +2730,18 @@ if ($action == 'create' && $usercancreate) {
 					}
 				}
 				print '</td></tr>';
+			}
+		}
+
+		// Insitu
+		if ($soc) {
+			if($soc->array_options['options_insitu']){
+				print '<tr><td>';
+				print $langs->trans('Insitu');
+				print '</td><td>';
+				print 'Oui';
+				print '</td>';
+				print '</tr>';
 			}
 		}
 
@@ -2918,7 +2930,7 @@ if ($action == 'create' && $usercancreate) {
 
 		// Show object lines
 		if (!empty($object->lines)) {
-			$object->printObjectLines($action, $mysoc, $soc, $lineid, 1);
+			$object->printObjectLinesPropal($action, $mysoc, $soc, $lineid, 1);
 		}
 
 		$numlines = count($object->lines);
