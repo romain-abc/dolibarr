@@ -606,7 +606,7 @@ if (empty($reshook)) {
 							// Hooks
 							$parameters = array('objFrom' => $srcobject);
 							$reshook = $hookmanager->executeHooks('createFrom', $parameters, $object, $action); // Note that $action and $object may have been
-																											   // modified by hook
+							// modified by hook
 							if ($reshook < 0) {
 								setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 								$error++;
@@ -795,7 +795,7 @@ if (empty($reshook)) {
 	} elseif ($action == 'import_lines_from_object'
 		&& $user->hasRight('propal', 'creer')
 		&& $object->statut == Propal::STATUS_DRAFT
-		) {
+	) {
 		// add lines from objectlinked
 		$fromElement = GETPOST('fromelement');
 		$fromElementid = GETPOST('fromelementid');
@@ -2608,13 +2608,13 @@ if ($action == 'create') {
 	print '</td></tr>';
 
 	// Delivery date
-	$langs->load('deliveries');
+	/*$langs->load('deliveries');
 	print '<tr><td>';
 	print $form->editfieldkey($langs->trans('DeliveryDate'), 'date_livraison', $object->delivery_date, $object, $usercancreate && $caneditfield, 'datepicker');
 	print '</td><td class="valuefieldedit">';
 	print $form->editfieldval($langs->trans('DeliveryDate'), 'date_livraison', $object->delivery_date, $object, $usercancreate && $caneditfield, 'datepicker');
 	print '</td>';
-	print '</tr>';
+	print '</tr>';*/
 
 	// Delivery delay
 	print '<tr class="fielddeliverydelay"><td>';
@@ -2685,6 +2685,7 @@ if ($action == 'create') {
 	if ($action != 'editdemandreason' && $usercancreate) {
 		print '<td class="right"><a class="editfielda" href="'.$_SERVER["PHP_SELF"].'?action=editdemandreason&token='.newToken().'&id='.$object->id.'">'.img_edit($langs->transnoentitiesnoconv('SetDemandReason'), 1).'</a></td>';
 	}
+
 	print '</tr></table>';
 	print '</td><td class="valuefield">';
 	if ($action == 'editdemandreason' && $usercancreate) {
@@ -2694,6 +2695,18 @@ if ($action == 'create') {
 	}
 	print '</td>';
 	print '</tr>';
+
+	// Insitu
+	if ($soc) {
+		if($soc->array_options['options_insitu']){
+			print '<tr><td>';
+			print $langs->trans('Insitu');
+			print '</td><td>';
+			print 'Oui';
+			print '</td>';
+			print '</tr>';
+		}
+	}
 
 	// Multicurrency
 	if (isModEnabled("multicurrency")) {
@@ -2926,7 +2939,7 @@ if ($action == 'create') {
 	}
 
 	if (!empty($object->lines)) {
-		$object->printObjectLines($action, $mysoc, $object->thirdparty, $lineid, 1);
+		$object->printObjectLinesPropal($action, $mysoc, $object->thirdparty, $lineid, 1);
 	}
 
 	// Form to add new line
@@ -2962,7 +2975,7 @@ if ($action == 'create') {
 
 		$parameters = array();
 		$reshook = $hookmanager->executeHooks('addMoreActionsButtons', $parameters, $object, $action); // Note that $action and $object may have been
-																									   // modified by hook
+		// modified by hook
 		if (empty($reshook)) {
 			if ($action != 'editline') {
 				// Validate
