@@ -465,6 +465,7 @@ class Notify
 					$obj = $this->db->fetch_object($result);
 
 					$sendto = dolGetFirstLastname($obj->firstname, $obj->lastname)." <".$obj->email.">";
+					$signed = false;
 					$notifcodedefid = $obj->adid;
 					$trackid = '';
 					if ($obj->type_target == 'tocontactid') {
@@ -546,16 +547,17 @@ class Notify
 								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 								$object_type = 'propal';
 								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
-								if (!empty($object->context['closedfromonlinesignature'])) {
+								/*if (!empty($object->context['closedfromonlinesignature'])) {
 									$mesg .= ' - From online page';
-								}
+								}*/
 								break;
 							case 'PROPAL_CLOSE_SIGNED_WEB':
 								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 								$object_type = 'propal';
 								$labeltouse = $conf->global->PROPAL_CLOSE_SIGNED_TEMPLATE;
-								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
+								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
+								$signed = true;
 								break;
 							case 'FICHINTER_ADD_CONTACT':
 								$link = '<a href="'.$urlwithroot.'/fichinter/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
@@ -659,15 +661,31 @@ class Notify
 						}
 
 						$ref = dol_sanitizeFileName($newref);
-						$pdf_path = $dir_output."/".$ref.".pdf";
-						if (!dol_is_file($pdf_path)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
-							// We can't add PDF as it is not generated yet.
-							$filepdf = '';
-						} else {
-							$filepdf = $pdf_path;
-							$filename_list[] = $filepdf;
-							$mimetype_list[] = mime_content_type($filepdf);
-							$mimefilename_list[] = $ref.".pdf";
+						if($signed){
+							$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output));
+							foreach($files as $f){
+								if (!dol_is_file($f)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+									// We can't add PDF as it is not generated yet.
+									$filepdf = '';
+								} else {
+									$filepdf = $f;
+									$filename_list[] = $filepdf;
+									$mimetype_list[] = mime_content_type($filepdf);
+									$mimefilename_list[] = $f;
+								}
+							}
+						}
+						else{
+							$pdf_path = $dir_output."/".$ref.".pdf";
+							if (!dol_is_file($pdf_path)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+								// We can't add PDF as it is not generated yet.
+								$filepdf = '';
+							} else {
+								$filepdf = $pdf_path;
+								$filename_list[] = $filepdf;
+								$mimetype_list[] = mime_content_type($filepdf);
+								$mimefilename_list[] = $ref.".pdf";
+							}
 						}
 
 						$labeltouse = !empty($labeltouse) ? $labeltouse : '';
@@ -825,6 +843,13 @@ class Notify
 						$object_type = 'propal';
 						$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
 						break;
+					case 'PROPAL_CLOSE_SIGNED_WEB':
+						$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
+						$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
+						$object_type = 'propal';
+						$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
+						$signed = true;
+						break;
 					case 'FICHINTER_ADD_CONTACT':
 						$link = '<a href="'.$urlwithroot.'/fichinter/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 						$dir_output = $conf->ficheinter->dir_output;
@@ -912,15 +937,31 @@ class Notify
 						break;
 				}
 				$ref = dol_sanitizeFileName($newref);
-				$pdf_path = $dir_output."/".$ref."/".$ref.".pdf";
-				if (!dol_is_file($pdf_path)) {
-					// We can't add PDF as it is not generated yet.
-					$filepdf = '';
-				} else {
-					$filepdf = $pdf_path;
-					$filename_list[] = $pdf_path;
-					$mimetype_list[] = mime_content_type($filepdf);
-					$mimefilename_list[] = $ref.".pdf";
+				if($signed){
+					$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output . "/" . $ref));
+					foreach($files as $f){
+						if (!dol_is_file($f)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+							// We can't add PDF as it is not generated yet.
+							$filepdf = '';
+						} else {
+							$filepdf = $f;
+							$filename_list[] = $filepdf;
+							$mimetype_list[] = mime_content_type($filepdf);
+							$mimefilename_list[] = $f;
+						}
+					}
+				}
+				else {
+					$pdf_path = $dir_output . "/" . $ref . "/" . $ref . ".pdf";
+					if (!dol_is_file($pdf_path)) {
+						// We can't add PDF as it is not generated yet.
+						$filepdf = '';
+					} else {
+						$filepdf = $pdf_path;
+						$filename_list[] = $pdf_path;
+						$mimetype_list[] = mime_content_type($filepdf);
+						$mimefilename_list[] = $ref . ".pdf";
+					}
 				}
 
 				$message = '';
