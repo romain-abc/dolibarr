@@ -220,7 +220,6 @@ $arrayfields = array(
 	'f.date_valid'=>array('label'=>"DateValidation", 'checked'=>0, 'position'=>22),
 	'f.date_lim_reglement'=>array('label'=>"DateDue", 'checked'=>1, 'position'=>25),
 	'f.date_closing'=>array('label'=>"DateClosing", 'checked'=>0, 'position'=>30),
-	'f.last_sent_email_date'=>array('label'=>"Envoyé par mail le", 'checked'=>0, 'position'=>35),
 	'p.ref'=>array('label'=>"ProjectRef", 'checked'=>1, 'enabled'=>(!isModEnabled('project') ? 0 : 1), 'position'=>40),
 	'p.title'=>array('label'=>"ProjectLabel", 'checked'=>0, 'enabled'=>(!isModEnabled('project') ? 0 : 1), 'position'=>41),
 	's.nom'=>array('label'=>"ThirdParty", 'checked'=>1, 'position'=>50),
@@ -1673,11 +1672,11 @@ if ($resql) {
 	if (!empty($arrayfields['f.date_lim_reglement']['checked'])) {
 		print_liste_field_titre($arrayfields['f.date_lim_reglement']['label'], $_SERVER['PHP_SELF'], "f.date_lim_reglement", '', $param, 'align="center"', $sortfield, $sortorder);
 	}
-	if (!empty($arrayfields['f.last_sent_email_date']['checked'])) {
-		print_liste_field_titre($arrayfields['f.last_sent_email_date']['label'], $_SERVER["PHP_SELF"], "f.last_sent_email_date", "", $param, 'align="center" class="nowrap"', $sortfield, $sortorder);
-	}
 	if (!empty($arrayfields['p.ref']['checked'])) {
 		print_liste_field_titre($arrayfields['p.ref']['label'], $_SERVER['PHP_SELF'], "p.ref", '', $param, '', $sortfield, $sortorder);
+	}
+	if (!empty($arrayfields['f.last_sent_email_date']['checked'])) {
+		print_liste_field_titre($arrayfields['f.last_sent_email_date']['label'], $_SERVER["PHP_SELF"], "f.last_sent_email_date", "", $param, 'align="center" class="nowrap"', $sortfield, $sortorder);
 	}
 	if (!empty($arrayfields['p.title']['checked'])) {
 		print_liste_field_titre($arrayfields['p.title']['label'], $_SERVER['PHP_SELF'], "p.title", '', $param, '', $sortfield, $sortorder);
@@ -1968,161 +1967,6 @@ if ($resql) {
 					print '});"';
 				}
 				print '>';
-
-			// No
-			if (!empty($conf->global->MAIN_VIEW_LINE_NUMBER_IN_LIST)) {
-				print '<td>'.(($offset * $limit) + $i).'</td>';
-			}
-
-			// Ref
-			if (!empty($arrayfields['f.ref']['checked'])) {
-				print '<td class="nowraponall">';
-
-				print '<table class="nobordernopadding"><tr class="nocellnopadd">';
-
-				print '<td class="nobordernopadding nowraponall">';
-				if ($contextpage == 'poslist') {
-					print dol_escape_htmltag($obj->ref);
-				} else {
-					print $facturestatic->getNomUrl(1, '', 200, 0, '', 0, 1);
-				}
-
-				$filename = dol_sanitizeFileName($obj->ref);
-				$filedir = $conf->facture->dir_output.'/'.dol_sanitizeFileName($obj->ref);
-				$urlsource = $_SERVER['PHP_SELF'].'?id='.$obj->id;
-				print $formfile->getDocumentsLink($facturestatic->element, $filename, $filedir);
-				print '</td>';
-				print '</tr>';
-				print '</table>';
-
-				print "</td>\n";
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Customer ref
-			if (!empty($arrayfields['f.ref_client']['checked'])) {
-				print '<td class="nowrap tdoverflowmax200">';
-				print dol_escape_htmltag($obj->ref_client);
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Type
-			if (!empty($arrayfields['f.type']['checked'])) {
-				print '<td class="nowraponall tdoverflowmax100" title="'.$facturestatic->getLibType().'">';
-				print $facturestatic->getLibType(2);
-				print "</td>";
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Date
-			if (!empty($arrayfields['f.datef']['checked'])) {
-				print '<td align="center" class="nowraponall">';
-				print dol_print_date($db->jdate($obj->datef), 'day');
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Date
-			if (!empty($arrayfields['f.date_valid']['checked'])) {
-				print '<td align="center" class="nowraponall">';
-				print dol_print_date($db->jdate($obj->date_valid), 'day');
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Date limit
-			if (!empty($arrayfields['f.date_lim_reglement']['checked'])) {
-				print '<td align="center" class="nowraponall">'.dol_print_date($datelimit, 'day');
-				if ($facturestatic->hasDelay()) {
-					print img_warning($langs->trans('Alert').' - '.$langs->trans('Late'));
-				}
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Last sent email date
-			if (!empty($arrayfields['f.last_sent_email_date']['checked'])) {
-				print '<td align="center" class="nowrap">';
-				$lastemail = $objecttmp->getLastSentEmail($obj->id);
-				if ($lastemail) {
-					if ($lastemail->datec) {
-						print dol_print_date($db->jdate($lastemail->datec), 'dayhour', 'tzuser');
-					}
-				}
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Project ref
-			if (!empty($arrayfields['p.ref']['checked'])) {
-				print '<td class="nocellnopadd nowraponall">';
-				if ($obj->project_id > 0) {
-					print $projectstatic->getNomUrl(1);
-				}
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Project title
-			if (!empty($arrayfields['p.title']['checked'])) {
-				print '<td class="nowraponall">';
-				if ($obj->project_id > 0) {
-					print dol_escape_htmltag($projectstatic->title);
-				}
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-
-			// Third party
-			if (!empty($arrayfields['s.nom']['checked'])) {
-				print '<td class="tdoverflowmax200">';
-				if ($contextpage == 'poslist') {
-					print dol_escape_htmltag($companystatic->name);
-				} else {
-					print $companystatic->getNomUrl(1, 'customer', 0, 0, -1, empty($arrayfields['s.name_alias']['checked']) ? 0 : 1);
-				}
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-			// Alias
-			if (!empty($arrayfields['s.name_alias']['checked'])) {
-				print '<td class="tdoverflowmax150" title="'.dol_escape_htmltag($companystatic->name_alias).'">';
-				print dol_escape_htmltag($companystatic->name_alias);
-				print '</td>';
-				if (!$i) {
-					$totalarray['nbfield']++;
-				}
-			}
-			// Parent company
-			if (!empty($arrayfields['s2.nom']['checked'])) {
-				print '<td class="tdoverflowmax200">';
-				if ($obj->fk_parent > 0) {
-					if (!isset($company_url_list[$obj->fk_parent])) {
-						$companyparent = new Societe($db);
-						$res = $companyparent->fetch($obj->fk_parent);
-						if ($res > 0) {
-							$company_url_list[$obj->fk_parent] = $companyparent->getNomUrl(1);
 
 				// Action column
 				if (!empty($conf->global->MAIN_CHECKBOX_LEFT_COLUMN)) {

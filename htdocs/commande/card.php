@@ -259,6 +259,7 @@ if (empty($reshook)) {
 		$datecommande = dol_mktime(12, 0, 0, GETPOST('remonth'), GETPOST('reday'), GETPOST('reyear'));
 		$date_delivery = dol_mktime(GETPOST('liv_hour', 'int'), GETPOST('liv_min', 'int'), 0, GETPOST('liv_month', 'int'), GETPOST('liv_day', 'int'), GETPOST('liv_year', 'int'));
 		$selectedLines = GETPOST('toselect', 'array');
+		$qtyLines = GETPOST('qty', 'array');
 
 		if ($datecommande == '') {
 			setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentities('Date')), null, 'errors');
@@ -388,7 +389,7 @@ if (empty($reshook)) {
 									$date_end = $lines[$i]->date_end;
 								}
 
-									// Reset fk_parent_line for no child products and special product
+								// Reset fk_parent_line for no child products and special product
 								if (($lines[$i]->product_type != 9 && empty($lines[$i]->fk_parent_line)) || $lines[$i]->product_type == 9) {
 									$fk_parent_line = 0;
 								}
@@ -407,7 +408,8 @@ if (empty($reshook)) {
 								$result = $object->addline(
 									$desc,
 									$lines[$i]->subprice,
-									$lines[$i]->qty,
+									$qtyLines[$i],
+									//$lines[$i]->qty,
 									$tva_tx,
 									$lines[$i]->localtax1_tx,
 									$lines[$i]->localtax2_tx,
@@ -1498,7 +1500,7 @@ if (empty($reshook)) {
 	if ($action == 'import_lines_from_object'
 		&& $usercancreate
 		&& $object->statut == Commande::STATUS_DRAFT
-	  ) {
+	) {
 		$fromElement = GETPOST('fromelement');
 		$fromElementid = GETPOST('fromelementid');
 		$importLines = GETPOST('line_checkbox');
@@ -1865,7 +1867,7 @@ if ($action == 'create' && $usercancreate) {
 	print '</tr>'."\n";
 
 	// Contact of order
-	if ($socid > 0) {
+	/*if ($socid > 0) {
 		// Contacts (ask contact only if thirdparty already defined).
 		print "<tr><td>".$langs->trans("DefaultContact").'</td><td>';
 		print img_picto('', 'contact', 'class="pictofixedwidth"');
@@ -1883,7 +1885,7 @@ if ($action == 'create' && $usercancreate) {
 		include DOL_DOCUMENT_ROOT.'/core/tpl/object_discounts.tpl.php';
 
 		print '</td></tr>';
-	}
+	}*/
 
 	// Date
 	print '<tr><td class="fieldrequired">'.$langs->trans('Date').'</td><td>';
@@ -1892,7 +1894,7 @@ if ($action == 'create' && $usercancreate) {
 	print '</td></tr>';
 
 	// Date delivery planned
-	print '<tr><td>'.$langs->trans("DateDeliveryPlanned").'</td>';
+	/*print '<tr><td>'.$langs->trans("DateDeliveryPlanned").'</td>';
 	print '<td colspan="3">';
 	$date_delivery = ($date_delivery ? $date_delivery : $object->delivery_date);
 	print img_picto('', 'action', 'class="pictofixedwidth"');
@@ -2018,7 +2020,7 @@ if ($action == 'create' && $usercancreate) {
 		print img_picto('', 'currency', 'class="pictofixedwidth"').$form->selectMultiCurrency((GETPOSTISSET('multicurrency_code')?GETPOST('multicurrency_code'):$currency_code), 'multicurrency_code', 0, '', false, 'maxwidth200 widthcentpercentminusx');
 		print '</td></tr>';
 	}
-
+*/
 	// Note public
 	print '<tr>';
 	print '<td class="tdtop">'.$langs->trans('NotePublic').'</td>';
@@ -2103,21 +2105,84 @@ if ($action == 'create' && $usercancreate) {
 
 	print dol_get_fiche_end();
 
-	print $form->buttonsSaveCancel("CreateDraft");
-
 	// Show origin lines
 	if (!empty($origin) && !empty($originid) && is_object($objectsrc)) {
+
+		/*$sqlquery = "SELECT rowid FROM ".MAIN_DB_PREFIX."llx_propaldet as pdt, ".MAIN_DB_PREFIX."c_type_contact as ctc";
+							$sqlcontact.= " WHERE rowid NOT IN(SELECT rowid FROM ".MAIN_DB_PREFIX."element_contact) AND ec.fk_c_type_contact = ctc.rowid AND ctc.element = '".$db->escape($originforcontact)."'";
+
+							$ressqlquery = $db->query($sqlquery);*/
+
+		$sqlquery = "SELECT rowid, fk_product, rang, qty, fk_propal FROM ".MAIN_DB_PREFIX."propaldet as pdt";
+		$sqlquery.= " WHERE fk_propal = '".$db->escape($objectsrc->id)."'";
+
+		$ressqlquery = $db->query($sqlquery);
+		$qty_propal = array();
+		$qty_commandes = array();
+		$refLines = array();
+		$selectedLines = array();
+		foreach($ressqlquery as $q){
+			$qty_propal[$q["rang"]] = $q["qty"];
+			$sqlquery2 = "SELECT DISTINCT(cdt.rowid), cdt.fk_product, cdt.rang, cdt.qty FROM ".MAIN_DB_PREFIX."commandedet as cdt INNER JOIN ".MAIN_DB_PREFIX."commande as c";
+			$sqlquery2.= " WHERE cdt.rang = ".$db->escape($q['rang'])." AND cdt.fk_commande IN(SELECT ee.fk_target FROM ".MAIN_DB_PREFIX."element_element as ee WHERE ee.sourcetype='propal' AND ee.targettype='commande' AND ee.fk_source=".$db->escape($objectsrc->id).")";
+
+			//$sqlquerybis = "SELECT ee.fk_target FROM ".MAIN_DB_PREFIX."element_element as ee WHERE ee.sourcetype='propal' AND ee.targettype='commande' AND ee.fk_source=".$db->escape($objectsrc->id);
+
+			$res = $db->query($sqlquery2);
+			//$resbis = $db->query($sqlquerybis);
+			/*var_dump($res);
+			echo "<br /><br />";*/
+			if($res){
+				foreach($res as $r){
+					/*var_dump($r);
+					echo "<br /><br />";*/
+					if($qty_commandes[$r["rang"]]){
+						$qty_commandes[$r["rang"]] = $qty_commandes[$r["rang"]] + $r["qty"];
+					}
+					else{
+						$qty_commandes[$r["rang"]] = $r["qty"];
+					}
+				}
+			}
+			else{
+				$refLines[$q["rowid"]] = $q["qty"];
+				$selectedLines[] = $q["rowid"];
+			}
+		}
+		//var_dump($qty_commandes);
+		foreach($qty_propal as $rang => $qtyp){
+			if($qtyp!=$qty_commandes[$rang]){
+				$sqlquery3 = "SELECT rowid FROM ".MAIN_DB_PREFIX."propaldet as pdt";
+				$sqlquery3.= " WHERE rang='".$rang."' AND fk_propal = '".$db->escape($objectsrc->id)."'";
+
+				$ressqlquery3 = $db->query($sqlquery3);
+				if($ressqlquery3){
+					foreach($ressqlquery3 as $sql3){
+						$refLines[$sql3["rowid"]] = $qtyp - $qty_commandes[$rang];
+						$selectedLines[] = $sql3["rowid"];
+					}
+				}
+			}
+		}
+		if(!$refLines && !$selectedLines){
+			$completed = true;
+		}
+		//var_dump($refLines);
+		//$selectedLines = $refLines;
+
 		$title = $langs->trans('ProductsAndServices');
 		print load_fiche_titre($title);
 
 		print '<div class="div-table-responsive-no-min">';
 		print '<table class="noborder centpercent">';
 
-		$objectsrc->printOriginLinesList('', $selectedLines);
+		$objectsrc->printOriginLinesListLivraison('', $selectedLines, $refLines, $completed);
 
 		print '</table>';
 		print '</div>';
 	}
+
+	print $form->buttonsSaveCancel("CreateDraft");
 
 	print '</form>';
 } else {

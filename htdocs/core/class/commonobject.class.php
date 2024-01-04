@@ -4043,7 +4043,7 @@ abstract class CommonObject
 						$classpath = 'adherents/class';
 						$module = 'adherent';
 					} elseif ($objecttype == 'contact') {
-						 $module = 'societe';
+						$module = 'societe';
 					}
 					// Set classfile
 					$classfile = strtolower($subelement);
@@ -5148,6 +5148,57 @@ abstract class CommonObject
 	}
 
 	/**
+	 * 	Return HTML table table of source object lines
+	 *  TODO Move this and previous function into output html class file (htmlline.class.php).
+	 *  If lines are into a template, title must also be into a template
+	 *  But for the moment we don't know if it's possible, so we keep the method available on overloaded objects.
+	 *
+	 *	@param	string		$restrictlist		''=All lines, 'services'=Restrict to services only
+	 *  @param  array       $selectedLines      Array of lines id for selected lines
+	 *  @param  array       $refLines      Array of lines and qty for selected lines
+	 *  @return	void
+	 */
+	public function printOriginLinesListLivraison($restrictlist = '', $selectedLines = array(), $refLines = array(), $completed = false)
+	{
+		global $langs, $hookmanager, $conf, $form, $action;
+
+		print '<tr class="liste_titre">';
+		print '<td class="linecolref">'.$langs->trans('Ref').'</td>';
+		print '<td class="linecoldescription">'.$langs->trans('Description').'</td>';
+		print '<td class="linecolvat right">'.$langs->trans('VATRate').'</td>';
+		print '<td class="linecoluht right">'.$langs->trans('PriceUHT').'</td>';
+		if (isModEnabled("multicurrency")) {
+			print '<td class="linecoluht_currency right">'.$langs->trans('PriceUHTCurrency').'</td>';
+		}
+		print '<td class="linecolqty right">'.$langs->trans('QtyAlreadyShipped').'</td>';
+		print '<td class="linecolqty right">'.$langs->trans('QtyToShip').'</td>';
+		if (getDolGlobalInt('PRODUCT_USE_UNITS')) {
+			print '<td class="linecoluseunit left">'.$langs->trans('Unit').'</td>';
+		}
+		print '<td class="linecoldiscount right">'.$langs->trans('ReductionShort').'</td>';
+		print '<td class="center">'.$form->showCheckAddButtons('checkforselect', 1).'</td>';
+		print '</tr>';
+		$i = 0;
+
+		if (!empty($this->lines)) {
+			foreach ($this->lines as $line) {
+				$reshook = 0;
+				//if (is_object($hookmanager) && (($line->product_type == 9 && !empty($line->special_code)) || !empty($line->fk_parent_line))) {
+				if (is_object($hookmanager)) {   // Old code is commented on preceding line.
+					$parameters = array('line'=>$line, 'i'=>$i, 'restrictlist'=>$restrictlist, 'selectedLines'=> $selectedLines);
+					if (!empty($line->fk_parent_line)) { $parameters['fk_parent_line'] = $line->fk_parent_line; }
+					$reshook = $hookmanager->executeHooks('printOriginObjectLine', $parameters, $this, $action); // Note that $action and $object may have been modified by some hooks
+				}
+				if (empty($reshook)) {
+					$this->printOriginLineLivraison($line, '', $restrictlist, '/core/tpl', $selectedLines, $refLines, $completed);
+				}
+
+				$i++;
+			}
+		}
+	}
+
+	/**
 	 * 	Return HTML with a line of table array of source object lines
 	 *  TODO Move this and previous function into output html class file (htmlline.class.php).
 	 *  If lines are into a template, title must also be into a template
@@ -5277,6 +5328,159 @@ abstract class CommonObject
 				$tpl = dol_buildpath($reldir.'/originproductline.tpl.php');
 			} else {
 				$tpl = DOL_DOCUMENT_ROOT.$reldir.'/originproductline.tpl.php';
+			}
+
+			if (empty($conf->file->strict_mode)) {
+				$res = @include $tpl;
+			} else {
+				$res = include $tpl; // for debug
+			}
+			if ($res) {
+				break;
+			}
+		}
+	}
+
+	/**
+	 * 	Return HTML with a line of table array of source object lines
+	 *  TODO Move this and previous function into output html class file (htmlline.class.php).
+	 *  If lines are into a template, title must also be into a template
+	 *  But for the moment we don't know if it's possible as we keep a method available on overloaded objects.
+	 *
+	 * 	@param	CommonObjectLine	$line				Line
+	 * 	@param	string				$var				Var
+	 *	@param	string				$restrictlist		''=All lines, 'services'=Restrict to services only (strike line if not)
+	 *  @param	string				$defaulttpldir		Directory where to find the template
+	 *  @param  array       		$selectedLines      Array of lines id for selected lines
+	 *  @param  array       		$refLines      Array of lines id for selected lines
+	 * 	@return	void
+	 */
+	public function printOriginLineLivraison($line, $var, $restrictlist = '', $defaulttpldir = '/core/tpl', $selectedLines = array(), $refLines = array(), $completed = false)
+	{
+		global $langs, $conf;
+
+		if (!empty($line->date_start)) {
+			$date_start = $line->date_start;
+		} else {
+			$date_start = $line->date_debut_prevue;
+			if ($line->date_debut_reel) {
+				$date_start = $line->date_debut_reel;
+			}
+		}
+		if (!empty($line->date_end)) {
+			$date_end = $line->date_end;
+		} else {
+			$date_end = $line->date_fin_prevue;
+			if ($line->date_fin_reel) {
+				$date_end = $line->date_fin_reel;
+			}
+		}
+
+		$this->tpl['id'] = $line->id;
+
+		$this->tpl['label'] = '';
+		if (!empty($line->fk_parent_line)) {
+			$this->tpl['label'] .= img_picto('', 'rightarrow');
+		}
+
+		if (($line->info_bits & 2) == 2) {  // TODO Not sure this is used for source object
+			$discount = new DiscountAbsolute($this->db);
+			$discount->fk_soc = $this->socid;
+			$this->tpl['label'] .= $discount->getNomUrl(0, 'discount');
+		} elseif (!empty($line->fk_product)) {
+			$productstatic = new Product($this->db);
+			$productstatic->id = $line->fk_product;
+			$productstatic->ref = $line->ref;
+			$productstatic->type = $line->fk_product_type;
+			if (empty($productstatic->ref)) {
+				$line->fetch_product();
+				$productstatic = $line->product;
+			}
+
+			$this->tpl['label'] .= $productstatic->getNomUrl(1);
+			$this->tpl['label'] .= ' - '.(!empty($line->label) ? $line->label : $line->product_label);
+			// Dates
+			if ($line->product_type == 1 && ($date_start || $date_end)) {
+				$this->tpl['label'] .= get_date_range($date_start, $date_end);
+			}
+		} else {
+			$this->tpl['label'] .= ($line->product_type == -1 ? '&nbsp;' : ($line->product_type == 1 ? img_object($langs->trans(''), 'service') : img_object($langs->trans(''), 'product')));
+			if (!empty($line->desc)) {
+				$this->tpl['label'] .= $line->desc;
+			} else {
+				$this->tpl['label'] .= ($line->label ? '&nbsp;'.$line->label : '');
+			}
+
+			// Dates
+			if ($line->product_type == 1 && ($date_start || $date_end)) {
+				$this->tpl['label'] .= get_date_range($date_start, $date_end);
+			}
+		}
+
+		if (!empty($line->desc)) {
+			if ($line->desc == '(CREDIT_NOTE)') {  // TODO Not sure this is used for source object
+				$discount = new DiscountAbsolute($this->db);
+				$discount->fetch($line->fk_remise_except);
+				$this->tpl['description'] = $langs->transnoentities("DiscountFromCreditNote", $discount->getNomUrl(0));
+			} elseif ($line->desc == '(DEPOSIT)') {  // TODO Not sure this is used for source object
+				$discount = new DiscountAbsolute($this->db);
+				$discount->fetch($line->fk_remise_except);
+				$this->tpl['description'] = $langs->transnoentities("DiscountFromDeposit", $discount->getNomUrl(0));
+			} elseif ($line->desc == '(EXCESS RECEIVED)') {
+				$discount = new DiscountAbsolute($this->db);
+				$discount->fetch($line->fk_remise_except);
+				$this->tpl['description'] = $langs->transnoentities("DiscountFromExcessReceived", $discount->getNomUrl(0));
+			} elseif ($line->desc == '(EXCESS PAID)') {
+				$discount = new DiscountAbsolute($this->db);
+				$discount->fetch($line->fk_remise_except);
+				$this->tpl['description'] = $langs->transnoentities("DiscountFromExcessPaid", $discount->getNomUrl(0));
+			} else {
+				$this->tpl['description'] = dol_trunc($line->desc, 60);
+			}
+		} else {
+			$this->tpl['description'] = '&nbsp;';
+		}
+
+		// VAT Rate
+		$this->tpl['vat_rate'] = vatrate($line->tva_tx, true);
+		$this->tpl['vat_rate'] .= (($line->info_bits & 1) == 1) ? '*' : '';
+		if (!empty($line->vat_src_code) && !preg_match('/\(/', $this->tpl['vat_rate'])) {
+			$this->tpl['vat_rate'] .= ' ('.$line->vat_src_code.')';
+		}
+
+		$this->tpl['price'] = price($line->subprice);
+		$this->tpl['multicurrency_price'] = price($line->multicurrency_subprice);
+		if($refLines[$line->id]){
+			$this->tpl['qty_already_shipped'] = $line->qty-$refLines[$line->id];
+		}
+		else{
+			$this->tpl['qty_already_shipped'] = $line->qty;
+		}
+		if($refLines[$line->id]){
+			$this->tpl['qty'] = (($line->info_bits & 2) != 2) ? $refLines[$line->id] : '&nbsp;';
+		}
+		else{
+			$this->tpl['qty'] = (($line->info_bits & 2) != 2) ? 0 : '&nbsp;';
+		}
+		if (getDolGlobalInt('PRODUCT_USE_UNITS')) {
+			$this->tpl['unit'] = $langs->transnoentities($line->getLabelOfUnit('long'));
+		}
+		$this->tpl['remise_percent'] = (($line->info_bits & 2) != 2) ? vatrate($line->remise_percent, true) : '&nbsp;';
+
+		// Is the line strike or not
+		$this->tpl['strike'] = 0;
+		if ($restrictlist == 'services' && $line->product_type != Product::TYPE_SERVICE) {
+			$this->tpl['strike'] = 1;
+		}
+
+		// Output template part (modules that overwrite templates must declare this into descriptor)
+		// Use global variables + $dateSelector + $seller and $buyer
+		$dirtpls = array_merge($conf->modules_parts['tpl'], array($defaulttpldir));
+		foreach ($dirtpls as $module => $reldir) {
+			if (!empty($module)) {
+				$tpl = dol_buildpath($reldir.'/originproductlinelivraison.tpl.php');
+			} else {
+				$tpl = DOL_DOCUMENT_ROOT.$reldir.'/originproductlinelivraison.tpl.php';
 			}
 
 			if (empty($conf->file->strict_mode)) {
@@ -6510,12 +6714,12 @@ abstract class CommonObject
 							$new_array_languages[$key] = $value;
 						}
 						break;
-						/*case 'select':	// Not required, we chosed value='0' for undefined values
-						 if ($value=='-1')
-						 {
-						 $this->array_options[$key] = null;
-						 }
-						 break;*/
+					/*case 'select':	// Not required, we chosed value='0' for undefined values
+					 if ($value=='-1')
+					 {
+					 $this->array_options[$key] = null;
+					 }
+					 break;*/
 				}
 			}
 
@@ -8615,7 +8819,7 @@ abstract class CommonObject
 		$buyPrice = 0;
 
 		if (($unitPrice > 0) && (isset($conf->global->ForceBuyingPriceIfNull) && $conf->global->ForceBuyingPriceIfNull > 0)) {
-			 // When ForceBuyingPriceIfNull is set
+			// When ForceBuyingPriceIfNull is set
 			$buyPrice = $unitPrice * (1 - $discountPercent / 100);
 		} else {
 			// Get cost price for margin calculation
