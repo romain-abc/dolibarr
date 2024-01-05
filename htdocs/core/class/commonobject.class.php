@@ -4873,6 +4873,49 @@ abstract class CommonObject
 		}
 	}
 
+	/**
+	 *	Show add free and predefined products/services form
+	 *
+	 *  @param	int		        $dateSelector       1=Show also date range input fields
+	 *  @param	Societe			$seller				Object thirdparty who sell
+	 *  @param	Societe			$buyer				Object thirdparty who buy
+	 *  @param	string			$defaulttpldir		Directory where to find the template
+	 *	@return	void
+	 */
+	public function formAddObjectLinePropal($dateSelector, $seller, $buyer, $defaulttpldir = '/core/tpl')
+	{
+		global $conf, $user, $langs, $object, $hookmanager, $extrafields;
+		global $form;
+
+		// Line extrafield
+		if (!is_object($extrafields)) {
+			require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
+			$extrafields = new ExtraFields($this->db);
+		}
+		$extrafields->fetch_name_optionals_label($this->table_element_line);
+
+		// Output template part (modules that overwrite templates must declare this into descriptor)
+		// Use global variables + $dateSelector + $seller and $buyer
+		// Note: This is deprecated. If you need to overwrite the tpl file, use instead the hook 'formAddObjectLine'.
+		$dirtpls = array_merge($conf->modules_parts['tpl'], array($defaulttpldir));
+		foreach ($dirtpls as $module => $reldir) {
+			if (!empty($module)) {
+				$tpl = dol_buildpath($reldir.'/objectline_create_propal.tpl.php');
+			} else {
+				$tpl = DOL_DOCUMENT_ROOT.$reldir.'/objectline_create_propal.tpl.php';
+			}
+
+			if (empty($conf->file->strict_mode)) {
+				$res = @include $tpl;
+			} else {
+				$res = include $tpl; // for debug
+			}
+			if ($res) {
+				break;
+			}
+		}
+	}
+
 
 
 	/* This is to show array of line of details */
