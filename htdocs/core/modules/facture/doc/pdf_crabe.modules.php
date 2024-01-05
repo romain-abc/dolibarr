@@ -44,9 +44,9 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/pdf.lib.php';
  */
 class pdf_crabe extends ModelePDFFactures
 {
-	 /**
-	  * @var DoliDb Database handler
-	  */
+	/**
+	 * @var DoliDb Database handler
+	 */
 	public $db;
 
 	/**
@@ -781,7 +781,7 @@ class pdf_crabe extends ModelePDFFactures
 
 					// Retrieve type from database for backward compatibility with old records
 					if ((!isset($localtax1_type) || $localtax1_type == '' || !isset($localtax2_type) || $localtax2_type == '') // if tax type not defined
-					&& (!empty($localtax1_rate) || !empty($localtax2_rate))) { // and there is local tax
+						&& (!empty($localtax1_rate) || !empty($localtax2_rate))) { // and there is local tax
 						$localtaxtmp_array = getLocalTaxesFromRate($vatrate, 0, $object->thirdparty, $mysoc);
 						$localtax1_type = isset($localtaxtmp_array[0]) ? $localtaxtmp_array[0] : '';
 						$localtax2_type = isset($localtaxtmp_array[2]) ? $localtaxtmp_array[2] : '';
@@ -820,6 +820,37 @@ class pdf_crabe extends ModelePDFFactures
 
 					if ($posYAfterImage > $posYAfterDescription) {
 						$nexY = $posYAfterImage;
+					}
+
+					if (!empty($object->lines[$i]->array_options)) {
+						foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
+							if($extrafieldColKey=="options_ecopart"){
+								if($extrafieldValue){
+									$price_exp = explode(" ", $extrafieldValue);
+									$price = $price_exp[0];
+									$price = number_format($price, 2);
+									$pdf->SetFont('', 'italic', $default_font_size - 3);
+									$pdf->writeHTMLCell($this->posxtva - $curX, 3, $curX, $nexY+2, "Éco-participation", 0, 1, false, true, 'J', true);
+									//$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
+									//VAT
+									$pdf->SetXY($this->posxtva - 5, $nexY+2);
+									$pdf->MultiCell($this->posxup - $this->posxtva + 4, 3, $vat_rate, 0, 'R');
+									$extrafieldValue = $this->getExtrafieldContent($object->lines[$i], $extrafieldColKey, $outputlangs);
+									//Price Unit
+									$pdf->SetXY($this->posxup, $nexY+2);
+									$pdf->MultiCell($this->posxqty - $this->posxup - 0.8, 3, $price, 0, 'R', 0);
+									//Quantity
+									$pdf->SetXY($this->posxqty, $nexY+2);
+									$pdf->MultiCell($this->posxunit - $this->posxqty - 0.8, 4, $qty, 0, 'R'); // Enough for 6 chars
+									//TOTAL HT
+									$pdf->SetXY($this->postotalht, $nexY+2);
+									$pdf->MultiCell($this->page_largeur - $this->marge_droite - $this->postotalht, 3, number_format($qty*$price, 2), 0, 'R', 0);
+									//$this->printStdColumnContent($pdf, $nexY, $extrafieldColKey, $extrafieldValue);
+									$nexY = max($pdf->GetY(), $nexY);
+									$pdf->SetFont('', '', $default_font_size);
+								}
+							}
+						}
 					}
 
 					// Add line
@@ -1209,8 +1240,8 @@ class pdf_crabe extends ModelePDFFactures
 		if ($object->type != 2) {
 			// Check a payment mode is defined
 			if (empty($object->mode_reglement_code)
-			&& !getDolGlobalInt('FACTURE_CHQ_NUMBER')
-			&& !getDolGlobalInt('FACTURE_RIB_NUMBER')) {
+				&& !getDolGlobalInt('FACTURE_CHQ_NUMBER')
+				&& !getDolGlobalInt('FACTURE_RIB_NUMBER')) {
 				$this->error = $outputlangs->transnoentities("ErrorNoPaiementModeConfigured");
 			} elseif (($object->mode_reglement_code == 'CHQ' && !getDolGlobalInt('FACTURE_CHQ_NUMBER') && empty($object->fk_account) && empty($object->fk_bank))
 				|| ($object->mode_reglement_code == 'VIR' && !getDolGlobalInt('FACTURE_RIB_NUMBER') && empty($object->fk_account) && empty($object->fk_bank))) {
@@ -1229,8 +1260,8 @@ class pdf_crabe extends ModelePDFFactures
 
 			// Show payment mode
 			if (!empty($object->mode_reglement_code)
-			&& $object->mode_reglement_code != 'CHQ'
-			&& $object->mode_reglement_code != 'VIR') {
+				&& $object->mode_reglement_code != 'CHQ'
+				&& $object->mode_reglement_code != 'VIR') {
 				$pdf->SetFont('', 'B', $default_font_size - 2);
 				$pdf->SetXY($this->marge_gauche, $posy);
 				$titre = $outputlangs->transnoentities("PaymentMode").':';

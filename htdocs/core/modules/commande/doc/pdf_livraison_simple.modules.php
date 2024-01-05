@@ -604,6 +604,26 @@ class pdf_livraison_simple extends ModelePDFCommandes
 						}
 						$this->tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate'=>$vatrate, 'vatcode'=>$vatcode, 'amount'=> $this->tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $tvaligne);
 
+						/*if (!empty($object->lines[$i]->array_options)) {
+							foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
+								if($extrafieldColKey=="options_ecopart"){
+									if($extrafieldValue){
+										$price_exp = explode(" ", $extrafieldValue);
+										$price = $price_exp[0];
+										$price = number_format($price, 2);
+										$pdf->SetFont('', 'italic', $default_font_size - 3);
+										$pdf->writeHTMLCell($this->posxtva - $curX, 3, $curX, $nexY+2, "Éco-participation", 0, 1, false, true, 'J', true);
+										//$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
+										//Quantity
+										$pdf->SetXY($this->posxqty, $nexY+2);
+										$pdf->MultiCell($this->posxunit - $this->posxqty - 0.8, 4, $qty, 0, 'R'); // Enough for 6 chars
+																				$nexY = max($pdf->GetY(), $nexY);
+										$pdf->SetFont('', '', $default_font_size);
+									}
+								}
+							}
+						}*/
+
 						// Add line
 						if (!empty($conf->global->MAIN_PDF_DASH_BETWEEN_LINES) && $i < ($nblines - 1)) {
 							$pdf->setPage($pageposafter);

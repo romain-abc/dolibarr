@@ -3623,6 +3623,14 @@ abstract class CommonObject
 			$i = 0;
 			while ($i < $num) {
 				$obj = $this->db->fetch_object($resql);
+				if($this->element == 'propal'){
+					$originLine = new PropaleLigne($this->db);
+				} elseif ($this->element == 'commande' || $this->element == 'order') {
+					$originLine = new OrderLine($this->db);
+				} elseif ($this->element == 'facture' || $this->element == 'invoice') {
+					$originLine = new FactureLigne($this->db);
+				}
+				$originLine->fetch($obj->rowid);
 
 				// Note: There is no check on detail line and no check on total, if $forcedroundingmode = 'none'
 				$parameters = array('fk_element' => $obj->rowid);
@@ -3661,8 +3669,15 @@ abstract class CommonObject
 						$obj->total_ttc = $tmpcal[2];
 					}
 				}
+				$originLine->fetch_optionals();
 
-				$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
+				if($originLine->array_options['options_ecopart']){
+					$this->total_ht        += $obj->total_ht+($originLine->array_options['options_ecopart']*$obj->qty); // The field visible at end of line detail
+				}
+				else{
+					$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
+				}
+				//$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
 				$this->total_tva       += $obj->total_tva;
 				$this->total_localtax1 += $obj->total_localtax1;
 				$this->total_localtax2 += $obj->total_localtax2;

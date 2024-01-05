@@ -701,8 +701,8 @@ abstract class CommonDocGenerator
 
 		// Units
 		if (getDolGlobalInt('PRODUCT_USE_UNITS')) {
-			  $resarray['line_unit'] = $outputlangs->trans($line->getLabelOfUnit('long'));
-			  $resarray['line_unit_short'] = $outputlangs->trans($line->getLabelOfUnit('short'));
+			$resarray['line_unit'] = $outputlangs->trans($line->getLabelOfUnit('long'));
+			$resarray['line_unit_short'] = $outputlangs->trans($line->getLabelOfUnit('short'));
 		}
 
 		// Retrieve extrafields
@@ -1309,6 +1309,47 @@ abstract class CommonDocGenerator
 		$extrafieldDesc = $this->getExtrafieldsInHtml($object->lines[$i], $outputlangs, $params);
 		if (!empty($extrafieldDesc)) {
 			$this->printStdColumnContent($pdf, $posYAfterDescription, $colKey, $extrafieldDesc);
+		}
+	}
+
+
+	/**
+	 *  print description column content
+	 *
+	 *  @param	TCPDF		$pdf    		pdf object
+	 *  @param	float		$curY    		curent Y position
+	 *  @param	string		$colKey    		the column key
+	 *  @param  object      $object 		CommonObject
+	 *  @param  int         $i  			the $object->lines array key
+	 *  @param  Translate 	$outputlangs    Output language
+	 *  @param  int 		$hideref 		hide ref
+	 *  @param  int 		$hidedesc 		hide desc
+	 *  @param  int 		$issupplierline if object need supplier product
+	 *  @return void
+	 */
+	public function printColEcopartContent($pdf, &$curY, $colKey, $object, $i, $outputlangs, $hideref = 0, $hidedesc = 0, $issupplierline = 0)
+	{
+		// load desc col params
+		$colDef = $this->cols[$colKey];
+		// save curent cell padding
+		$curentCellPaddinds = $pdf->getCellPaddings();
+		// set cell padding with column content definition
+		$pdf->setCellPaddings($colDef['content']['padding'][3], $colDef['content']['padding'][0], $colDef['content']['padding'][1], $colDef['content']['padding'][2]);
+
+		//$posYAfterDescription = $pdf->GetY() - $colDef['content']['padding'][0];
+		$posYAfterDescription = $pdf->GetY() + $colDef['content']['padding'][0];
+
+		// restore cell padding
+		$pdf->setCellPaddings($curentCellPaddinds['L'], $curentCellPaddinds['T'], $curentCellPaddinds['R'], $curentCellPaddinds['B']);
+
+		if (!empty($object->lines[$i]->array_options)) {
+			foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
+				if($extrafieldColKey=="options_ecopart"){
+					if($extrafieldValue){
+						$this->printStdColumnContent($pdf, $curY, $colKey, "Éco-participation");
+					}
+				}
+			}
 		}
 	}
 

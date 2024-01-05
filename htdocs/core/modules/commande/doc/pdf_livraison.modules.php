@@ -600,6 +600,37 @@ class pdf_livraison extends ModelePDFCommandes
 						}
 						$this->tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate'=>$vatrate, 'vatcode'=>$vatcode, 'amount'=> $this->tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $tvaligne);
 
+						if (!empty($object->lines[$i]->array_options)) {
+							foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
+								if($extrafieldColKey=="options_ecopart"){
+									if($extrafieldValue){
+										$price_exp = explode(" ", $extrafieldValue);
+										$price = $price_exp[0];
+										$price = number_format($price, 2);
+										$pdf->SetFont('', 'italic', $default_font_size - 3);
+										$pdf->writeHTMLCell($this->posxtva - $curX, 3, $curX, $nexY+2, "Éco-participation", 0, 1, false, true, 'J', true);
+										//$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
+										//VAT
+										$pdf->SetXY($this->posxtva - 5, $nexY+2);
+										$pdf->MultiCell($this->posxup - $this->posxtva + 4, 3, $vat_rate, 0, 'R');
+										$extrafieldValue = $this->getExtrafieldContent($object->lines[$i], $extrafieldColKey, $outputlangs);
+										//Price Unit
+										$pdf->SetXY($this->posxup, $nexY+2);
+										$pdf->MultiCell($this->posxqty - $this->posxup - 0.8, 3, $price, 0, 'R', 0);
+										//Quantity
+										$pdf->SetXY($this->posxqty, $nexY+2);
+										$pdf->MultiCell($this->posxunit - $this->posxqty - 0.8, 4, $qty, 0, 'R'); // Enough for 6 chars
+										//TOTAL HT
+										$pdf->SetXY($this->postotalht, $nexY+2);
+										$pdf->MultiCell($this->page_largeur - $this->marge_droite - $this->postotalht, 3, number_format($qty*$price, 2), 0, 'R', 0);
+										//$this->printStdColumnContent($pdf, $nexY, $extrafieldColKey, $extrafieldValue);
+										$nexY = max($pdf->GetY(), $nexY);
+										$pdf->SetFont('', '', $default_font_size);
+									}
+								}
+							}
+						}
+
 						// Add line
 						if (!empty($conf->global->MAIN_PDF_DASH_BETWEEN_LINES) && $i < ($nblines - 1)) {
 							$pdf->setPage($pageposafter);

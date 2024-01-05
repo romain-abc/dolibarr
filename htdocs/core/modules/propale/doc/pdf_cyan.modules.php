@@ -194,7 +194,7 @@ class pdf_cyan extends ModelePDFPropales
 	 */
 	public function write_file($object, $outputlangs, $srctemplatepath = '', $hidedetails = 0, $hidedesc = 0, $hideref = 0)
 	{
-	  // phpcs:enable
+		// phpcs:enable
 		global $user, $langs, $conf, $mysoc, $db, $hookmanager, $nblines;
 
 		dol_syslog("write_file outputlangs->defaultlang=".(is_object($outputlangs) ? $outputlangs->defaultlang : 'null'));
@@ -787,7 +787,7 @@ class pdf_cyan extends ModelePDFPropales
 
 					// Retrieve type from database for backward compatibility with old records
 					if ((!isset($localtax1_type) || $localtax1_type == '' || !isset($localtax2_type) || $localtax2_type == '') // if tax type not defined
-					&& (!empty($localtax1_rate) || !empty($localtax2_rate))) { // and there is local tax
+						&& (!empty($localtax1_rate) || !empty($localtax2_rate))) { // and there is local tax
 						$localtaxtmp_array = getLocalTaxesFromRate($vatrate, 0, $object->thirdparty, $mysoc);
 						$localtax1_type = isset($localtaxtmp_array[0]) ? $localtaxtmp_array[0] : '';
 						$localtax2_type = isset($localtaxtmp_array[2]) ? $localtaxtmp_array[2] : '';
@@ -826,6 +826,28 @@ class pdf_cyan extends ModelePDFPropales
 
 					if ($posYAfterImage > $posYAfterDescription) {
 						$nexY = max($nexY, $posYAfterImage);
+					}
+
+					if (!empty($object->lines[$i]->array_options)) {
+						foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
+							if($extrafieldColKey=="options_ecopart"){
+								if($extrafieldValue){
+									$price_exp = explode(" ", $extrafieldValue);
+									$price = $price_exp[0];
+									$price = number_format($price, 2);
+									$pdf->SetFont('', 'italic', $default_font_size - 3);
+									$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
+									$this->printStdColumnContent($pdf, $nexY, 'vat', $vat_rate);
+									$extrafieldValue = $this->getExtrafieldContent($object->lines[$i], $extrafieldColKey, $outputlangs);
+									$this->printStdColumnContent($pdf, $nexY, 'subprice', $price);
+									$this->printStdColumnContent($pdf, $nexY, 'qty', $qty);
+									$this->printStdColumnContent($pdf, $nexY, 'totalexcltax', number_format($qty*$price, 2));
+									//$this->printStdColumnContent($pdf, $nexY, $extrafieldColKey, $extrafieldValue);
+									$nexY = max($pdf->GetY(), $nexY);
+									$pdf->SetFont('', '', $default_font_size);
+								}
+							}
+						}
 					}
 
 					// Add line
@@ -1131,8 +1153,8 @@ class pdf_cyan extends ModelePDFPropales
 		if (empty($conf->global->PROPOSAL_PDF_HIDE_PAYMENTMODE)) {
 			// Show payment mode
 			if ($object->mode_reglement_code
-			&& $object->mode_reglement_code != 'CHQ'
-			&& $object->mode_reglement_code != 'VIR') {
+				&& $object->mode_reglement_code != 'CHQ'
+				&& $object->mode_reglement_code != 'VIR') {
 				$pdf->SetFont('', 'B', $default_font_size - $diffsizetitle);
 				$pdf->SetXY($this->marge_gauche, $posy);
 				$titre = $outputlangs->transnoentities("PaymentMode").':';
