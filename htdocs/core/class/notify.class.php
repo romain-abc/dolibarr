@@ -541,7 +541,7 @@ class Notify
 								$soc->fetch($object->socid);
 								if($soc){
 									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
-									$mesg = "La proposition commerciale ".$link." de ".$soc->name. "a été clôturée signée.";
+									$mesg = "La proposition commerciale ".$link." de ".$soc->name. " a été clôturée signée.";
 								}
 								else{
 									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
@@ -857,7 +857,7 @@ class Notify
 						$soc->fetch($object->socid);
 						if($soc){
 							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
-							$mesg = "La proposition commerciale ".$link." de ".$soc->name. "a été clôturée signée.";
+							$mesg = "La proposition commerciale ".$link." de ".$soc->name. " a été clôturée signée.";
 						}
 						else{
 							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
