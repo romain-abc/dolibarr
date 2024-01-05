@@ -524,16 +524,6 @@ class Notify
 								$object_type = 'propal';
 								$labeltouse = $conf->global->PROPAL_CLOSE_REFUSED_TEMPLATE;
 								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedRefused", $link);
-								if (!empty($object->context['closedfromonlinesignature'])) {
-									$mesg .= ' - From online page';
-								}
-								break;
-							case 'PROPAL_CLOSE_REFUSED':
-								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
-								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
-								$object_type = 'propal';
-								$labeltouse = $conf->global->PROPAL_CLOSE_REFUSED_TEMPLATE;
-								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedRefused", $link);
 								break;
 							case 'PROPAL_CLOSE_REFUSED_WEB':
 								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
@@ -546,7 +536,17 @@ class Notify
 								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 								$object_type = 'propal';
-								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
+								//$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
+								$soc = new Societe($this->db);
+								$soc->fetch($object->socid);
+								if($soc){
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+									$mesg = "La proposition commerciale ".$link." de ".$soc->name. "a été clôturée signée.";
+								}
+								else{
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+								}
 								/*if (!empty($object->context['closedfromonlinesignature'])) {
 									$mesg .= ' - From online page';
 								}*/
@@ -556,7 +556,18 @@ class Notify
 								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 								$object_type = 'propal';
 								$labeltouse = $conf->global->PROPAL_CLOSE_SIGNED_TEMPLATE;
-								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
+								$soc = new Societe($this->db);
+								$soc->fetch($object->socid);
+								if($soc){
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée par ".$soc->name;
+									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail par ".$soc->name.".";
+								}
+								else{
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée en ligne";
+									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+								}
+								//$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
+
 								$signed = true;
 								break;
 							case 'FICHINTER_ADD_CONTACT':
@@ -636,7 +647,7 @@ class Notify
 								$dir_output = $conf->$object_type->multidir_output[$object->entity ? $object->entity : $conf->entity]."/".get_exdir(0, 0, 0, 1, $object, $object_type);
 								$template = $notifcode.'_TEMPLATE';
 								$mesg = $outputlangs->transnoentitiesnoconv('Notify_'.$notifcode).' '.$newref.' '.$dir_output;
-							break;
+								break;
 						}
 
 						include_once DOL_DOCUMENT_ROOT.'/core/class/html.formmail.class.php';
@@ -654,10 +665,10 @@ class Notify
 							$subject = make_substitutions($arraydefaultmessage->topic, $substitutionarray, $outputlangs);
 							$message = make_substitutions($arraydefaultmessage->content, $substitutionarray, $outputlangs);
 						} else {
-							$message = $outputlangs->transnoentities("YouReceiveMailBecauseOfNotification", $application, $mysoc->name)."\n";
+							/*$message = $outputlangs->transnoentities("YouReceiveMailBecauseOfNotification", $application, $mysoc->name)."\n";
 							$message .= $outputlangs->transnoentities("YouReceiveMailBecauseOfNotification2", $application, $mysoc->name)."\n";
-							$message .= "\n";
-							$message .= $mesg;
+							$message .= "\n\n";*/
+							$message = $mesg;
 						}
 
 						$ref = dol_sanitizeFileName($newref);
@@ -842,13 +853,33 @@ class Notify
 						$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 						$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 						$object_type = 'propal';
-						$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
+						$soc = new Societe($this->db);
+						$soc->fetch($object->socid);
+						if($soc){
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+							$mesg = "La proposition commerciale ".$link." de ".$soc->name. "a été clôturée signée.";
+						}
+						else{
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+						}
+						//$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
 						break;
 					case 'PROPAL_CLOSE_SIGNED_WEB':
 						$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 						$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 						$object_type = 'propal';
-						$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
+						$soc = new Societe($this->db);
+						$soc->fetch($object->socid);
+						if($soc){
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée par ".$soc->name;
+							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail par ".$soc->name.".";
+						}
+						else{
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée en ligne";
+							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+						}
+						//$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
 						$signed = true;
 						break;
 					case 'FICHINTER_ADD_CONTACT':
@@ -967,8 +998,8 @@ class Notify
 				}
 
 				$message = '';
-				$message .= $langs->transnoentities("YouReceiveMailBecauseOfNotification2", $application, $mysoc->name)."\n";
-				$message .= "\n";
+				/*$message .= $langs->transnoentities("YouReceiveMailBecauseOfNotification2", $application, $mysoc->name)."\n";
+				$message .= "\n\n";*/
 				$message .= $mesg;
 
 				$message = nl2br($message);
