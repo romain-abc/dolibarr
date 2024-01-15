@@ -28,7 +28,10 @@ if (empty($conf) || !is_object($conf)) {
 <!-- BEGIN PHP TEMPLATE originproductline.tpl.php -->
 <?php
 $selected = 1;
-if (($completed) || !empty($selectedLines) && !in_array($this->tpl['id'], $selectedLines)) {
+/*if (($completed) || !empty($selectedLines) && !in_array($this->tpl['id'], $selectedLines)) {
+	$selected = 0;
+}*/
+if (!empty($selectedLines) && !in_array($this->tpl['id'], $selectedLines)) {
 	$selected = 0;
 }
 
@@ -40,8 +43,9 @@ print '<td class="linecoluht right">'.$this->tpl['price'].'</td>';
 if (isModEnabled("multicurrency")) {
 	print '<td class="linecoluht_currency right">'.$this->tpl['multicurrency_price'].'</td>';
 }
+print '<td class="linecoluqtyordered right">'.$this->tpl['qty_ordered'].'</td>';
 print '<td class="linecoluqtyalreadyshipped right">'.$this->tpl['qty_already_shipped'].'</td>';
-print '<td class="linecolqty right"><input type="text" name="qty[]" value="'.$this->tpl['qty'].'" '.($selected ? '' : 'disabled').'/></td>';
+print '<td class="linecolqty right"><input type="text" name="qty[]" value="'.$this->tpl['qty'].'" '.($selected ? '' : '').'/></td>';
 if (!empty($conf->global->PRODUCT_USE_UNITS)) {
 	print '<td class="linecoluseunit left">'.$langs->trans($this->tpl['unit']).'</td>';
 }
@@ -49,7 +53,7 @@ if (!empty($conf->global->PRODUCT_USE_UNITS)) {
 print '<td class="linecoldiscount right">'.$this->tpl['remise_percent'].'</td>';
 
 print '<td class="center">';
-print '<input id="cb'.$this->tpl['id'].'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$this->tpl['id'].'"'.($selected ? ' checked="checked"' : 'disabled').'>';
+print '<input id="cb'.$this->tpl['id'].'" class="flat checkforselect" type="checkbox" name="toselect[]" value="'.$this->tpl['id'].'"'.($selected ? ' checked="checked"' : '').'>';
 print '</td>';
 print '</tr>'."\n";
 ?>

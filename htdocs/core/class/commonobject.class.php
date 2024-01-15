@@ -5445,7 +5445,8 @@ abstract class CommonObject
 		if (isModEnabled("multicurrency")) {
 			print '<td class="linecoluht_currency right">'.$langs->trans('PriceUHTCurrency').'</td>';
 		}
-		print '<td class="linecolqty right">'.$langs->trans('QtyAlreadyShipped').'</td>';
+		print '<td class="linecolqtyordered right">'.$langs->trans('QtyOrdered').'</td>';
+		print '<td class="linecolqtyalreadyshipped right">'.$langs->trans('QtyAlreadyShipped').'</td>';
 		print '<td class="linecolqty right">'.$langs->trans('QtyToShip').'</td>';
 		if (getDolGlobalInt('PRODUCT_USE_UNITS')) {
 			print '<td class="linecoluseunit left">'.$langs->trans('Unit').'</td>';
@@ -5725,6 +5726,7 @@ abstract class CommonObject
 
 		$this->tpl['price'] = price($line->subprice);
 		$this->tpl['multicurrency_price'] = price($line->multicurrency_subprice);
+		$this->tpl['qty_ordered'] = $line->qty;
 		if($refLines[$line->id]){
 			$this->tpl['qty_already_shipped'] = $line->qty-$refLines[$line->id];
 		}
