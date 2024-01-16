@@ -402,7 +402,7 @@ if ($nolinesbefore) {
 		?>
 	</td>
 
-	<td class="nobottom linecoluht right"><?php $coldisplay++; ?>
+	<td class="valignbottom nobottom linecoluht right"><?php $coldisplay++; ?>
 		<input type="text" size="5" name="price_ht" id="price_ht" class="flat right" value="<?php echo (GETPOSTISSET("price_ht") ? GETPOST("price_ht", 'alpha', 2) : ''); ?>">
 		<?php
 		if (is_object($objectline)) {
@@ -438,7 +438,7 @@ if ($nolinesbefore) {
 	$coldisplay++;
 	?>
 	<?php if (in_array($object->element, array('propal', 'commande', 'facture'))){ ?>
-	<td class="nobottom linecolextrafields right"><?php $coldisplay++; ?>
+	<td class="valignbottom nobottom linecolextrafields right"><?php $coldisplay++; ?>
 		<?php
 		if (is_object($objectline)) {
 			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "refproduct"), '', '', 1, 'line');
