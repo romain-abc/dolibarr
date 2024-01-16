@@ -341,7 +341,7 @@ $sqlquery0 = "SELECT rowid FROM ".MAIN_DB_PREFIX."propal as p";
 $ressqlquery0 = $db->query($sqlquery0);
 foreach($ressqlquery0 as $q0) {
 	$sqlquery = "SELECT rowid, fk_product, rang, qty, fk_propal FROM " . MAIN_DB_PREFIX . "propaldet as pdt";
-	$sqlquery.= " WHERE fk_propal = '".$db->escape($q0['row_id'])."'";
+	$sqlquery.= " WHERE fk_propal = '".$db->escape($q0['rowid'])."'";
 
 	$ressqlquery = $db->query($sqlquery);
 	$qty_propal = array();
@@ -351,7 +351,7 @@ foreach($ressqlquery0 as $q0) {
 	foreach ($ressqlquery as $q) {
 		$qty_propal[$q["rang"]] = $q["qty"];
 		$sqlquery2 = "SELECT DISTINCT(cdt.rowid), cdt.fk_product, cdt.rang, cdt.qty FROM " . MAIN_DB_PREFIX . "commandedet as cdt INNER JOIN " . MAIN_DB_PREFIX . "commande as c";
-		$sqlquery2 .= " WHERE cdt.rang = " . $db->escape($q['rang']) . " AND cdt.fk_commande IN(SELECT ee.fk_target FROM " . MAIN_DB_PREFIX . "element_element as ee WHERE ee.sourcetype='propal' AND ee.targettype='commande' AND ee.fk_source=" . $db->escape($q0['row_id']) . ")";
+		$sqlquery2 .= " WHERE cdt.rang = " . $db->escape($q['rang']) . " AND cdt.fk_commande IN(SELECT ee.fk_target FROM " . MAIN_DB_PREFIX . "element_element as ee WHERE ee.sourcetype='propal' AND ee.targettype='commande' AND ee.fk_source=" . $db->escape($q0['rowid']) . ")";
 
 		//$sqlquerybis = "SELECT ee.fk_target FROM ".MAIN_DB_PREFIX."element_element as ee WHERE ee.sourcetype='propal' AND ee.targettype='commande' AND ee.fk_source=".$db->escape($objectsrc->id);
 
@@ -377,7 +377,7 @@ foreach($ressqlquery0 as $q0) {
 	foreach ($qty_propal as $rang => $qtyp) {
 		if ($qtyp != $qty_commandes[$rang]) {
 			$sqlquery3 = "SELECT rowid FROM " . MAIN_DB_PREFIX . "propaldet as pdt";
-			$sqlquery3 .= " WHERE rang='" . $rang . "' AND fk_propal = '" . $db->escape($q0['row_id']) . "'";
+			$sqlquery3 .= " WHERE rang='" . $rang . "' AND fk_propal = '" . $db->escape($q0['rowid']) . "'";
 
 			$ressqlquery3 = $db->query($sqlquery3);
 			if ($ressqlquery3) {
