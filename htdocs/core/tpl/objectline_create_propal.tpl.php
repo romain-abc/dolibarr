@@ -404,6 +404,18 @@ if ($nolinesbefore) {
 
 	<td class="nobottom linecoluht right"><?php $coldisplay++; ?>
 		<input type="text" size="5" name="price_ht" id="price_ht" class="flat right" value="<?php echo (GETPOSTISSET("price_ht") ? GETPOST("price_ht", 'alpha', 2) : ''); ?>">
+		<?php
+		if (is_object($objectline)) {
+			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "ecopart"), '', '', 1, 'line');
+			//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+
+			if (!empty($temps)) {
+				print '<div style="padding-top: 10px" id="extrafield_lines_area_create" name="extrafield_lines_area_create">';
+				print $temps;
+				print '</div>';
+			}
+		}
+		?>
 	</td>
 
 	<?php
@@ -429,14 +441,14 @@ if ($nolinesbefore) {
 	<td class="nobottom linecolextrafields right"><?php $coldisplay++; ?>
 		<?php
 		if (is_object($objectline)) {
-		//$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "ecopart"), '', '', 1, 'line');
-			$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => array("refproduct", "fournisseurorigine")), '', '', 1, 'line');
+				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
-		if (!empty($temps)) {
-		print '<div style="padding-top: 10px" id="extrafield_lines_area_create" name="extrafield_lines_area_create">';
-			print $temps;
-			print '</div>';
-		}
+			if (!empty($temps)) {
+			print '<div style="padding-top: 10px" id="extrafield_lines_area_create" name="extrafield_lines_area_create">';
+				print $temps;
+				print '</div>';
+			}
 		}
 		?>
 	</td>
