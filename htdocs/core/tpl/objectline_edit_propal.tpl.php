@@ -217,7 +217,7 @@ $coldisplay = 0;
 	}
 
 	$coldisplay++;
-	print '<td class="right"><input type="text" class="flat right" size="5" id="price_ht" name="price_ht" value="'.(GETPOSTISSET('price_ht') ? GETPOST('price_ht', 'alpha') : (isset($line->pu_ht) ? price($line->pu_ht, 0, '', 0) : price($line->subprice, 0, '', 0))).'"';
+	print '<td class="right valignbottom"><input type="text" class="flat right" size="5" id="price_ht" name="price_ht" value="'.(GETPOSTISSET('price_ht') ? GETPOST('price_ht', 'alpha') : (isset($line->pu_ht) ? price($line->pu_ht, 0, '', 0) : price($line->subprice, 0, '', 0))).'"';
 	if ($situationinvoicelinewithparent) {
 		print ' readonly';
 	}
@@ -228,7 +228,7 @@ $coldisplay = 0;
 			//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
-				print '<div style="padding-top: 10px" name="extrafield_lines_area_edit">';
+				print '<div style="padding-top: 30px" name="extrafield_lines_area_edit">';
 				print $temps;
 				print '</div>';
 			}
@@ -254,7 +254,7 @@ $coldisplay = 0;
 					//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 					if (!empty($temps)) {
-						print '<div style="padding-top: 10px" name="extrafield_lines_area_edit">';
+						print '<div name="extrafield_lines_area_edit">';
 						print $temps;
 						print '</div>';
 					}
@@ -263,7 +263,7 @@ $coldisplay = 0;
 					//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 					if (!empty($temps)) {
-						print '<div style="padding-top: 10px" name="extrafield_lines_area_edit">';
+						print '<div style="padding-top: 20px" name="extrafield_lines_area_edit">';
 						print $temps;
 						print '</div>';
 					}
