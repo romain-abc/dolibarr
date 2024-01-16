@@ -410,7 +410,7 @@ if ($nolinesbefore) {
 			//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
-				print '<div style="padding-top: 26px" name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
+				print '<div style="padding-top: 28px" name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
 				print $temps;
 				print '</div>';
 			}
