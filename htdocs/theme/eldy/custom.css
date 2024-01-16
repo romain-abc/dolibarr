@@ -1,4 +1,4 @@
 .linecolextrafields .valuefieldcreate{
-	display: block;
+	display: block !important;
 	margin-bottom: 20px;
 }
