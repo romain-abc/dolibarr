@@ -124,6 +124,9 @@ if ($nolinesbefore) {
 		<?php if (isModEnabled("multicurrency") && $this->multicurrency_code != $conf->currency) { ?>
 			<td class="linecoluht_currency right"><span id="title_up_ht_currency"><?php echo $langs->trans('PriceUHTCurrency'); ?></span></td>
 		<?php } ?>
+		<?php if (in_array($object->element, array('propal', 'commande', 'facture'))){
+		print '<td class="linecolextrafields right nowraponall">'.$langs->trans('Extrafields').'</td>';
+		} ?>
 		<?php /*if (!empty($inputalsopricewithtax) && !getDolGlobalInt('MAIN_NO_INPUT_PRICE_WITH_TAX')) { ?>
 			<td class="linecoluttc right"><span id="title_up_ttc"><?php echo $langs->trans('PriceUTTC'); ?></span></td>
 		<?php }*/ ?>
@@ -374,7 +377,7 @@ if ($nolinesbefore) {
 			echo $form->selectyesno('date_end_fill', $line->date_end_fill, 1);
 			echo '</div>';
 		}
-		if (is_object($objectline)) {
+		/*if (is_object($objectline)) {
 			$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
@@ -382,7 +385,7 @@ if ($nolinesbefore) {
 				print $temps;
 				print '</div>';
 			}
-		}
+		}*/
 		echo '</td>';
 		if ($object->element == 'supplier_proposal' || $object->element == 'order_supplier' || $object->element == 'invoice_supplier' || $object->element == 'invoice_supplier_rec') {	// We must have same test in printObjectLines
 			$coldisplay++;
@@ -422,6 +425,23 @@ if ($nolinesbefore) {
 	}*/
 	$coldisplay++;
 	?>
+	<?php if (in_array($object->element, array('propal', 'commande', 'facture'))){ ?>
+	<td class="nobottom linecolextrafields right"><?php $coldisplay++; ?>
+		<?php
+		if (is_object($objectline)) {
+		//$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "ecopart"), '', '', 1, 'line');
+			$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+
+		if (!empty($temps)) {
+		print '<div style="padding-top: 10px" id="extrafield_lines_area_create" name="extrafield_lines_area_create">';
+			print $temps;
+			print '</div>';
+		}
+		}
+		?>
+	</td>
+	<?php } ?>
+
 	<td class="nobottom linecolqty right">
 	<?php $default_qty = (empty($conf->global->MAIN_OBJECTLINE_CREATE_EMPTY_QTY_BY_DEFAULT) ? 1 : ''); ?>
 	<input type="text" name="qty" id="qty" class="flat width40 right" value="<?php echo (GETPOSTISSET("qty") ? GETPOST("qty", 'alpha', 2) : $default_qty); ?>">
@@ -931,7 +951,8 @@ if (!empty($usemargins) && $user->rights->margins->creer) {
 
 					console.log("finally selected defaultkey="+defaultkey+" defaultprice for buying price="+defaultprice);
 
-					$("#fournprice_predef").html(options).show();
+					/*$("#fournprice_predef").html(options).show();*/
+					$("#fournprice_predef").html(options);
 					if (defaultkey != '')
 					{
 						$("#fournprice_predef").val(defaultkey);
@@ -942,7 +963,9 @@ if (!empty($usemargins) && $user->rights->margins->creer) {
 
 					/* Define default price at loading */
 					var defaultprice = $("#fournprice_predef").find('option:selected').attr("price");
+					defaultprice = parseFloat(defaultprice).toFixed(2).replace('.', ',');
 					$("#buying_price").val(defaultprice);
+					$('#buying_price').show();
 
 					$("#fournprice_predef").change(function() {
 						console.log("change on fournprice_predef");
@@ -1186,7 +1209,7 @@ if (!empty($usemargins) && $user->rights->margins->creer) {
 		<?php } ?>
 		/* jQuery("#tva_tx, #title_vat").hide(); */
 		/* jQuery("#title_fourn_ref").hide(); */
-		jQuery("#np_marginRate, #np_markRate, .np_marginRate, .np_markRate, #units, #title_units").hide();
+		/*jQuery("#np_marginRate, #np_markRate, .np_marginRate, .np_markRate, #units, #title_units").hide();*/
 		jQuery("#buying_price").show();
 		jQuery('#trlinefordates, .divlinefordates').show();
 	}

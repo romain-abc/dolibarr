@@ -327,6 +327,11 @@ print '*/'."\n";
 // Include the global.inc.php that include the badges, btn, info-box, dropdown, progress...
 require __DIR__.'/global.inc.php';
 
+header("Content-type: text/css");
+    // Lire le contenu du fichier monstyle.css
+    $content = file_get_contents("custom.css");
+    // Imprimer le contenu du fichier monstyle.css
+    echo $content;
 
 if (is_object($db)) {
 	$db->close();
