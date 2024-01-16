@@ -346,8 +346,7 @@ foreach($ressqlquery0 as $q0) {
 	$ressqlquery = $db->query($sqlquery);
 	$qty_propal = array();
 	$qty_commandes = array();
-	$refLines = array();
-	$selectedLines = array();
+	//$refLines = array();
 	foreach ($ressqlquery as $q) {
 		$qty_propal[$q["rang"]] = $q["qty"];
 		$sqlquery2 = "SELECT DISTINCT(cdt.rowid), cdt.fk_product, cdt.rang, cdt.qty FROM " . MAIN_DB_PREFIX . "commandedet as cdt INNER JOIN " . MAIN_DB_PREFIX . "commande as c";
@@ -387,18 +386,16 @@ foreach($ressqlquery0 as $q0) {
 			}
 		}
 	}
+
 }
 
 $nbtotalofrecords = count($refLines);
 
-// Count total nb of records
-$nbtotalofrecords = '';
 
-
-	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller than paging size (filtering), goto and load page 0
-		$page = 0;
-		$offset = 0;
-	}
+if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller than paging size (filtering), goto and load page 0
+	$page = 0;
+	$offset = 0;
+}
 
 
 if ($socid > 0) {
@@ -411,9 +408,6 @@ if ($socid > 0) {
 } else {
 	$title = $langs->trans('RemainingToBeDelivered');
 }
-
-var_dump($refLines);
-exit;
 
 // Output page
 // --------------------------------------------------------------------
@@ -620,140 +614,14 @@ print '<input type="hidden" name="socid" value="'.$socid.'">';
 print '<input type="hidden" name="page_y" value="">';
 print '<input type="hidden" name="mode" value="'.$mode.'">';
 
-
+$num = 1;
 print_barre_liste($title, $page, $_SERVER["PHP_SELF"], $param, $sortfield, $sortorder, $massactionbutton, $num, $nbtotalofrecords, 'order', 0, $newcardbutton, '', $limit, 0, 0, 1);
 
 $topicmail = "SendOrderRef";
 $modelmail = "order_send";
 $objecttmp = new Commande($db);
 $trackid = 'ord'.$object->id;
-include DOL_DOCUMENT_ROOT.'/core/tpl/massactions_pre.tpl.php';
 
-if ($massaction == 'prevalidate') {
-	print $form->formconfirm($_SERVER["PHP_SELF"], $langs->trans("ConfirmMassValidation"), $langs->trans("ConfirmMassValidationQuestion"), "validate", null, '', 0, 200, 500, 1);
-}
-if ($massaction == 'preshipped') {
-	print $form->formconfirm($_SERVER["PHP_SELF"], $langs->trans("CloseOrder"), $langs->trans("ConfirmCloseOrder"), "shipped", null, '', 0, 200, 500, 1);
-}
-
-if ($massaction == 'createbills') {
-	print '<input type="hidden" name="massaction" value="confirm_createbills">';
-
-	print '<table class="noborder centpercent">';
-	print '<tr>';
-	print '<td>';
-	print $langs->trans('DateInvoice');
-	print '</td>';
-	print '<td>';
-	print $form->selectDate('', '', '', '', '', '', 1, 1);
-	print '</td>';
-	print '</tr>';
-	print '<tr>';
-	print '<td>';
-	print $langs->trans('CreateOneBillByThird');
-	print '</td>';
-	print '<td>';
-	print $form->selectyesno('createbills_onebythird', '', 1);
-	print '</td>';
-	print '</tr>';
-	print '<tr>';
-	print '<td>';
-	print $langs->trans('ValidateInvoices');
-	print '</td>';
-	print '<td>';
-	if (isModEnabled('stock') && !empty($conf->global->STOCK_CALCULATE_ON_BILL)) {
-		print $form->selectyesno('validate_invoices', 0, 1, 1);
-		$langs->load("errors");
-		print ' ('.$langs->trans("WarningAutoValNotPossibleWhenStockIsDecreasedOnInvoiceVal").')';
-	} else {
-		print $form->selectyesno('validate_invoices', 0, 1);
-	}
-	if (!empty($conf->workflow->enabled) && !empty($conf->global->WORKFLOW_INVOICE_AMOUNT_CLASSIFY_BILLED_ORDER)) {
-		print ' &nbsp; &nbsp; <span class="opacitymedium">'.$langs->trans("IfValidateInvoiceIsNoOrderStayUnbilled").'</span>';
-	} else {
-		print ' &nbsp; &nbsp; <span class="opacitymedium">'.$langs->trans("OptionToSetOrderBilledNotEnabled").'</span>';
-	}
-	print '</td>';
-	print '</tr>';
-	print '</table>';
-
-	print '<div class="center">';
-	print '<input type="submit" class="button" id="createbills" name="createbills" value="'.$langs->trans('CreateInvoiceForThisCustomer').'">  ';
-	print '<input type="submit" class="button button-cancel" id="cancel" name="cancel" value="'.$langs->trans("Cancel").'">';
-	print '</div>';
-	print '<br><br>';
-}
-
-if ($sall) {
-	$setupstring = '';
-	foreach ($fieldstosearchall as $key => $val) {
-		$fieldstosearchall[$key] = $langs->trans($val);
-		$setupstring .= $key."=".$val.";";
-	}
-	print '<!-- Search done like if MYOBJECT_QUICKSEARCH_ON_FIELDS = '.$setupstring.' -->'."\n";
-	print '<div class="divsearchfieldfilter">'.$langs->trans("FilterOnInto", $sall).join(', ', $fieldstosearchall).'</div>';
-}
-
-$moreforfilter = '';
-
-// If the user can view prospects? sales other than his own
-if ($user->hasRight("user", "user", "lire")) {
-	$langs->load("commercial");
-	$moreforfilter .= '<div class="divsearchfield">';
-	$tmptitle = $langs->trans('ThirdPartiesOfSaleRepresentative');
-	$moreforfilter .= img_picto($tmptitle, 'user', 'class="pictofixedwidth"').$formother->select_salesrepresentatives($search_sale, 'search_sale', $user, 0, $tmptitle, 'maxwidth250 widthcentpercentminusx');
-	$moreforfilter .= '</div>';
-}
-// If the user can view other users
-if ($user->hasRight("user", "user", "lire")) {
-	$moreforfilter .= '<div class="divsearchfield">';
-	$tmptitle = $langs->trans('LinkedToSpecificUsers');
-	$moreforfilter .= img_picto($tmptitle, 'user', 'class="pictofixedwidth"').$form->select_dolusers($search_user, 'search_user', $tmptitle, '', 0, '', '', 0, 0, 0, '', 0, '', 'maxwidth250 widthcentpercentminusx');
-	$moreforfilter .= '</div>';
-}
-
-// If the user can view other products/services than his own
-if (isModEnabled('categorie') && $user->hasRight("categorie", "lire") && ($user->hasRight("produit", "lire") || $user->hasRight("service", "lire"))) {
-	include_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
-	$moreforfilter .= '<div class="divsearchfield">';
-	$tmptitle = $langs->trans('IncludingProductWithTag');
-	$cate_arbo = $form->select_all_categories(Categorie::TYPE_PRODUCT, null, 'parent', null, null, 1);
-	$moreforfilter .= img_picto($tmptitle, 'category', 'class="pictofixedwidth"').$form->selectarray('search_product_category', $cate_arbo, $search_product_category, $tmptitle, 0, 0, '', 0, 0, 0, 0, 'maxwidth300 widthcentpercentminusx', 1);
-	$moreforfilter .= '</div>';
-}
-// If Categories are enabled & user has rights to see
-if (isModEnabled('categorie') && $user->hasRight("categorie", "lire")) {
-	require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
-	$moreforfilter .= '<div class="divsearchfield">';
-	$tmptitle = $langs->trans('CustomersProspectsCategoriesShort');
-	$moreforfilter .= img_picto($tmptitle, 'category', 'class="pictofixedwidth"').$formother->select_categories('customer', $search_categ_cus, 'search_categ_cus', 1, $tmptitle, 'maxwidth300 widthcentpercentminusx');
-	$moreforfilter .= '</div>';
-}
-// If Stock is enabled
-if (isModEnabled('stock') && !empty($conf->global->WAREHOUSE_ASK_WAREHOUSE_DURING_ORDER)) {
-	require_once DOL_DOCUMENT_ROOT.'/product/class/html.formproduct.class.php';
-	$formproduct = new FormProduct($db);
-	$moreforfilter .= '<div class="divsearchfield">';
-	$tmptitle = $langs->trans('Warehouse');
-	$moreforfilter .= img_picto($tmptitle, 'stock', 'class="pictofixedwidth"').$formproduct->selectWarehouses($search_warehouse, 'search_warehouse', '', 1, 0, 0, $tmptitle, 0, 0, array(), 'maxwidth250 widthcentpercentminusx');
-	$moreforfilter .= '</div>';
-}
-$parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-if (empty($reshook)) {
-	$moreforfilter .= $hookmanager->resPrint;
-} else {
-	$moreforfilter = $hookmanager->resPrint;
-}
-
-if (!empty($moreforfilter)) {
-	print '<div class="liste_titre liste_titre_bydiv centpercent">';
-	print $moreforfilter;
-	$parameters = array();
-	$reshook = $hookmanager->executeHooks('printFieldPreListTitle', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-	print $hookmanager->resPrint;
-	print '</div>';
-}
 
 $varpage = empty($contextpage) ? $_SERVER["PHP_SELF"] : $contextpage;
 $selectedfields = ($mode != 'kanban' ? $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfields, $varpage, getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN', '')) : ''); // This also change content of $arrayfields
@@ -783,192 +651,6 @@ if (getDolGlobalString('MAIN_CHECKBOX_LEFT_COLUMN')) {
 	print '</td>';
 }
 
-// Ref
-if (!empty($arrayfields['c.ref']['checked'])) {
-	print '<td class="liste_titre">';
-	print '<input class="flat" size="6" type="text" name="search_ref" value="'.dol_escape_htmltag($search_ref).'">';
-	print '</td>';
-}
-// Ref customer
-if (!empty($arrayfields['c.ref_client']['checked'])) {
-	print '<td class="liste_titre" align="left">';
-	print '<input class="flat" type="text" size="6" name="search_ref_customer" value="'.dol_escape_htmltag($search_ref_customer).'">';
-	print '</td>';
-}
-// Project ref
-if (!empty($arrayfields['p.ref']['checked'])) {
-	print '<td class="liste_titre"><input type="text" class="flat" size="6" name="search_project_ref" value="'.dol_escape_htmltag($search_project_ref).'"></td>';
-}
-// Project title
-if (!empty($arrayfields['p.title']['checked'])) {
-	print '<td class="liste_titre"><input type="text" class="flat" size="6" name="search_project" value="'.dol_escape_htmltag($search_project).'"></td>';
-}
-// Thirpdarty
-if (!empty($arrayfields['s.nom']['checked'])) {
-	print '<td class="liste_titre" align="left">';
-	print '<input class="flat maxwidth100" type="text" name="search_company" value="'.dol_escape_htmltag($search_company).'">';
-	print '</td>';
-}
-// Alias
-if (!empty($arrayfields['s.name_alias']['checked'])) {
-	print '<td class="liste_titre" align="left">';
-	print '<input class="flat maxwidth100" type="text" name="search_company_alias" value="'.dol_escape_htmltag($search_company_alias).'">';
-	print '</td>';
-}
-// Parent company
-if (!empty($arrayfields['s2.nom']['checked'])) {
-	print '<td class="liste_titre">';
-	print '<input class="flat maxwidth100" type="text" name="search_parent_name" value="'.dol_escape_htmltag($search_parent_name).'">';
-	print '</td>';
-}
-// Town
-if (!empty($arrayfields['s.town']['checked'])) {
-	print '<td class="liste_titre"><input class="flat width50" type="text" name="search_town" value="'.dol_escape_htmltag($search_town).'"></td>';
-}
-// Zip
-if (!empty($arrayfields['s.zip']['checked'])) {
-	print '<td class="liste_titre"><input class="flat width50" type="text" name="search_zip" value="'.dol_escape_htmltag($search_zip).'"></td>';
-}
-// State
-if (!empty($arrayfields['state.nom']['checked'])) {
-	print '<td class="liste_titre">';
-	print '<input class="flat width50" type="text" name="search_state" value="'.dol_escape_htmltag($search_state).'">';
-	print '</td>';
-}
-// Country
-if (!empty($arrayfields['country.code_iso']['checked'])) {
-	print '<td class="liste_titre" align="center">';
-	print $form->select_country($search_country, 'search_country', '', 0, 'minwidth100imp maxwidth100');
-	print '</td>';
-}
-// Company type
-if (!empty($arrayfields['typent.code']['checked'])) {
-	print '<td class="liste_titre maxwidthonsmartphone" align="center">';
-	print $form->selectarray("search_type_thirdparty", $formcompany->typent_array(0), $search_type_thirdparty, 1, 0, 0, '', 0, 0, 0, (empty($conf->global->SOCIETE_SORT_ON_TYPEENT) ? 'ASC' : $conf->global->SOCIETE_SORT_ON_TYPEENT), '', 1);
-	print '</td>';
-}
-// Date order
-if (!empty($arrayfields['c.date_commande']['checked'])) {
-	print '<td class="liste_titre center">';
-	print '<div class="nowrap">';
-	print $form->selectDate($search_dateorder_start ? $search_dateorder_start : -1, 'search_dateorder_start_', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans('From'));
-	print '</div>';
-	print '<div class="nowrap">';
-	print $form->selectDate($search_dateorder_end ? $search_dateorder_end : -1, 'search_dateorder_end_', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans('to'));
-	print '</div>';
-	print '</td>';
-}
-if (!empty($arrayfields['c.date_delivery']['checked'])) {
-	print '<td class="liste_titre center">';
-	print '<div class="nowrap">';
-	print $form->selectDate($search_datedelivery_start ? $search_datedelivery_start : -1, 'search_datedelivery_start_', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans('From'));
-	print '</div>';
-	print '<div class="nowrap">';
-	print $form->selectDate($search_datedelivery_end ? $search_datedelivery_end : -1, 'search_datedelivery_end_', 0, 0, 1, '', 1, 0, 0, '', '', '', '', 1, '', $langs->trans('to'));
-	print '</div>';
-	print '</td>';
-}
-// Shipping Method
-if (!empty($arrayfields['c.fk_shipping_method']['checked'])) {
-	print '<td class="liste_titre">';
-	$form->selectShippingMethod($search_fk_shipping_method, 'search_fk_shipping_method', '', 1, '', 1);
-	print '</td>';
-}
-// Payment term
-if (!empty($arrayfields['c.fk_cond_reglement']['checked'])) {
-	print '<td class="liste_titre">';
-	print $form->getSelectConditionsPaiements($search_fk_cond_reglement, 'search_fk_cond_reglement', 1, 1, 1);
-	print '</td>';
-}
-// Payment mode
-if (!empty($arrayfields['c.fk_mode_reglement']['checked'])) {
-	print '<td class="liste_titre">';
-	print $form->select_types_paiements($search_fk_mode_reglement, 'search_fk_mode_reglement', '', 0, 1, 1, 0, -1, '', 1);
-	print '</td>';
-}
-// Channel
-if (!empty($arrayfields['c.fk_input_reason']['checked'])) {
-	print '<td class="liste_titre">';
-	$form->selectInputReason($search_fk_input_reason, 'search_fk_input_reason', '', 1, '', 1);
-	print '</td>';
-}
-// Amount HT / net
-if (!empty($arrayfields['c.total_ht']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '<input class="flat" type="text" size="4" name="search_total_ht" value="'.dol_escape_htmltag($search_total_ht).'">';
-	print '</td>';
-}
-// Amount of VAT
-if (!empty($arrayfields['c.total_vat']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '<input class="flat" type="text" size="4" name="search_total_vat" value="'.dol_escape_htmltag($search_total_vat).'">';
-	print '</td>';
-}
-// Total Amount (TTC / gross)
-if (!empty($arrayfields['c.total_ttc']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '<input class="flat" type="text" size="5" name="search_total_ttc" value="'.$search_total_ttc.'">';
-	print '</td>';
-}
-// Currency
-if (!empty($arrayfields['c.multicurrency_code']['checked'])) {
-	print '<td class="liste_titre">';
-	print $form->selectMultiCurrency($search_multicurrency_code, 'search_multicurrency_code', 1);
-	print '</td>';
-}
-// Currency rate
-if (!empty($arrayfields['c.multicurrency_tx']['checked'])) {
-	print '<td class="liste_titre">';
-	print '<input class="flat" type="text" size="4" name="search_multicurrency_tx" value="'.dol_escape_htmltag($search_multicurrency_tx).'">';
-	print '</td>';
-}
-// Amount HT/net in foreign currency
-if (!empty($arrayfields['c.multicurrency_total_ht']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '<input class="flat" type="text" size="4" name="search_multicurrency_montant_ht" value="'.dol_escape_htmltag($search_multicurrency_montant_ht).'">';
-	print '</td>';
-}
-// VAT in foreign currency
-if (!empty($arrayfields['c.multicurrency_total_vat']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '<input class="flat" type="text" size="4" name="search_multicurrency_montant_vat" value="'.dol_escape_htmltag($search_multicurrency_montant_vat).'">';
-	print '</td>';
-}
-// Amount/Total (TTC / gross) in foreign currency
-if (!empty($arrayfields['c.multicurrency_total_ttc']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '<input class="flat width75" type="text" name="search_multicurrency_montant_ttc" value="'.dol_escape_htmltag($search_multicurrency_montant_ttc).'">';
-	print '</td>';
-}
-// Author
-if (!empty($arrayfields['u.login']['checked'])) {
-	print '<td class="liste_titre">';
-	print '<input class="flat width75" type="text" name="search_login" value="'.dol_escape_htmltag($search_login).'">';
-	print '</td>';
-}
-// Sales Representative
-if (!empty($arrayfields['sale_representative']['checked'])) {
-	print '<td class="liste_titre"></td>';
-}
-if (!empty($arrayfields['total_pa']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '</td>';
-}
-if (!empty($arrayfields['total_margin']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '</td>';
-}
-if (!empty($arrayfields['total_margin_rate']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '</td>';
-}
-if (!empty($arrayfields['total_mark_rate']['checked'])) {
-	print '<td class="liste_titre right">';
-	print '</td>';
-}
-
-// Extra fields
-include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_input.tpl.php';
 
 // Fields from hook
 $parameters = array('arrayfields'=>$arrayfields);
@@ -1264,13 +946,13 @@ $userstatic = new User($db);
 
 $with_margin_info = false;
 if (isModEnabled('margin') && (
-	!empty($arrayfields['total_pa']['checked'])
-	|| !empty($arrayfields['total_margin']['checked'])
-	|| !empty($arrayfields['total_margin_rate']['checked'])
-	|| !empty($arrayfields['total_mark_rate']['checked'])
+		!empty($arrayfields['total_pa']['checked'])
+		|| !empty($arrayfields['total_margin']['checked'])
+		|| !empty($arrayfields['total_margin_rate']['checked'])
+		|| !empty($arrayfields['total_mark_rate']['checked'])
 	)
-	) {
-		$with_margin_info = true;
+) {
+	$with_margin_info = true;
 }
 
 $total_ht = 0;
