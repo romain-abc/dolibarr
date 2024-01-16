@@ -319,7 +319,7 @@ print vatrate($positiverates.($line->vat_src_code ? ' ('.$line->vat_src_code.')'
 print $tooltiponpriceend;
 ?></td>
 
-	<td class="linecoluht nowraponall right"><?php $coldisplay++; ?><?php print price($sign * $line->subprice); ?></td>
+	<td class="linecoluht nowraponall right"><?php $coldisplay++; ?><?php print price($sign * $line->subprice); ?>
 	<?php
 		if (is_object($line)) {
 			if (!empty($extrafields)) {
@@ -334,7 +334,7 @@ print $tooltiponpriceend;
 			}
 		}
 		?>
-
+	</td>
 <?php if (isModEnabled("multicurrency") && $this->multicurrency_code != $conf->currency) { ?>
 	<td class="linecoluht_currency nowraponall right"><?php $coldisplay++; ?><?php print price($sign * $line->multicurrency_subprice); ?></td>
 <?php } ?>
@@ -349,7 +349,7 @@ print $tooltiponpriceend;
 				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 				if (!empty($temps)) {
-					print '<div name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
+					print '<div style="padding-top: 10px" name="extrafield_lines_area_'.$line->id.'">';
 					print $temps;
 					print '</div>';
 				}
@@ -358,7 +358,7 @@ print $tooltiponpriceend;
 				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 				if (!empty($temps)) {
-					print '<div name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
+					print '<div style="padding-top: 10px" name="extrafield_lines_area_'.$line->id.'">';
 					print $temps;
 					print '</div>';
 				}
