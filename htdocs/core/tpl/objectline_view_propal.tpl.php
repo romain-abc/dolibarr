@@ -225,14 +225,14 @@ if (($line->info_bits & 2) == 2) {
 	}
 
 	// Line extrafield
-	if (!empty($extrafields)) {
+	/*if (!empty($extrafields)) {
 		$temps = $line->showOptionals($extrafields, 'view', array(), '', '', 1, 'line');
 		if (!empty($temps)) {
 			print '<div style="padding-top: 10px" id="extrafield_lines_area_'.$line->id.'" name="extrafield_lines_area_'.$line->id.'">';
 			print $temps;
 			print '</div>';
 		}
-	}
+	}*/
 }
 
 if ($user->hasRight('fournisseur', 'lire') && isset($line->fk_fournprice) && $line->fk_fournprice > 0 && empty($conf->global->SUPPLIER_HIDE_SUPPLIER_OBJECTLINES)) {
@@ -320,10 +320,53 @@ print $tooltiponpriceend;
 ?></td>
 
 	<td class="linecoluht nowraponall right"><?php $coldisplay++; ?><?php print price($sign * $line->subprice); ?></td>
+	<?php
+		if (is_object($line)) {
+			if (!empty($extrafields)) {
+				$temps = $line->showOptionals($extrafields, 'view', array("onlykey" => "ecopart"), '', '', 1, 'line');
+				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+
+				if (!empty($temps)) {
+					print '<div style="padding-top: 10px" id="extrafield_lines_area_'.$line->id.'" name="extrafield_lines_area_'.$line->id.'">';
+					print $temps;
+					print '</div>';
+				}
+			}
+		}
+		?>
 
 <?php if (isModEnabled("multicurrency") && $this->multicurrency_code != $conf->currency) { ?>
 	<td class="linecoluht_currency nowraponall right"><?php $coldisplay++; ?><?php print price($sign * $line->multicurrency_subprice); ?></td>
 <?php } ?>
+
+
+<?php if (in_array($object->element, array('propal', 'commande', 'facture'))){ ?>
+	<td class="valignbottom nobottom linecolextrafields right"><?php $coldisplay++; ?>
+		<?php
+		if (is_object($line)) {
+			if (!empty($extrafields)) {
+				$temps = $line->showOptionals($extrafields, 'view', array("onlykey" => "refproduct"), '', '', 1, 'line');
+				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+
+				if (!empty($temps)) {
+					print '<div name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
+					print $temps;
+					print '</div>';
+				}
+
+				$temps = $line->showOptionals($extrafields, 'view', array("onlykey" => "fournisseurorigine"), '', '', 1, 'line');
+				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+
+				if (!empty($temps)) {
+					print '<div name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
+					print $temps;
+					print '</div>';
+				}
+			}
+		}
+		?>
+	</td>
+	<?php } ?>
 
 	<td class="linecolqty nowraponall right"><?php $coldisplay++; ?>
 <?php
@@ -337,6 +380,8 @@ if ((($line->info_bits & 2) != 2) && $line->special_code != 3) {
 	print '&nbsp;';
 }
 print '</td>';
+
+
 
 if (!empty($conf->global->PRODUCT_USE_UNITS)) {
 	print '<td class="linecoluseunit nowrap left">';
