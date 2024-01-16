@@ -410,7 +410,7 @@ if ($nolinesbefore) {
 			//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
-				print '<div style="padding-top: 10px" name="extrafield_lines_area_create">';
+				print '<div style="padding-top: 10px" name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
 				print $temps;
 				print '</div>';
 			}
@@ -441,20 +441,20 @@ if ($nolinesbefore) {
 	<td class="nobottom linecolextrafields right"><?php $coldisplay++; ?>
 		<?php
 		if (is_object($objectline)) {
-			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => array("refproduct")), '', '', 1, 'line');
+			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "refproduct"), '', '', 1, 'line');
 				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
-			print '<div name="extrafield_lines_area_create">';
+			print '<div name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
 				print $temps;
 				print '</div>';
 			}
 
-			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => array("fournisseurorigine")), '', '', 1, 'line');
+			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "fournisseurorigine"), '', '', 1, 'line');
 			//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
-				print '<div name="extrafield_lines_area_create">';
+				print '<div name="extrafield_lines_area_create" class="extrafield_lines_area_create">';
 				print $temps;
 				print '</div>';
 			}
