@@ -327,7 +327,7 @@ print $tooltiponpriceend;
 				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 				if (!empty($temps)) {
-					print '<div style="padding-top: 10px" id="extrafield_lines_area_'.$line->id.'" name="extrafield_lines_area_'.$line->id.'">';
+					print '<div style="padding-top: 10px" name="extrafield_lines_area_'.$line->id.'" class="extrafield_lines_area">';
 					print $temps;
 					print '</div>';
 				}
@@ -349,7 +349,7 @@ print $tooltiponpriceend;
 				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 				if (!empty($temps)) {
-					print '<div style="padding-top: 10px" name="extrafield_lines_area_'.$line->id.'">';
+					print '<div style="padding-top: 10px" name="extrafield_lines_area_'.$line->id.'" class="extrafield_lines_area">';
 					print $temps;
 					print '</div>';
 				}
@@ -358,7 +358,7 @@ print $tooltiponpriceend;
 				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 				if (!empty($temps)) {
-					print '<div style="padding-top: 10px" name="extrafield_lines_area_'.$line->id.'">';
+					print '<div style="padding-top: 10px" name="extrafield_lines_area_'.$line->id.'" class="extrafield_lines_area">';
 					print $temps;
 					print '</div>';
 				}

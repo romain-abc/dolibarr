@@ -1,4 +1,7 @@
-td .valuefieldcreate{
+td .extrafield_lines_area{
 	display: block !important;
 	margin-bottom: 10px;
+}
+td .extrafield_lines_area .wordbreak{
+	padding: 0 !important;
 }

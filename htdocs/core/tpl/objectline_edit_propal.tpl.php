@@ -228,7 +228,7 @@ $coldisplay = 0;
 			//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
-				print '<div style="padding-top: 30px" name="extrafield_lines_area_edit">';
+				print '<div style="padding-top: 30px" name="extrafield_lines_area_edit" class="extrafield_lines_area">';
 				print $temps;
 				print '</div>';
 			}
@@ -254,7 +254,7 @@ $coldisplay = 0;
 					//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 					if (!empty($temps)) {
-						print '<div name="extrafield_lines_area_edit">';
+						print '<div name="extrafield_lines_area_edit" class="extrafield_lines_area">';
 						print $temps;
 						print '</div>';
 					}
@@ -263,7 +263,7 @@ $coldisplay = 0;
 					//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 					if (!empty($temps)) {
-						print '<div style="padding-top: 20px" name="extrafield_lines_area_edit">';
+						print '<div style="padding-top: 20px" name="extrafield_lines_area_edit" class="extrafield_lines_area">';
 						print $temps;
 						print '</div>';
 					}
