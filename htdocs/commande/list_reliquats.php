@@ -144,7 +144,7 @@ $show_shippable_command = GETPOST('show_shippable_command', 'aZ09');
 
 // Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
 $object = new Commande($db);
-$hookmanager->initHooks(array('orderlist'));
+//$hookmanager->initHooks(array('orderlist'));
 $extrafields = new ExtraFields($db);
 
 // fetch optionals attributes and labels
@@ -245,538 +245,6 @@ if ($reshook < 0) {
 	setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 }
 
-if (empty($reshook)) {
-	// Selection of new fields
-	include DOL_DOCUMENT_ROOT.'/core/actions_changeselectedfields.inc.php';
-
-	// Purge search criteria
-	if (GETPOST('button_removefilter_x', 'alpha') || GETPOST('button_removefilter.x', 'alpha') || GETPOST('button_removefilter', 'alpha')) { // All tests are required to be compatible with all browsers
-		$search_categ = '';
-		$search_user = '';
-		$search_sale = '';
-		$search_product_category = '';
-		$search_ref = '';
-		$search_ref_customer = '';
-		$search_company = '';
-		$search_company_alias = '';
-		$search_parent_name = '';
-		$search_town = '';
-		$search_zip = "";
-		$search_state = "";
-		$search_type = '';
-		$search_country = '';
-		$search_type_thirdparty = '';
-		$search_total_ht = '';
-		$search_total_vat = '';
-		$search_total_ttc = '';
-		$search_warehouse = '';
-		$search_multicurrency_code = '';
-		$search_multicurrency_tx = '';
-		$search_multicurrency_montant_ht = '';
-		$search_multicurrency_montant_vat = '';
-		$search_multicurrency_montant_ttc = '';
-		$search_login = '';
-		$search_dateorder_start = '';
-		$search_dateorder_end = '';
-		$search_datedelivery_start = '';
-		$search_datedelivery_end = '';
-		$search_project_ref = '';
-		$search_project = '';
-		$search_status = '';
-		$search_billed = '';
-		$toselect = array();
-		$search_array_options = array();
-		$search_categ_cus = 0;
-		$search_datecloture_start = '';
-		$search_datecloture_end = '';
-		$search_fk_cond_reglement = '';
-		$search_fk_shipping_method = '';
-		$search_fk_mode_reglement = '';
-		$search_fk_input_reason = '';
-	}
-	if (GETPOST('button_removefilter_x', 'alpha') || GETPOST('button_removefilter.x', 'alpha') || GETPOST('button_removefilter', 'alpha')
-	 || GETPOST('button_search_x', 'alpha') || GETPOST('button_search.x', 'alpha') || GETPOST('button_search', 'alpha')) {
-		$massaction = ''; // Protection to avoid mass action if we force a new search during a mass action confirmation
-	}
-
-	// Mass actions
-	$objectclass = 'Commande';
-	$objectlabel = 'Orders';
-	$permissiontoread = $user->hasRight("commande", "lire");
-	$permissiontoadd = $user->hasRight("commande", "creer");
-	$permissiontodelete = $user->hasRight("commande", "supprimer");
-	if (!empty($conf->global->MAIN_USE_ADVANCED_PERMS)) {
-		$permissiontovalidate = $user->hasRight("commande", "order_advance", "validate");
-		$permissiontoclose = $user->hasRight("commande", "order_advance", "close");
-		$permissiontocancel = $user->hasRight("commande", "order_advance", "annuler");
-		$permissiontosendbymail = $user->hasRight("commande", "order_advance", "send");
-	} else {
-		$permissiontovalidate = $user->hasRight("commande", "creer");
-		$permissiontoclose = $user->hasRight("commande", "creer");
-		$permissiontocancel = $user->hasRight("commande", "creer");
-		$permissiontosendbymail = $user->hasRight("commande", "creer");
-	}
-	$uploaddir = $conf->commande->multidir_output[$conf->entity];
-	$triggersendname = 'ORDER_SENTBYMAIL';
-	include DOL_DOCUMENT_ROOT.'/core/actions_massactions.inc.php';
-
-	if ($massaction == 'confirm_createbills') {   // Create bills from orders.
-		$orders = GETPOST('toselect', 'array');
-		$createbills_onebythird = GETPOST('createbills_onebythird', 'int');
-		$validate_invoices = GETPOST('validate_invoices', 'int');
-
-		$errors = array();
-
-		$TFact = array();
-		$TFactThird = array();
-		$TFactThirdNbLines = array();
-
-		$nb_bills_created = 0;
-		$lastid= 0;
-		$lastref = '';
-
-		$db->begin();
-
-		$nbOrders = is_array($orders) ? count($orders) : 1;
-
-		foreach ($orders as $id_order) {
-			$cmd = new Commande($db);
-			if ($cmd->fetch($id_order) <= 0) {
-				continue;
-			}
-			$cmd->fetch_thirdparty();
-
-			$objecttmp = new Facture($db);
-			if (!empty($createbills_onebythird) && !empty($TFactThird[$cmd->socid])) {
-				// If option "one bill per third" is set, and an invoice for this thirdparty was already created, we re-use it.
-				$objecttmp = $TFactThird[$cmd->socid];
-			} else {
-				// If we want one invoice per order or if there is no first invoice yet for this thirdparty.
-				$objecttmp->socid = $cmd->socid;
-				$objecttmp->thirdparty = $cmd->thirdparty;
-
-				$objecttmp->type = $objecttmp::TYPE_STANDARD;
-				$objecttmp->cond_reglement_id = !empty($cmd->cond_reglement_id) ? $cmd->cond_reglement_id : $cmd->thirdparty->cond_reglement_id;
-				$objecttmp->mode_reglement_id = !empty($cmd->mode_reglement_id) ? $cmd->mode_reglement_id : $cmd->thirdparty->mode_reglement_id;
-
-				$objecttmp->fk_project = $cmd->fk_project;
-				$objecttmp->multicurrency_code = $cmd->multicurrency_code;
-				if (empty($createbills_onebythird)) {
-					$objecttmp->ref_client = $cmd->ref_client;
-				}
-
-				$datefacture = dol_mktime(12, 0, 0, GETPOST('remonth', 'int'), GETPOST('reday', 'int'), GETPOST('reyear', 'int'));
-				if (empty($datefacture)) {
-					$datefacture = dol_now();
-				}
-
-				$objecttmp->date = $datefacture;
-				$objecttmp->origin    = 'commande';
-				$objecttmp->origin_id = $id_order;
-
-				$objecttmp->array_options = $cmd->array_options; // Copy extrafields
-
-				$res = $objecttmp->create($user);
-
-				if ($res > 0) {
-					$nb_bills_created++;
-					$lastref = $objecttmp->ref;
-					$lastid = $objecttmp->id;
-
-					$TFactThird[$cmd->socid] = $objecttmp;
-					$TFactThirdNbLines[$cmd->socid] = 0; //init nblines to have lines ordered by expedition and rang
-				} else {
-					$langs->load("errors");
-					$errors[] = $cmd->ref.' : '.$langs->trans($objecttmp->errors[0]);
-					$error++;
-				}
-			}
-
-			if ($objecttmp->id > 0) {
-				$res = $objecttmp->add_object_linked($objecttmp->origin, $id_order);
-
-				if ($res == 0) {
-					$errors[] = $cmd->ref.' : '.$langs->trans($objecttmp->errors[0]);
-					$error++;
-				}
-
-				if (!$error) {
-					$lines = $cmd->lines;
-					if (empty($lines) && method_exists($cmd, 'fetch_lines')) {
-						$cmd->fetch_lines();
-						$lines = $cmd->lines;
-					}
-
-					$fk_parent_line = 0;
-					$num = count($lines);
-
-					for ($i = 0; $i < $num; $i++) {
-						$desc = ($lines[$i]->desc ? $lines[$i]->desc : '');
-						// If we build one invoice for several orders, we must put the ref of order on the invoice line
-						if (!empty($createbills_onebythird)) {
-							$desc = dol_concatdesc($desc, $langs->trans("Order").' '.$cmd->ref.' - '.dol_print_date($cmd->date, 'day'));
-						}
-
-						if ($lines[$i]->subprice < 0 && empty($conf->global->INVOICE_KEEP_DISCOUNT_LINES_AS_IN_ORIGIN)) {
-							// Negative line, we create a discount line
-							$discount = new DiscountAbsolute($db);
-							$discount->fk_soc = $objecttmp->socid;
-							$discount->amount_ht = abs($lines[$i]->total_ht);
-							$discount->amount_tva = abs($lines[$i]->total_tva);
-							$discount->amount_ttc = abs($lines[$i]->total_ttc);
-							$discount->tva_tx = $lines[$i]->tva_tx;
-							$discount->fk_user = $user->id;
-							$discount->description = $desc;
-							$discountid = $discount->create($user);
-							if ($discountid > 0) {
-								$result = $objecttmp->insert_discount($discountid);
-								//$result=$discount->link_to_invoice($lineid,$id);
-							} else {
-								setEventMessages($discount->error, $discount->errors, 'errors');
-								$error++;
-								break;
-							}
-						} else {
-							// Positive line
-							$product_type = ($lines[$i]->product_type ? $lines[$i]->product_type : 0);
-							// Date start
-							$date_start = false;
-							if ($lines[$i]->date_debut_prevue) {
-								$date_start = $lines[$i]->date_debut_prevue;
-							}
-							if ($lines[$i]->date_debut_reel) {
-								$date_start = $lines[$i]->date_debut_reel;
-							}
-							if ($lines[$i]->date_start) {
-								$date_start = $lines[$i]->date_start;
-							}
-							//Date end
-							$date_end = false;
-							if ($lines[$i]->date_fin_prevue) {
-								$date_end = $lines[$i]->date_fin_prevue;
-							}
-							if ($lines[$i]->date_fin_reel) {
-								$date_end = $lines[$i]->date_fin_reel;
-							}
-							if ($lines[$i]->date_end) {
-								$date_end = $lines[$i]->date_end;
-							}
-							// Reset fk_parent_line for no child products and special product
-							if (($lines[$i]->product_type != 9 && empty($lines[$i]->fk_parent_line)) || $lines[$i]->product_type == 9) {
-								$fk_parent_line = 0;
-							}
-
-							// Extrafields
-							if (method_exists($lines[$i], 'fetch_optionals')) {
-								$lines[$i]->fetch_optionals();
-								$array_options = $lines[$i]->array_options;
-							}
-
-							$objecttmp->context['createfromclone'] = 'createfromclone';
-
-							$rang = ($nbOrders > 1) ? -1 : $lines[$i]->rang;
-							//there may already be rows from previous orders
-							if (!empty($createbills_onebythird)) {
-								$rang = $TFactThirdNbLines[$cmd->socid];
-							}
-
-							$result = $objecttmp->addline(
-								$desc,
-								$lines[$i]->subprice,
-								$lines[$i]->qty,
-								$lines[$i]->tva_tx,
-								$lines[$i]->localtax1_tx,
-								$lines[$i]->localtax2_tx,
-								$lines[$i]->fk_product,
-								$lines[$i]->remise_percent,
-								$date_start,
-								$date_end,
-								0,
-								$lines[$i]->info_bits,
-								$lines[$i]->fk_remise_except,
-								'HT',
-								0,
-								$product_type,
-								$rang,
-								$lines[$i]->special_code,
-								$objecttmp->origin,
-								$lines[$i]->rowid,
-								$fk_parent_line,
-								$lines[$i]->fk_fournprice,
-								$lines[$i]->pa_ht,
-								$lines[$i]->label,
-								$array_options,
-								100,
-								0,
-								$lines[$i]->fk_unit
-							);
-							if ($result > 0) {
-								$lineid = $result;
-								if (!empty($createbills_onebythird)) //increment rang to keep order
-									$TFactThirdNbLines[$cmd->socid]++;
-							} else {
-								$lineid = 0;
-								$error++;
-								$errors[] = $objecttmp->error;
-								break;
-							}
-							// Defined the new fk_parent_line
-							if ($result > 0 && $lines[$i]->product_type == 9) {
-								$fk_parent_line = $result;
-							}
-						}
-					}
-				}
-			}
-
-			//$cmd->classifyBilled($user);        // Disabled. This behavior must be set or not using the workflow module.
-
-			if (!empty($createbills_onebythird) && empty($TFactThird[$cmd->socid])) {
-				$TFactThird[$cmd->socid] = $objecttmp;
-			} else {
-				$TFact[$objecttmp->id] = $objecttmp;
-			}
-		}
-
-		// Build doc with all invoices
-		$TAllFact = empty($createbills_onebythird) ? $TFact : $TFactThird;
-		$toselect = array();
-
-		if (!$error && $validate_invoices) {
-			$massaction = $action = 'builddoc';
-
-			foreach ($TAllFact as &$objecttmp) {
-				$result = $objecttmp->validate($user);
-				if ($result <= 0) {
-					$error++;
-					setEventMessages($objecttmp->error, $objecttmp->errors, 'errors');
-					break;
-				}
-
-				$id = $objecttmp->id; // For builddoc action
-
-				// Builddoc
-				$donotredirect = 1;
-				$upload_dir = $conf->facture->dir_output;
-				$permissiontoadd = $user->hasRight('facture', 'creer');
-
-				// Call action to build doc
-				$savobject = $object;
-				$object = $objecttmp;
-				include DOL_DOCUMENT_ROOT.'/core/actions_builddoc.inc.php';
-				$object = $savobject;
-			}
-
-			$massaction = $action = 'confirm_createbills';
-		}
-
-		if (!$error) {
-			$db->commit();
-
-			if ($nb_bills_created == 1) {
-				$texttoshow = $langs->trans('BillXCreated', '{s1}');
-				$texttoshow = str_replace('{s1}', '<a href="'.DOL_URL_ROOT.'/compta/facture/card.php?id='.urlencode($lastid).'">'.$lastref.'</a>', $texttoshow);
-				setEventMessages($texttoshow, null, 'mesgs');
-			} else {
-				setEventMessages($langs->trans('BillCreated', $nb_bills_created), null, 'mesgs');
-			}
-
-			// Make a redirect to avoid to bill twice if we make a refresh or back
-			$param = '';
-			if (!empty($mode)) {
-				$param .= '&mode='.urlencode($mode);
-			}
-			if (!empty($contextpage) && $contextpage != $_SERVER["PHP_SELF"]) {
-				$param .= '&contextpage='.urlencode($contextpage);
-			}
-			if ($limit > 0 && $limit != $conf->liste_limit) {
-				$param .= '&limit='.((int) $limit);
-			}
-			if ($sall) {
-				$param .= '&sall='.urlencode($sall);
-			}
-			if ($socid > 0) {
-				$param .= '&socid='.urlencode($socid);
-			}
-			if ($search_status != '') {
-				$param .= '&search_status='.urlencode($search_status);
-			}
-			if ($search_orderday) {
-				$param .= '&search_orderday='.urlencode($search_orderday);
-			}
-			if ($search_ordermonth) {
-				$param .= '&search_ordermonth='.urlencode($search_ordermonth);
-			}
-			if ($search_orderyear) {
-				$param .= '&search_orderyear='.urlencode($search_orderyear);
-			}
-			if ($search_deliveryday) {
-				$param .= '&search_deliveryday='.urlencode($search_deliveryday);
-			}
-			if ($search_deliverymonth) {
-				$param .= '&search_deliverymonth='.urlencode($search_deliverymonth);
-			}
-			if ($search_deliveryyear) {
-				$param .= '&search_deliveryyear='.urlencode($search_deliveryyear);
-			}
-			if ($search_ref) {
-				$param .= '&search_ref='.urlencode($search_ref);
-			}
-			if ($search_company) {
-				$param .= '&search_company='.urlencode($search_company);
-			}
-			if ($search_ref_customer) {
-				$param .= '&search_ref_customer='.urlencode($search_ref_customer);
-			}
-			if ($search_user > 0) {
-				$param .= '&search_user='.urlencode($search_user);
-			}
-			if ($search_sale > 0) {
-				$param .= '&search_sale='.urlencode($search_sale);
-			}
-			if ($search_total_ht != '') {
-				$param .= '&search_total_ht='.urlencode($search_total_ht);
-			}
-			if ($search_total_vat != '') {
-				$param .= '&search_total_vat='.urlencode($search_total_vat);
-			}
-			if ($search_total_ttc != '') {
-				$param .= '&search_total_ttc='.urlencode($search_total_ttc);
-			}
-			if ($search_project_ref >= 0) {
-				$param .= "&search_project_ref=".urlencode($search_project_ref);
-			}
-			if ($show_files) {
-				$param .= '&show_files='.urlencode($show_files);
-			}
-			if ($optioncss != '') {
-				$param .= '&optioncss='.urlencode($optioncss);
-			}
-			if ($billed != '') {
-				$param .= '&billed='.urlencode($billed);
-			}
-
-			header("Location: ".$_SERVER['PHP_SELF'].'?'.$param);
-			exit;
-		} else {
-			$db->rollback();
-
-			$action = 'create';
-			$_GET["origin"] = $_POST["origin"];
-			$_GET["originid"] = $_POST["originid"];
-			if (!empty($errors)) {
-				setEventMessages(null, $errors, 'errors');
-			} else {
-				setEventMessages("Error", null, 'errors');
-			}
-			$error++;
-		}
-	}
-}
-if ($action == 'validate' && $permissiontoadd) {
-	if (GETPOST('confirm') == 'yes') {
-		$objecttmp = new $objectclass($db);
-		$db->begin();
-		$error = 0;
-		foreach ($toselect as $checked) {
-			if ($objecttmp->fetch($checked)) {
-				if ($objecttmp->statut == 0) {
-					if (!empty($objecttmp->fk_warehouse)) {
-						$idwarehouse = $objecttmp->fk_warehouse;
-					} else {
-						$idwarehouse = 0;
-					}
-					if ($objecttmp->valid($user, $idwarehouse)) {
-						setEventMessages($langs->trans('hasBeenValidated', $objecttmp->ref), null, 'mesgs');
-					} else {
-						setEventMessages($objecttmp->error, $objecttmp->errors, 'errors');
-						$error++;
-					}
-				} else {
-					$langs->load("errors");
-					setEventMessages($langs->trans('ErrorIsNotADraft', $objecttmp->ref), null, 'errors');
-					$error++;
-				}
-			} else {
-				dol_print_error($db);
-				$error++;
-			}
-		}
-		if ($error) {
-			$db->rollback();
-		} else {
-			$db->commit();
-		}
-	}
-}
-if ($action == 'shipped' && $permissiontoadd) {
-	if (GETPOST('confirm') == 'yes') {
-		$objecttmp = new $objectclass($db);
-		$db->begin();
-		$error = 0;
-		foreach ($toselect as $checked) {
-			if ($objecttmp->fetch($checked)) {
-				if ($objecttmp->statut == 1 || $objecttmp->statut == 2) {
-					if ($objecttmp->cloture($user)) {
-						setEventMessages($langs->trans('StatusOrderDelivered', $objecttmp->ref), null, 'mesgs');
-					} else {
-						setEventMessages($langs->trans('ErrorOrderStatusCantBeSetToDelivered'), null, 'errors');
-						$error++;
-					}
-				} else {
-					$langs->load("errors");
-					setEventMessages($langs->trans('ErrorIsNotADraft', $objecttmp->ref), null, 'errors');
-					$error++;
-				}
-			} else {
-				dol_print_error($db);
-				$error++;
-			}
-		}
-		if ($error) {
-			$db->rollback();
-		} else {
-			$db->commit();
-		}
-	}
-}
-
-// Closed records
-if (!$error && $massaction === 'setbilled' && $permissiontoclose) {
-	$db->begin();
-
-	$objecttmp = new $objectclass($db);
-	$nbok = 0;
-	foreach ($toselect as $toselectid) {
-		$result = $objecttmp->fetch($toselectid);
-		if ($result > 0) {
-			$result = $objecttmp->classifyBilled($user, 0);
-			if ($result <= 0) {
-				setEventMessages($objecttmp->error, $objecttmp->errors, 'errors');
-				$error++;
-				break;
-			} else {
-				$nbok++;
-			}
-		} else {
-			setEventMessages($objecttmp->error, $objecttmp->errors, 'errors');
-			$error++;
-			break;
-		}
-	}
-
-	if (!$error) {
-		if ($nbok > 1) {
-			setEventMessages($langs->trans("RecordsModified", $nbok), null, 'mesgs');
-		} else {
-			setEventMessages($langs->trans("RecordsModified", $nbok), null, 'mesgs');
-		}
-		$db->commit();
-	} else {
-		$db->rollback();
-	}
-}
-
 
 /*
  * View
@@ -869,233 +337,69 @@ if ($search_user > 0) {
 	$sql .= ", ".MAIN_DB_PREFIX."c_type_contact as tc";
 }
 
-// Add table from hooks
-$parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListFrom', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-$sql .= $hookmanager->resPrint;
+$sqlquery0 = "SELECT rowid FROM ".MAIN_DB_PREFIX."propal as p";
+$ressqlquery0 = $db->query($sqlquery0);
+foreach($ressqlquery0 as $q0) {
+	$sqlquery = "SELECT rowid, fk_product, rang, qty, fk_propal FROM " . MAIN_DB_PREFIX . "propaldet as pdt";
+	$sqlquery.= " WHERE fk_propal = '".$db->escape($q0['row_id'])."'";
 
-$sql .= ' WHERE c.fk_soc = s.rowid';
-$sql .= ' AND c.entity IN ('.getEntity('commande').')';
-if ($socid > 0) {
-	$sql .= ' AND s.rowid = '.((int) $socid);
-}
-if (empty($user->rights->societe->client->voir) && !$socid) {
-	$sql .= " AND s.rowid = sc.fk_soc AND sc.fk_user = ".((int) $user->id);
-}
-if ($search_ref) {
-	$sql .= natural_search('c.ref', $search_ref);
-}
-if ($search_ref_customer) {
-	$sql .= natural_search('c.ref_client', $search_ref_customer);
-}
-if ($sall) {
-	$sql .= natural_search(array_keys($fieldstosearchall), $sall);
-}
-if ($search_billed != '' && $search_billed >= 0) {
-	$sql .= ' AND c.facture = '.((int) $search_billed);
-}
-if ($search_status <> '') {
-	if ($search_status <= 3 && $search_status >= -1) {	// status from -1 to 3 are real status (other are virtual combination)
-		if ($search_status == 1 && !isModEnabled('expedition')) {
-			$sql .= ' AND c.fk_statut IN (1,2)'; // If module expedition disabled, we include order with status 'sending in process' into 'validated'
+	$ressqlquery = $db->query($sqlquery);
+	$qty_propal = array();
+	$qty_commandes = array();
+	$refLines = array();
+	$selectedLines = array();
+	foreach ($ressqlquery as $q) {
+		$qty_propal[$q["rang"]] = $q["qty"];
+		$sqlquery2 = "SELECT DISTINCT(cdt.rowid), cdt.fk_product, cdt.rang, cdt.qty FROM " . MAIN_DB_PREFIX . "commandedet as cdt INNER JOIN " . MAIN_DB_PREFIX . "commande as c";
+		$sqlquery2 .= " WHERE cdt.rang = " . $db->escape($q['rang']) . " AND cdt.fk_commande IN(SELECT ee.fk_target FROM " . MAIN_DB_PREFIX . "element_element as ee WHERE ee.sourcetype='propal' AND ee.targettype='commande' AND ee.fk_source=" . $db->escape($q0['row_id']) . ")";
+
+		//$sqlquerybis = "SELECT ee.fk_target FROM ".MAIN_DB_PREFIX."element_element as ee WHERE ee.sourcetype='propal' AND ee.targettype='commande' AND ee.fk_source=".$db->escape($objectsrc->id);
+
+		$res = $db->query($sqlquery2);
+		//$resbis = $db->query($sqlquerybis);
+		/*var_dump($res);
+		echo "<br /><br />";*/
+		if ($res) {
+			foreach ($res as $r) {
+				/*var_dump($r);
+				echo "<br /><br />";*/
+				if ($qty_commandes[$r["rang"]]) {
+					$qty_commandes[$r["rang"]] = $qty_commandes[$r["rang"]] + $r["qty"];
+				} else {
+					$qty_commandes[$r["rang"]] = $r["qty"];
+				}
+			}
 		} else {
-			$sql .= ' AND c.fk_statut = '.((int) $search_status); // draft, validated, in process or canceled
+			$refLines[$q["rowid"]] = $q["qty"];
 		}
 	}
-	if ($search_status == -2) {	// "validated + in process"
-		//$sql.= ' AND c.fk_statut IN (1,2,3) AND c.facture = 0';
-		$sql .= " AND (c.fk_statut IN (1,2))";
-	}
-	if ($search_status == -3) {	// "validated + in process + delivered"
-		//$sql.= ' AND c.fk_statut in (1,2,3)';
-		//$sql.= ' AND c.facture = 0'; // invoice not created
-		$sql .= ' AND (c.fk_statut IN (1,2,3))'; // validated, in process or closed
-	}
-	if ($search_status == -4) {	//  "validate + in progress"
-		$sql .= ' AND (c.fk_statut IN (1,2))'; // validated, in process
-	}
-}
+//var_dump($qty_commandes);
+	foreach ($qty_propal as $rang => $qtyp) {
+		if ($qtyp != $qty_commandes[$rang]) {
+			$sqlquery3 = "SELECT rowid FROM " . MAIN_DB_PREFIX . "propaldet as pdt";
+			$sqlquery3 .= " WHERE rang='" . $rang . "' AND fk_propal = '" . $db->escape($q0['row_id']) . "'";
 
-if ($search_datecloture_start) {
-	$sql .= " AND c.date_cloture >= '".$db->idate($search_datecloture_start)."'";
-}
-if ($search_datecloture_end) {
-	$sql .= " AND c.date_cloture <= '".$db->idate($search_datecloture_end)."'";
-}
-if ($search_dateorder_start) {
-	$sql .= " AND c.date_commande >= '".$db->idate($search_dateorder_start)."'";
-}
-if ($search_dateorder_end) {
-	$sql .= " AND c.date_commande <= '".$db->idate($search_dateorder_end)."'";
-}
-if ($search_datedelivery_start) {
-	$sql .= " AND c.date_livraison >= '".$db->idate($search_datedelivery_start)."'";
-}
-if ($search_datedelivery_end) {
-	$sql .= " AND c.date_livraison <= '".$db->idate($search_datedelivery_end)."'";
-}
-if ($search_town) {
-	$sql .= natural_search('s.town', $search_town);
-}
-if ($search_zip) {
-	$sql .= natural_search("s.zip", $search_zip);
-}
-if ($search_state) {
-	$sql .= natural_search("state.nom", $search_state);
-}
-if ($search_country) {
-	$sql .= " AND s.fk_pays IN (".$db->sanitize($search_country).')';
-}
-if ($search_type_thirdparty && $search_type_thirdparty != '-1') {
-	$sql .= " AND s.fk_typent IN (".$db->sanitize($search_type_thirdparty).')';
-}
-if (empty($arrayfields['s.name_alias']['checked']) && $search_company) {
-	$sql .= natural_search(array("s.nom", "s.name_alias"), $search_company);
-} else {
-	if ($search_company) {
-		$sql .= natural_search('s.nom', $search_company);
-	}
-	if ($search_company_alias) {
-		$sql .= natural_search('s.name_alias', $search_company_alias);
-	}
-}
-if ($search_parent_name) {
-	$sql .= natural_search('s2.nom', $search_parent_name);
-}
-if ($search_sale > 0) {
-	$sql .= " AND s.rowid = sc.fk_soc AND sc.fk_user = ".((int) $search_sale);
-}
-if ($search_user > 0) {
-	$sql .= " AND ec.fk_c_type_contact = tc.rowid AND tc.element='commande' AND tc.source='internal' AND ec.element_id = c.rowid AND ec.fk_socpeople = ".((int) $search_user);
-}
-if ($search_total_ht != '') {
-	$sql .= natural_search('c.total_ht', $search_total_ht, 1);
-}
-if ($search_total_vat != '') {
-	$sql .= natural_search('c.total_tva', $search_total_vat, 1);
-}
-if ($search_total_ttc != '') {
-	$sql .= natural_search('c.total_ttc', $search_total_ttc, 1);
-}
-if ($search_warehouse != '' && $search_warehouse > 0) {
-	$sql .= natural_search('c.fk_warehouse', $search_warehouse, 1);
-}
-if ($search_multicurrency_code != '') {
-	$sql .= " AND c.multicurrency_code = '".$db->escape($search_multicurrency_code)."'";
-}
-if ($search_multicurrency_tx != '') {
-	$sql .= natural_search('c.multicurrency_tx', $search_multicurrency_tx, 1);
-}
-if ($search_multicurrency_montant_ht != '') {
-	$sql .= natural_search('c.multicurrency_total_ht', $search_multicurrency_montant_ht, 1);
-}
-if ($search_multicurrency_montant_vat != '') {
-	$sql .= natural_search('c.multicurrency_total_tva', $search_multicurrency_montant_vat, 1);
-}
-if ($search_multicurrency_montant_ttc != '') {
-	$sql .= natural_search('c.multicurrency_total_ttc', $search_multicurrency_montant_ttc, 1);
-}
-if ($search_login) {
-	$sql .= natural_search(array("u.login", "u.firstname", "u.lastname"), $search_login);
-}
-if ($search_project_ref != '') {
-	$sql .= natural_search("p.ref", $search_project_ref);
-}
-if ($search_project != '') {
-	$sql .= natural_search("p.title", $search_project);
-}
-if ($search_categ_cus > 0) {
-	$sql .= " AND cc.fk_categorie = ".((int) $search_categ_cus);
-}
-if ($search_categ_cus == -2) {
-	$sql .= " AND cc.fk_categorie IS NULL";
-}
-if ($search_fk_cond_reglement > 0) {
-	$sql .= " AND c.fk_cond_reglement = ".((int) $search_fk_cond_reglement);
-}
-if ($search_fk_shipping_method > 0) {
-	$sql .= " AND c.fk_shipping_method = ".((int) $search_fk_shipping_method);
-}
-if ($search_fk_mode_reglement > 0) {
-	$sql .= " AND c.fk_mode_reglement = ".((int) $search_fk_mode_reglement);
-}
-if ($search_fk_input_reason > 0) {
-	$sql .= " AND c.fk_input_reason = ".((int) $search_fk_input_reason);
-}
-// Search for tag/category ($searchCategoryProductList is an array of ID)
-$searchCategoryProductOperator = -1;
-$searchCategoryProductList = array($search_product_category);
-if (!empty($searchCategoryProductList)) {
-	$searchCategoryProductSqlList = array();
-	$listofcategoryid = '';
-	foreach ($searchCategoryProductList as $searchCategoryProduct) {
-		if (intval($searchCategoryProduct) == -2) {
-			$searchCategoryProductSqlList[] = "NOT EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."commandedet as cd WHERE cd.fk_commande = c.rowid AND cd.fk_product = ck.fk_product)";
-		} elseif (intval($searchCategoryProduct) > 0) {
-			if ($searchCategoryProductOperator == 0) {
-				$searchCategoryProductSqlList[] = " EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."commandedet as cd WHERE cd.fk_commande = c.rowid AND cd.fk_product = ck.fk_product AND ck.fk_categorie = ".((int) $searchCategoryProduct).")";
-			} else {
-				$listofcategoryid .= ($listofcategoryid ? ', ' : '') .((int) $searchCategoryProduct);
+			$ressqlquery3 = $db->query($sqlquery3);
+			if ($ressqlquery3) {
+				foreach ($ressqlquery3 as $sql3) {
+					$refLines[$sql3["rowid"]] = $qtyp - $qty_commandes[$rang];
+				}
 			}
 		}
 	}
-	if ($listofcategoryid) {
-		$searchCategoryProductSqlList[] = " EXISTS (SELECT ck.fk_product FROM ".MAIN_DB_PREFIX."categorie_product as ck, ".MAIN_DB_PREFIX."commandedet as cd WHERE cd.fk_commande = c.rowid AND cd.fk_product = ck.fk_product AND ck.fk_categorie IN (".$db->sanitize($listofcategoryid)."))";
-	}
-	if ($searchCategoryProductOperator == 1) {
-		if (!empty($searchCategoryProductSqlList)) {
-			$sql .= " AND (".implode(' OR ', $searchCategoryProductSqlList).")";
-		}
-	} else {
-		if (!empty($searchCategoryProductSqlList)) {
-			$sql .= " AND (".implode(' AND ', $searchCategoryProductSqlList).")";
-		}
-	}
 }
-// Add where from extra fields
-include DOL_DOCUMENT_ROOT.'/core/tpl/extrafields_list_search_sql.tpl.php';
-// Add where from hooks
-$parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListWhere', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-$sql .= $hookmanager->resPrint;
 
-// Add HAVING from hooks
-$parameters = array();
-$reshook = $hookmanager->executeHooks('printFieldListHaving', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-$sql .= empty($hookmanager->resPrint) ? "" : " HAVING 1=1 ".$hookmanager->resPrint;
+$nbtotalofrecords = count($refLines);
 
 // Count total nb of records
 $nbtotalofrecords = '';
-if (!getDolGlobalInt('MAIN_DISABLE_FULL_SCANLIST')) {
-	/* The fast and low memory method to get and count full list converts the sql into a sql count */
-	$sqlforcount = preg_replace('/^'.preg_quote($sqlfields, '/').'/', 'SELECT COUNT(*) as nbtotalofrecords', $sql);
-	$sqlforcount = preg_replace('/GROUP BY .*$/', '', $sqlforcount);
-	$resql = $db->query($sqlforcount);
-	if ($resql) {
-		$objforcount = $db->fetch_object($resql);
-		$nbtotalofrecords = $objforcount->nbtotalofrecords;
-	} else {
-		dol_print_error($db);
-	}
+
 
 	if (($page * $limit) > $nbtotalofrecords) {	// if total resultset is smaller than paging size (filtering), goto and load page 0
 		$page = 0;
 		$offset = 0;
 	}
-	$db->free($resql);
-}
 
-$sql .= $db->order($sortfield, $sortorder);
-if ($limit) {
-	$sql .= $db->plimit($limit + 1, $offset);
-}
-//print $sql;
-
-$resql = $db->query($sql);
-if (!$resql) {
-	dol_print_error($db);
-	exit;
-}
 
 if ($socid > 0) {
 	$soc = new Societe($db);
@@ -1105,43 +409,11 @@ if ($socid > 0) {
 		$search_company = $soc->name;
 	}
 } else {
-	$title = $langs->trans('CustomersOrders');
-}
-if (strval($search_status) == '0') {
-	$title .= ' - '.$langs->trans('StatusOrderDraftShort');
-}
-if ($search_status == 1) {
-	$title .= ' - '.$langs->trans('StatusOrderValidatedShort');
-}
-if ($search_status == 2) {
-	$title .= ' - '.$langs->trans('StatusOrderSentShort');
-}
-if ($search_status == 3) {
-	$title .= ' - '.$langs->trans('StatusOrderToBillShort');
-}
-if ($search_status == -1) {
-	$title .= ' - '.$langs->trans('StatusOrderCanceledShort');
-}
-if ($search_status == -2) {
-	$title .= ' - '.$langs->trans('StatusOrderToProcessShort');
-}
-if ($search_status == -3) {
-	$title .= ' - '.$langs->trans('StatusOrderValidated').', '.(!isModEnabled('expedition') ? '' : $langs->trans("StatusOrderSent").', ').$langs->trans('StatusOrderToBill');
-}
-if ($search_status == -4) {
-	$title .= ' - '.$langs->trans("StatusOrderValidatedShort").'+'.$langs->trans("StatusOrderSentShort");
+	$title = $langs->trans('RemainingToBeDelivered');
 }
 
-$num = $db->num_rows($resql);
-
-$arrayofselected = is_array($toselect) ? $toselect : array();
-
-if ($num == 1 && !empty($conf->global->MAIN_SEARCH_DIRECT_OPEN_IF_ONLY_ONE) && $sall) {
-	$obj = $db->fetch_object($resql);
-	$id = $obj->rowid;
-	header("Location: ".DOL_URL_ROOT.'/commande/card.php?id='.$id);
-	exit;
-}
+var_dump($refLines);
+exit;
 
 // Output page
 // --------------------------------------------------------------------
