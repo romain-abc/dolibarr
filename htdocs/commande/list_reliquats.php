@@ -216,7 +216,8 @@ $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 
 $sqlquery0 = "SELECT rowid FROM ".MAIN_DB_PREFIX."propal as p";
-$sqlquery0 .= " WHERE p.fk_statut = ".Propal::STATUS_VALIDATED;
+$sqlquery0 .= " WHERE p.fk_statut = ".Propal::STATUS_SIGNED;
+
 
 $ressqlquery0 = $db->query($sqlquery0);
 foreach($ressqlquery0 as $q0) {
