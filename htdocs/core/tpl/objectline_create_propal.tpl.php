@@ -408,7 +408,7 @@ if ($nolinesbefore) {
 		?>
 	</td>
 
-	<td class="valignbottom nobottom linecoluht right"><?php $coldisplay++; ?>
+	<td class="valignmiddle nobottom linecoluht right"><?php $coldisplay++; ?>
 		<input style="margin-top: 70px;" type="text" size="5" name="price_ht" id="price_ht" class="flat right" value="<?php echo (GETPOSTISSET("price_ht") ? GETPOST("price_ht", 'alpha', 2) : ''); ?>">
 		<?php
 		if (is_object($objectline)) {
