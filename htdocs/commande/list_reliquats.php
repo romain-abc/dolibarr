@@ -373,22 +373,22 @@ $totalarray = array(
 // --------------------------------------------------------------------
 print '<tr class="liste_titre">';
 
-print_liste_field_titre("Produits", $_SERVER["PHP_SELF"], 'c.ref', '', $param, '', $sortfield, $sortorder);
+print_liste_field_titre("Produits", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
 $totalarray['nbfield']++;
 
-print_liste_field_titre("Quantité commandée", $_SERVER["PHP_SELF"], 'c.ref', '', $param, '', $sortfield, $sortorder);
+print_liste_field_titre("Quantité commandée", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
 $totalarray['nbfield']++;
 
-print_liste_field_titre("Quantité déjà livrée", $_SERVER["PHP_SELF"], 'c.ref', '', $param, '', $sortfield, $sortorder);
+print_liste_field_titre("Quantité déjà livrée", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
 $totalarray['nbfield']++;
 
-print_liste_field_titre("Quantité restant à livrer", $_SERVER["PHP_SELF"], 'c.ref', '', $param, '', $sortfield, $sortorder);
+print_liste_field_titre("Quantité restant à livrer", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
 $totalarray['nbfield']++;
 
-print_liste_field_titre("Tiers", $_SERVER["PHP_SELF"], 'c.ref', '', $param, '', $sortfield, $sortorder);
+print_liste_field_titre("Tiers", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
 $totalarray['nbfield']++;
 
-print_liste_field_titre("Devis", $_SERVER["PHP_SELF"], 'c.ref', '', $param, '', $sortfield, $sortorder);
+print_liste_field_titre("Devis", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
 $totalarray['nbfield']++;
 
 
