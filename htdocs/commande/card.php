@@ -49,6 +49,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/order.lib.php';
 
 require_once DOL_DOCUMENT_ROOT.'/comm/action/class/actioncomm.class.php';
 require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
+include_once DOL_DOCUMENT_ROOT . '/categories/class/categorie.class.php';
 
 if (isModEnabled("propal")) {
 	require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
@@ -75,6 +76,9 @@ if (isModEnabled('margin')) {
 }
 if (isModEnabled('productbatch')) {
 	$langs->load('productbatch');
+}
+if (isModEnabled('categorie')) {
+	$langs->load('categories');
 }
 
 
@@ -2735,11 +2739,20 @@ if ($action == 'create' && $usercancreate) {
 
 		// Insitu
 		if ($soc) {
-			if($soc->array_options['options_insitu']){
+			$cat = new Categorie($db);
+			$categories = $cat->containing($soc->id, Categorie::TYPE_CUSTOMER);
+			if($categories){
 				print '<tr><td>';
-				print $langs->trans('Insitu');
+				print $langs->trans('CustomersCategoriesShort');
 				print '</td><td>';
-				print 'Oui';
+				$toprint = array();
+				foreach ($categories as $c) {
+					$ways = $c->print_all_ways(' &gt;&gt; ', '', 0, 1); // $ways[0] = "ccc2 >> ccc2a >> ccc2a1" with html formated text
+					foreach ($ways as $way) {
+						$toprint[] = '<li class="select2-search-choice-dolibarr noborderoncategories"' . ($c->color ? ' style="background: #' . $c->color . ';"' : ' style="background: #bbb"') . '>' . $way . '</li>';
+					}
+				}
+				print '<div class="select2-container-multi-dolibarr"><ul class="select2-choices-dolibarr">' . implode(' ', $toprint) . '</ul></div>';
 				print '</td>';
 				print '</tr>';
 			}
