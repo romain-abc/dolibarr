@@ -436,7 +436,7 @@ foreach($refLines as $rowid => $qty){
 	//var_dump($ol->product_label);
 	print '<tr data-rowid="'.$ol->id.'" class="oddeven">';
 
-	print '<td class="nowraponall tdoverflowmax200">';
+	print '<td class="nowraponall tdoverflowmax300">';
 	if($ol->fk_product){
 		$p = new Product($db);
 		if($p->fetch($ol->fk_product)){
@@ -461,7 +461,7 @@ foreach($refLines as $rowid => $qty){
 		$totalarray['nbfield']++;
 	}
 
-	print '<td class="nowraponall">';
+	print '<td class="nowraponall center">';
 	print $ol->qty;
 	print '</td>';
 
@@ -470,7 +470,7 @@ foreach($refLines as $rowid => $qty){
 	}
 
 
-	print '<td class="nowraponall">';
+	print '<td class="nowraponall center">';
 	print $ol->qty-$qty;
 	print '</td>';
 
@@ -480,7 +480,7 @@ foreach($refLines as $rowid => $qty){
 
 
 
-	print '<td class="nowraponall">';
+	print '<td class="nowraponall center">';
 	print "<b>".$qty."</b>";
 	print '</td>';
 
