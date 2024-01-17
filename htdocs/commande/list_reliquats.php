@@ -217,13 +217,13 @@ $reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters, $obje
 
 $sqlquery0 = "SELECT rowid FROM ".MAIN_DB_PREFIX."propal as p";
 $sqlquery0 .= " WHERE p.fk_statut = ".Propal::STATUS_SIGNED;
+$sqlquery0 .= " ORDER BY date_signature ASC";
 
 
 $ressqlquery0 = $db->query($sqlquery0);
 foreach($ressqlquery0 as $q0) {
 	$sqlquery = "SELECT rowid, fk_product, rang, qty, fk_propal FROM " . MAIN_DB_PREFIX . "propaldet as pdt";
 	$sqlquery.= " WHERE fk_propal = '".$db->escape($q0['rowid'])."'";
-	$sqlquery .= " ORDER BY date_signature ASC";
 
 	$ressqlquery = $db->query($sqlquery);
 	$qty_propal = array();
