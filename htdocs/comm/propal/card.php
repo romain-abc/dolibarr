@@ -69,6 +69,9 @@ if (isModEnabled('incoterm')) {
 if (isModEnabled('margin')) {
 	$langs->load('margins');
 }
+if (isModEnabled('categories')) {
+	$langs->load('categories');
+}
 
 $error = 0;
 
