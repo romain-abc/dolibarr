@@ -225,7 +225,7 @@ $coldisplay = 0;
 	}
 
 	$coldisplay++;
-	print '<td class="right valignbottom"><input type="text" class="flat right" size="5" id="price_ht" name="price_ht" value="'.(GETPOSTISSET('price_ht') ? GETPOST('price_ht', 'alpha') : (isset($line->pu_ht) ? price($line->pu_ht, 0, '', 0) : price($line->subprice, 0, '', 0))).'"';
+	print '<td class="right valignbottom"><input style="margin-top: 70px;" type="text" class="flat right" size="5" id="price_ht" name="price_ht" value="'.(GETPOSTISSET('price_ht') ? GETPOST('price_ht', 'alpha') : (isset($line->pu_ht) ? price($line->pu_ht, 0, '', 0) : price($line->subprice, 0, '', 0))).'"';
 	if ($situationinvoicelinewithparent) {
 		print ' readonly';
 	}
@@ -236,7 +236,7 @@ $coldisplay = 0;
 			//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 			if (!empty($temps)) {
-				print '<div style="padding-top: 30px" name="extrafield_lines_area_edit" class="extrafield_lines_area">';
+				print '<div style="padding-top: 10px" name="extrafield_lines_area_edit" class="extrafield_lines_area">';
 				print $temps;
 				print '</div>';
 			}

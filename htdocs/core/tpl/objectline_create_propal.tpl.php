@@ -409,7 +409,7 @@ if ($nolinesbefore) {
 	</td>
 
 	<td class="valignbottom nobottom linecoluht right"><?php $coldisplay++; ?>
-		<input type="text" size="5" name="price_ht" id="price_ht" class="flat right" value="<?php echo (GETPOSTISSET("price_ht") ? GETPOST("price_ht", 'alpha', 2) : ''); ?>">
+		<input style="margin-top: 70px;" type="text" size="5" name="price_ht" id="price_ht" class="flat right" value="<?php echo (GETPOSTISSET("price_ht") ? GETPOST("price_ht", 'alpha', 2) : ''); ?>">
 		<?php
 		if (is_object($objectline)) {
 			if (!empty($extrafields)) {
@@ -417,7 +417,7 @@ if ($nolinesbefore) {
 				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
 
 				if (!empty($temps)) {
-					print '<div style="padding-top: 28px" name="extrafield_lines_area_create" class="extrafield_lines_area">';
+					print '<div style="padding-top: 10px" name="extrafield_lines_area_create" class="extrafield_lines_area">';
 					print $temps;
 					print '</div>';
 				}
