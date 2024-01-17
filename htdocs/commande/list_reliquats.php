@@ -436,7 +436,7 @@ foreach($refLines as $rowid => $qty){
 	//var_dump($ol->product_label);
 	print '<tr data-rowid="'.$ol->id.'" class="oddeven">';
 
-	print '<td class="nowraponall">';
+	print '<td class="nowraponall tdoverflowmax200">';
 	if($ol->fk_product){
 		$p = new Product($db);
 		if($p->fetch($ol->fk_product)){
