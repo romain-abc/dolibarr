@@ -69,7 +69,7 @@ if (isModEnabled('incoterm')) {
 if (isModEnabled('margin')) {
 	$langs->load('margins');
 }
-if (isModEnabled('categories')) {
+if (isModEnabled('categorie')) {
 	$langs->load('categories');
 }
 
