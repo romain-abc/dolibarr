@@ -2698,20 +2698,26 @@ if ($action == 'create') {
 	print '</tr>';*/
 
 	// Insitu
-	$cat = new Categorie($db);
-	$categories = $cat->containing($soc->id, Categorie::TYPE_CUSTOMER);
-	var_dump($categories);
-	//$form->showCategories($soc->id, Categorie::TYPE_CUSTOMER, 0);
 	if ($soc) {
-		if($soc->array_options['options_insitu']){
+		$cat = new Categorie($db);
+		$categories = $cat->containing($soc->id, Categorie::TYPE_CUSTOMER);
+		if($categories){
 			print '<tr><td>';
-			print $langs->trans('Insitu');
+			print $langs->trans('CustomersCategoriesShort');
 			print '</td><td>';
-			print 'Oui';
+			$toprint = array();
+			foreach ($categories as $c) {
+				$ways = $c->print_all_ways(' &gt;&gt; ', '', 0, 1); // $ways[0] = "ccc2 >> ccc2a >> ccc2a1" with html formated text
+				foreach ($ways as $way) {
+					$toprint[] = '<li class="select2-search-choice-dolibarr noborderoncategories"' . ($c->color ? ' style="background: #' . $c->color . ';"' : ' style="background: #bbb"') . '>' . $way . '</li>';
+				}
+			}
+			print '<div class="select2-container-multi-dolibarr"><ul class="select2-choices-dolibarr">' . implode(' ', $toprint) . '</ul></div>';
 			print '</td>';
 			print '</tr>';
 		}
 	}
+
 
 	// Multicurrency
 	if (isModEnabled("multicurrency")) {
