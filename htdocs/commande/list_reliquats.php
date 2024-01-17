@@ -223,6 +223,7 @@ $ressqlquery0 = $db->query($sqlquery0);
 foreach($ressqlquery0 as $q0) {
 	$sqlquery = "SELECT rowid, fk_product, rang, qty, fk_propal FROM " . MAIN_DB_PREFIX . "propaldet as pdt";
 	$sqlquery.= " WHERE fk_propal = '".$db->escape($q0['rowid'])."'";
+	$sqlquery .= " ORDER BY date_signature ASC";
 
 	$ressqlquery = $db->query($sqlquery);
 	$qty_propal = array();
@@ -516,7 +517,7 @@ foreach($refLines as $rowid => $qty){
 
 
 	print '<td class="nowraponall">';
-	print $pr->date_signature;
+	print dol_print_date($db->jdate($pr->date_signature), 'day');
 	print '</td>';
 
 	if (!$i) {
