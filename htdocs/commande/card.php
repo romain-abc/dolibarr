@@ -2944,10 +2944,10 @@ if ($action == 'create' && $usercancreate) {
 
 				$parameters = array();
 				// Note that $action and $object may be modified by hook
-				$reshook = $hookmanager->executeHooks('formAddObjectLine', $parameters, $object, $action);
+				$reshook = $hookmanager->executeHooks('formAddObjectLinePropal', $parameters, $object, $action);
 				if ($reshook < 0) setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
 				if (empty($reshook))
-					$object->formAddObjectLine(1, $mysoc, $soc);
+					$object->formAddObjectLinePropal(1, $mysoc, $soc);
 			}
 		}
 		print '</table>';
