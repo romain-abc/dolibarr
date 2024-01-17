@@ -440,17 +440,18 @@ foreach($refLines as $rowid => $qty){
 	if($ol->fk_product){
 		$p = new Product($db);
 		if($p->fetch($ol->fk_product)){
-			print "<b>".$p->label."</b>";
+			print $p->getNomUrl(1, 0, 0, 0, 0, 1, 1);
+			//print "<b>".$p->label."</b>";
 		}
 		else{
 			$s = new Service($db);
 			$s->fetch($ol->fk_product);
-			print "<b>".$s->label."</b>";
+			print $s->getNomUrl(1, 0, 0, 0, 0, 1, 1);
+			//print "<b>".$s->label."</b>";
 		}
 	}
 	else{
 		//var_dump($ol);
-		echo "<br /><br />";
 		print $ol->desc;
 	}
 
