@@ -301,7 +301,10 @@ $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $param .= $hookmanager->resPrint;
 
-
+// List of mass actions available
+$arrayofmassactions = array(
+	// TODO add mass action here
+);
 $massactionbutton = $form->selectMassAction('', $arrayofmassactions);
 
 $url = DOL_URL_ROOT.'/commande/card.php?action=create';
