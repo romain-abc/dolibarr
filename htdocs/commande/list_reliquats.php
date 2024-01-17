@@ -503,7 +503,7 @@ foreach($refLines as $rowid => $qty){
 
 
 	print '<td class="nowraponall">';
-	print $pr->getNomUrl(1, 0, 0, 1, 0, 1);
+	print $pr->getNomUrl(1, '', '', 0, 1, 1);
 	print '</td>';
 
 	if (!$i) {
