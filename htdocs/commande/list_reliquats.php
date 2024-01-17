@@ -517,6 +517,8 @@ foreach($refLines as $rowid => $qty){
 
 
 	print '<td class="nowraponall">';
+	var_dump($pr->dsignature);
+	var_dump($pr->date_signature);
 	print dol_print_date($db->jdate($pr->dsignature), 'day');
 	print '</td>';
 
