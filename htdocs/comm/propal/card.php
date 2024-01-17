@@ -2678,7 +2678,7 @@ if ($action == 'create') {
 	}
 
 	// Origin of demand
-	print '<tr><td>';
+	/*print '<tr><td>';
 	print '<table class="nobordernopadding centpercent"><tr><td>';
 	print $langs->trans('Source');
 	print '</td>';
@@ -2694,9 +2694,10 @@ if ($action == 'create') {
 		$form->formInputReason($_SERVER['PHP_SELF'].'?id='.$object->id, $object->demand_reason_id, 'none');
 	}
 	print '</td>';
-	print '</tr>';
+	print '</tr>';*/
 
 	// Insitu
+	$form->showCategories($soc->id, Categorie::TYPE_CUSTOMER, 0);
 	if ($soc) {
 		if($soc->array_options['options_insitu']){
 			print '<tr><td>';
