@@ -8734,6 +8734,10 @@ abstract class CommonObject
 							break;
 					}
 
+					if($mode=="view" && !$value){
+						continue;
+					}
+
 					$nbofextrafieldsshown++;
 
 					// Output value of the current field
