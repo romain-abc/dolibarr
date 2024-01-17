@@ -223,13 +223,18 @@ if ($action == "importSignature") {
 						$user = new User($db);
 						$user->fetch($object->user_valid_id);
 						$object->context = array('closedfromonlinesignature' => 'closedfromonlinesignature');
-						$result = $object->call_trigger('PROPAL_CLOSE_SIGNED', $user);
+						//$result = $object->call_trigger('PROPAL_CLOSE_SIGNED', $user);
+						$result = $object->call_trigger('PROPAL_CLOSE_SIGNED_WEB', $user);
 						if ($result < 0) {
 							$error++;
 							$response = "error in trigger ".$object->error;
 						} else {
 							$response = "success";
 						}
+						/*$result = $object->call_trigger('PROPAL_CLOSE_SIGNED_WEB', $user);
+						if ($result < 0) {
+							$error++;
+						}*/
 					} else {
 						$response = "success";
 					}

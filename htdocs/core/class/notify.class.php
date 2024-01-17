@@ -73,6 +73,9 @@ class Notify
 		'PROPAL_VALIDATE',
 		'PROPAL_CLOSE_SIGNED',
 		'PROPAL_CLOSE_REFUSED',
+		'PROPAL_CLOSE_SIGNED_WEB',
+		'PROPAL_CLOSE_REFUSED',
+		'PROPAL_CLOSE_REFUSED_WEB',
 		'FICHINTER_VALIDATE',
 		'FICHINTER_ADD_CONTACT',
 		'ORDER_SUPPLIER_VALIDATE',
@@ -462,6 +465,7 @@ class Notify
 					$obj = $this->db->fetch_object($result);
 
 					$sendto = dolGetFirstLastname($obj->firstname, $obj->lastname)." <".$obj->email.">";
+					$signed = false;
 					$notifcodedefid = $obj->adid;
 					$trackid = '';
 					if ($obj->type_target == 'tocontactid') {
@@ -520,18 +524,51 @@ class Notify
 								$object_type = 'propal';
 								$labeltouse = $conf->global->PROPAL_CLOSE_REFUSED_TEMPLATE;
 								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedRefused", $link);
-								if (!empty($object->context['closedfromonlinesignature'])) {
-									$mesg .= ' - From online page';
-								}
+								break;
+							case 'PROPAL_CLOSE_REFUSED_WEB':
+								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
+								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
+								$object_type = 'propal';
+								$labeltouse = $conf->global->PROPAL_CLOSE_REFUSED_TEMPLATE;
+								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedRefusedWeb", $link);
 								break;
 							case 'PROPAL_CLOSE_SIGNED':
 								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 								$object_type = 'propal';
-								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
-								if (!empty($object->context['closedfromonlinesignature'])) {
-									$mesg .= ' - From online page';
+								//$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
+								$soc = new Societe($this->db);
+								$soc->fetch($object->socid);
+								if($soc){
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+									$mesg = "La proposition commerciale ".$link." de ".$soc->name. " a été clôturée signée.";
 								}
+								else{
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+								}
+								/*if (!empty($object->context['closedfromonlinesignature'])) {
+									$mesg .= ' - From online page';
+								}*/
+								break;
+							case 'PROPAL_CLOSE_SIGNED_WEB':
+								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
+								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
+								$object_type = 'propal';
+								$labeltouse = $conf->global->PROPAL_CLOSE_SIGNED_TEMPLATE;
+								$soc = new Societe($this->db);
+								$soc->fetch($object->socid);
+								if($soc){
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée par ".$soc->name;
+									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail par ".$soc->name.".";
+								}
+								else{
+									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée en ligne";
+									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+								}
+								//$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
+
+								$signed = true;
 								break;
 							case 'FICHINTER_ADD_CONTACT':
 								$link = '<a href="'.$urlwithroot.'/fichinter/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
@@ -610,7 +647,7 @@ class Notify
 								$dir_output = $conf->$object_type->multidir_output[$object->entity ? $object->entity : $conf->entity]."/".get_exdir(0, 0, 0, 1, $object, $object_type);
 								$template = $notifcode.'_TEMPLATE';
 								$mesg = $outputlangs->transnoentitiesnoconv('Notify_'.$notifcode).' '.$newref.' '.$dir_output;
-							break;
+								break;
 						}
 
 						include_once DOL_DOCUMENT_ROOT.'/core/class/html.formmail.class.php';
@@ -628,22 +665,39 @@ class Notify
 							$subject = make_substitutions($arraydefaultmessage->topic, $substitutionarray, $outputlangs);
 							$message = make_substitutions($arraydefaultmessage->content, $substitutionarray, $outputlangs);
 						} else {
-							$message = $outputlangs->transnoentities("YouReceiveMailBecauseOfNotification", $application, $mysoc->name)."\n";
+							/*$message = $outputlangs->transnoentities("YouReceiveMailBecauseOfNotification", $application, $mysoc->name)."\n";
 							$message .= $outputlangs->transnoentities("YouReceiveMailBecauseOfNotification2", $application, $mysoc->name)."\n";
-							$message .= "\n";
-							$message .= $mesg;
+							$message .= "\n\n";*/
+							$message = $mesg;
 						}
 
 						$ref = dol_sanitizeFileName($newref);
-						$pdf_path = $dir_output."/".$ref.".pdf";
-						if (!dol_is_file($pdf_path)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
-							// We can't add PDF as it is not generated yet.
-							$filepdf = '';
-						} else {
-							$filepdf = $pdf_path;
-							$filename_list[] = $filepdf;
-							$mimetype_list[] = mime_content_type($filepdf);
-							$mimefilename_list[] = $ref.".pdf";
+						if($signed){
+							$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output));
+							foreach($files as $f){
+								$fichier = $dir_output."/".$f;
+								if (!dol_is_file($fichier)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+									// We can't add PDF as it is not generated yet.
+									$filepdf = '';
+								} else {
+									$filepdf = $fichier;
+									$filename_list[] = $filepdf;
+									$mimetype_list[] = mime_content_type($filepdf);
+									$mimefilename_list[] = $f;
+								}
+							}
+						}
+						else{
+							$pdf_path = $dir_output."/".$ref.".pdf";
+							if (!dol_is_file($pdf_path)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+								// We can't add PDF as it is not generated yet.
+								$filepdf = '';
+							} else {
+								$filepdf = $pdf_path;
+								$filename_list[] = $filepdf;
+								$mimetype_list[] = mime_content_type($filepdf);
+								$mimefilename_list[] = $ref.".pdf";
+							}
 						}
 
 						$labeltouse = !empty($labeltouse) ? $labeltouse : '';
@@ -799,7 +853,34 @@ class Notify
 						$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 						$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 						$object_type = 'propal';
-						$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
+						$soc = new Societe($this->db);
+						$soc->fetch($object->socid);
+						if($soc){
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+							$mesg = "La proposition commerciale ".$link." de ".$soc->name. " a été clôturée signée.";
+						}
+						else{
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+						}
+						//$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
+						break;
+					case 'PROPAL_CLOSE_SIGNED_WEB':
+						$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
+						$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
+						$object_type = 'propal';
+						$soc = new Societe($this->db);
+						$soc->fetch($object->socid);
+						if($soc){
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée par ".$soc->name;
+							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail par ".$soc->name.".";
+						}
+						else{
+							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée en ligne";
+							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
+						}
+						//$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
+						$signed = true;
 						break;
 					case 'FICHINTER_ADD_CONTACT':
 						$link = '<a href="'.$urlwithroot.'/fichinter/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
@@ -888,20 +969,37 @@ class Notify
 						break;
 				}
 				$ref = dol_sanitizeFileName($newref);
-				$pdf_path = $dir_output."/".$ref."/".$ref.".pdf";
-				if (!dol_is_file($pdf_path)) {
-					// We can't add PDF as it is not generated yet.
-					$filepdf = '';
-				} else {
-					$filepdf = $pdf_path;
-					$filename_list[] = $pdf_path;
-					$mimetype_list[] = mime_content_type($filepdf);
-					$mimefilename_list[] = $ref.".pdf";
+				if($signed){
+					$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output . "/" . $ref));
+					foreach($files as $f){
+						$fichier = $dir_output . "/" . $ref."/".$f;
+						if (!dol_is_file($fichier)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+							// We can't add PDF as it is not generated yet.
+							$filepdf = '';
+						} else {
+							$filepdf = $fichier;
+							$filename_list[] = $filepdf;
+							$mimetype_list[] = mime_content_type($filepdf);
+							$mimefilename_list[] = $f;
+						}
+					}
+				}
+				else {
+					$pdf_path = $dir_output . "/" . $ref . "/" . $ref . ".pdf";
+					if (!dol_is_file($pdf_path)) {
+						// We can't add PDF as it is not generated yet.
+						$filepdf = '';
+					} else {
+						$filepdf = $pdf_path;
+						$filename_list[] = $pdf_path;
+						$mimetype_list[] = mime_content_type($filepdf);
+						$mimefilename_list[] = $ref . ".pdf";
+					}
 				}
 
 				$message = '';
-				$message .= $langs->transnoentities("YouReceiveMailBecauseOfNotification2", $application, $mysoc->name)."\n";
-				$message .= "\n";
+				/*$message .= $langs->transnoentities("YouReceiveMailBecauseOfNotification2", $application, $mysoc->name)."\n";
+				$message .= "\n\n";*/
 				$message .= $mesg;
 
 				$message = nl2br($message);

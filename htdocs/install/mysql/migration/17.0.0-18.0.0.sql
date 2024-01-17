@@ -69,7 +69,8 @@ insert into llx_c_action_trigger (code,label,description,elementtype,rang) value
 insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PARTNERSHIP_MODIFY','Partnership modified','Executed when a partnership is modified','partnership',58002);
 insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PARTNERSHIP_SENTBYMAIL','Mails sent from partnership file','Executed when you send email from partnership file','partnership',58004);
 insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PARTNERSHIP_DELETE','Partnership deleted','Executed when a partnership is deleted','partnership',58006);
-
+insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PROPAL_CLOSE_SIGNED_WEB','Customer proposal closed signed on portal','Executed when a customer proposal is closed signed on portal','propal',2);
+insert into llx_c_action_trigger (code,label,description,elementtype,rang) values ('PROPAL_CLOSE_REFUSED_WEB','Customer proposal closed refused on portal','Executed when a customer proposal is closed refused on portal','propal',2);
 
 -- amount was removed in v12
 ALTER TABLE llx_facture DROP COLUMN amount;
@@ -488,7 +489,7 @@ ALTER TABLE llx_partnership ADD COLUMN email_partnership varchar(64) after fk_me
 ALTER TABLE llx_contratdet ADD INDEX idx_contratdet_statut (statut);
 
 ALTER TABLE fk_product_price_product DROP FOREIGN KEY fk_product_price_product;
- 
+
 ALTER TABLE llx_societe_rib ADD COLUMN ext_payment_site varchar(128);
 
 -- Drop the composite unique index that exists on llx_commande_fournisseur to rebuild a new one without the fk_soc.

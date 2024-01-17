@@ -190,7 +190,11 @@ if ($action == 'confirm_refusepropal' && $confirm == 'yes') {
 			$user = new User($db);
 			$user->fetch($object->user_valid_id);
 			$object->context = array('closedfromonlinesignature' => 'closedfromonlinesignature');
-			$result = $object->call_trigger('PROPAL_CLOSE_REFUSED', $user);
+			/*$result = $object->call_trigger('PROPAL_CLOSE_REFUSED', $user);
+			if ($result < 0) {
+				$error++;
+			}*/
+			$result = $object->call_trigger('PROPAL_CLOSE_REFUSED_WEB', $user);
 			if ($result < 0) {
 				$error++;
 			}
