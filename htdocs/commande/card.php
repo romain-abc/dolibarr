@@ -2657,7 +2657,7 @@ if ($action == 'create' && $usercancreate) {
 		}
 
 		// Source reason (why we have an order)
-		print '<tr><td>';
+		/*print '<tr><td>';
 		$editenable = $usercancreate;
 		print $form->editfieldkey("Source", 'demandreason', '', $object, $editenable);
 		print '</td><td class="valuefield">';
@@ -2666,7 +2666,7 @@ if ($action == 'create' && $usercancreate) {
 		} else {
 			$form->formInputReason($_SERVER['PHP_SELF'].'?id='.$object->id, $object->demand_reason_id, 'none');
 		}
-		print '</td></tr>';
+		print '</td></tr>';*/
 
 		// Terms of payment
 		print '<tr><td>';
