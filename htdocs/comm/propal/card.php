@@ -51,6 +51,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/propal.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/extrafields.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
+include_once DOL_DOCUMENT_ROOT . '/categories/class/categorie.class.php';
 if (isModEnabled('project')) {
 	require_once DOL_DOCUMENT_ROOT.'/projet/class/project.class.php';
 	require_once DOL_DOCUMENT_ROOT.'/core/class/html.formprojet.class.php';
@@ -2697,7 +2698,10 @@ if ($action == 'create') {
 	print '</tr>';*/
 
 	// Insitu
-	$form->showCategories($soc->id, Categorie::TYPE_CUSTOMER, 0);
+	$cat = new Categorie($this->db);
+	$categories = $cat->containing($soc->id, Categorie::TYPE_CUSTOMER);
+	var_dump($categories);
+	//$form->showCategories($soc->id, Categorie::TYPE_CUSTOMER, 0);
 	if ($soc) {
 		if($soc->array_options['options_insitu']){
 			print '<tr><td>';
