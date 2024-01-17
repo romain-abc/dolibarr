@@ -377,15 +377,21 @@ if ($nolinesbefore) {
 			echo $form->selectyesno('date_end_fill', $line->date_end_fill, 1);
 			echo '</div>';
 		}
-		/*if (is_object($objectline)) {
-			$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+		if (is_object($objectline)) {
+			$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "refproduct"), '', '', 1, 'line');
+			$temps2 = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "fournisseurorigine"), '', '', 1, 'line');
 
-			if (!empty($temps)) {
+			if (!empty($temps) || !empty($temps2)) {
 				print '<div style="padding-top: 10px" id="extrafield_lines_area_create" name="extrafield_lines_area_create">';
-				print $temps;
+				if (!empty($temps)) {
+					print $temps;
+				}
+				if (!empty($temps2)) {
+					print $temps2;
+				}
 				print '</div>';
 			}
-		}*/
+		}
 		echo '</td>';
 		if ($object->element == 'supplier_proposal' || $object->element == 'order_supplier' || $object->element == 'invoice_supplier' || $object->element == 'invoice_supplier_rec') {	// We must have same test in printObjectLines
 			$coldisplay++;
@@ -439,33 +445,6 @@ if ($nolinesbefore) {
 	}*/
 	$coldisplay++;
 	?>
-	<?php if (in_array($object->element, array('propal', 'commande', 'facture'))){ ?>
-	<td class="valignbottom nobottom linecolextrafields right"><?php $coldisplay++; ?>
-		<?php
-		if (is_object($objectline)) {
-			if (!empty($extrafields)) {
-				$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "refproduct"), '', '', 1, 'line');
-				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
-
-				if (!empty($temps)) {
-					print '<div name="extrafield_lines_area_create" class="extrafield_lines_area">';
-					print $temps;
-					print '</div>';
-				}
-
-				$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "fournisseurorigine"), '', '', 1, 'line');
-				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
-
-				if (!empty($temps)) {
-					print '<div style="padding-top: 20px;" name="extrafield_lines_area_create" class="extrafield_lines_area">';
-					print $temps;
-					print '</div>';
-				}
-			}
-		}
-		?>
-	</td>
-	<?php } ?>
 
 	<td class="nobottom linecolqty right">
 	<?php $default_qty = (empty($conf->global->MAIN_OBJECTLINE_CREATE_EMPTY_QTY_BY_DEFAULT) ? 1 : ''); ?>

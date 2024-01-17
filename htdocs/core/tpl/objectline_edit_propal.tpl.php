@@ -171,14 +171,22 @@ $coldisplay = 0;
 		}
 
 		//Line extrafield
-		/*if (!empty($extrafields)) {
-			$temps = $line->showOptionals($extrafields, 'edit', array('class'=>'tredited'), '', '', 1, 'line');
-			if (!empty($temps)) {
+		if (!empty($extrafields)) {
+			//$temps = $line->showOptionals($extrafields, 'edit', array('class'=>'tredited'), '', '', 1, 'line');
+			$temps = $line->showOptionals($extrafields, 'edit', array('class'=>'tredited', "onlykey" => "refproduct"), '', '', 1, 'line');
+			$temps2 = $line->showOptionals($extrafields, 'edit', array('class'=>'tredited', "onlykey" => "fournisseurorigine"), '', '', 1, 'line');
+
+			if (!empty($temps) || !empty($temps2)) {
 				print '<div style="padding-top: 10px" id="extrafield_lines_area_edit" name="extrafield_lines_area_edit">';
-				print $temps;
+				if (!empty($temps)){
+					print $temps;
+				}
+				if (!empty($temps2)){
+					print $temps2;
+				}
 				print '</div>';
 			}
-		}*/
+		}
 
 		// Show autofill date for recuring invoices
 		if (isModEnabled("service") && $line->product_type == 1 && ($line->element == 'facturedetrec' || $line->element == 'invoice_supplier_det_rec')) {
@@ -244,34 +252,6 @@ $coldisplay = 0;
 
 
 	?>
-
-	<?php if (in_array($object->element, array('propal', 'commande', 'facture'))){ ?>
-		<td class="valignbottom nobottom linecolextrafields right"><?php $coldisplay++; ?>
-			<?php
-			if (is_object($line)) {
-				if (!empty($extrafields)) {
-					$temps = $line->showOptionals($extrafields, 'edit', array('class'=>'tredited', "onlykey" => "refproduct"), '', '', 1, 'line');
-					//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
-
-					if (!empty($temps)) {
-						print '<div name="extrafield_lines_area_edit" class="extrafield_lines_area">';
-						print $temps;
-						print '</div>';
-					}
-
-					$temps = $line->showOptionals($extrafields, 'create', array("onlykey" => "fournisseurorigine"), '', '', 1, 'line');
-					//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
-
-					if (!empty($temps)) {
-						print '<div style="padding-top: 20px" name="extrafield_lines_area_edit" class="extrafield_lines_area">';
-						print $temps;
-						print '</div>';
-					}
-				}
-			}
-			?>
-		</td>
-	<?php } ?>
 
 	<td class="right">
 		<?php $coldisplay++;
