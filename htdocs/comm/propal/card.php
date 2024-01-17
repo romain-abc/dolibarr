@@ -2698,7 +2698,7 @@ if ($action == 'create') {
 	print '</tr>';*/
 
 	// Insitu
-	$cat = new Categorie($this->db);
+	$cat = new Categorie($db);
 	$categories = $cat->containing($soc->id, Categorie::TYPE_CUSTOMER);
 	var_dump($categories);
 	//$form->showCategories($soc->id, Categorie::TYPE_CUSTOMER, 0);
