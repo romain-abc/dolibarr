@@ -493,7 +493,7 @@ foreach($refLines as $rowid => $qty){
 
 	print '<td class="nowraponall tdoverflowmax200">';
 	//print dol_escape_htmltag($societe->ref_client);
-	print $societe->getNomUrl(1, 0, 0, 0, 0, 1, 1);
+	print $societe->getNomUrl(1, 0, 0, 0, 0, 1, "_blank");
 	//print $societe->name;
 	print '</td>';
 
@@ -503,7 +503,7 @@ foreach($refLines as $rowid => $qty){
 
 
 	print '<td class="nowraponall">';
-	print $pr->getNomUrl(1, 0, 0, 0, 0, 1, 1);
+	print $pr->getNomUrl(1, 0, 0, 0, 0, 1);
 	print '</td>';
 
 	if (!$i) {
