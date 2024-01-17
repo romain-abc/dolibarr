@@ -63,64 +63,6 @@ $toselect = GETPOST('toselect', 'array');
 $contextpage = GETPOST('contextpage', 'aZ') ?GETPOST('contextpage', 'aZ') : 'orderlist';
 $mode        = GETPOST('mode', 'alpha');
 
-// Search Parameters
-$search_datecloture_start = GETPOST('search_datecloture_start', 'int');
-if (empty($search_datecloture_start)) {
-	$search_datecloture_start = dol_mktime(0, 0, 0, GETPOST('search_datecloture_startmonth', 'int'), GETPOST('search_datecloture_startday', 'int'), GETPOST('search_datecloture_startyear', 'int'));
-}
-$search_datecloture_end = GETPOST('search_datecloture_end', 'int');
-if (empty($search_datecloture_end)) {
-	$search_datecloture_end = dol_mktime(23, 59, 59, GETPOST('search_datecloture_endmonth', 'int'), GETPOST('search_datecloture_endday', 'int'), GETPOST('search_datecloture_endyear', 'int'));
-}
-$search_dateorder_start = dol_mktime(0, 0, 0, GETPOST('search_dateorder_start_month', 'int'), GETPOST('search_dateorder_start_day', 'int'), GETPOST('search_dateorder_start_year', 'int'));
-$search_dateorder_end = dol_mktime(23, 59, 59, GETPOST('search_dateorder_end_month', 'int'), GETPOST('search_dateorder_end_day', 'int'), GETPOST('search_dateorder_end_year', 'int'));
-$search_datedelivery_start = dol_mktime(0, 0, 0, GETPOST('search_datedelivery_start_month', 'int'), GETPOST('search_datedelivery_start_day', 'int'), GETPOST('search_datedelivery_start_year', 'int'));
-$search_datedelivery_end = dol_mktime(23, 59, 59, GETPOST('search_datedelivery_end_month', 'int'), GETPOST('search_datedelivery_end_day', 'int'), GETPOST('search_datedelivery_end_year', 'int'));
-
-$search_product_category = GETPOST('search_product_category', 'int');
-$search_ref = GETPOST('search_ref', 'alpha') != '' ?GETPOST('search_ref', 'alpha') : GETPOST('sref', 'alpha');
-$search_ref_customer = GETPOST('search_ref_customer', 'alpha');
-$search_company = GETPOST('search_company', 'alpha');
-$search_company_alias = GETPOST('search_company_alias', 'alpha');
-$search_parent_name = trim(GETPOST('search_parent_name', 'alphanohtml'));
-$search_town = GETPOST('search_town', 'alpha');
-$search_zip = GETPOST('search_zip', 'alpha');
-$search_state = GETPOST('search_state', 'alpha');
-$search_country = GETPOST('search_country', 'int');
-$search_type_thirdparty = GETPOST('search_type_thirdparty', 'int');
-$sall = trim((GETPOST('search_all', 'alphanohtml') != '') ? GETPOST('search_all', 'alphanohtml') : GETPOST('sall', 'alphanohtml'));
-$socid = GETPOST('socid', 'int');
-$search_user = GETPOST('search_user', 'int');
-$search_sale = GETPOST('search_sale', 'int');
-
-$search_total_ht  = GETPOST('search_total_ht', 'alpha');
-$search_total_vat = GETPOST('search_total_vat', 'alpha');
-$search_total_ttc = GETPOST('search_total_ttc', 'alpha');
-$search_warehouse = GETPOST('search_warehouse', 'int');
-
-$search_multicurrency_code = GETPOST('search_multicurrency_code', 'alpha');
-$search_multicurrency_tx = GETPOST('search_multicurrency_tx', 'alpha');
-$search_multicurrency_montant_ht  = GETPOST('search_multicurrency_montant_ht', 'alpha');
-$search_multicurrency_montant_vat = GETPOST('search_multicurrency_montant_vat', 'alpha');
-$search_multicurrency_montant_ttc = GETPOST('search_multicurrency_montant_ttc', 'alpha');
-
-$search_login = GETPOST('search_login', 'alpha');
-$search_categ_cus = GETPOST("search_categ_cus", 'int');
-$optioncss = GETPOST('optioncss', 'alpha');
-$search_billed = GETPOST('search_billed', 'int');
-$search_status = GETPOST('search_status', 'int');
-$search_btn = GETPOST('button_search', 'alpha');
-$search_remove_btn = GETPOST('button_removefilter', 'alpha');
-$search_project_ref = GETPOST('search_project_ref', 'alpha');
-$search_project = GETPOST('search_project', 'alpha');
-$search_shippable = GETPOST('search_shippable', 'aZ09');
-
-$search_fk_cond_reglement = GETPOST('search_fk_cond_reglement', 'int');
-$search_fk_shipping_method = GETPOST('search_fk_shipping_method', 'int');
-$search_fk_mode_reglement = GETPOST('search_fk_mode_reglement', 'int');
-$search_fk_input_reason = GETPOST('search_fk_input_reason', 'int');
-
-$diroutputmassaction = $conf->commande->multidir_output[$conf->entity].'/temp/massgeneration/'.$user->id;
 
 // Load variable for pagination
 $limit = GETPOST('limit', 'int') ?GETPOST('limit', 'int') : $conf->liste_limit;
@@ -241,10 +183,6 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 }
 
 $parameters = array('socid'=>$socid, 'arrayfields'=>&$arrayfields);
-$reshook = $hookmanager->executeHooks('doActions', $parameters, $object, $action); // Note that $action and $object may have been modified by some hooks
-if ($reshook < 0) {
-	setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
-}
 
 
 /*
@@ -272,71 +210,10 @@ $selectedfields = $form->multiSelectArrayWithCheckbox('selectedfields', $arrayfi
 $title = $langs->trans("Orders");
 $help_url = "EN:Module_Customers_Orders|FR:Module_Commandes_Clients|ES:Módulo_Pedidos_de_clientes";
 
-// Build and execute select
-// --------------------------------------------------------------------
-$sql = 'SELECT';
-if ($sall || $search_user > 0) {
-	$sql = 'SELECT DISTINCT';
-}
-$sql .= ' s.rowid as socid, s.nom as name, s.name_alias as alias, s.email, s.phone, s.fax, s.address, s.town, s.zip, s.fk_pays, s.client, s.fournisseur, s.code_client,';
-$sql .= " s.parent as fk_parent,";
-$sql .= " s2.nom as name2,";
-$sql .= " typent.code as typent_code,";
-$sql .= " state.code_departement as state_code, state.nom as state_name,";
-$sql .= " country.code as country_code,";
-$sql .= ' c.rowid, c.ref, c.total_ht, c.total_tva, c.total_ttc, c.ref_client, c.fk_user_author,';
-$sql .= ' c.fk_multicurrency, c.multicurrency_code, c.multicurrency_tx, c.multicurrency_total_ht, c.multicurrency_total_tva as multicurrency_total_vat, c.multicurrency_total_ttc,';
-$sql .= ' c.date_valid, c.date_commande, c.note_public, c.note_private, c.date_livraison as date_delivery, c.fk_statut, c.facture as billed,';
-$sql .= ' c.date_creation as date_creation, c.tms as date_update, c.date_cloture as date_cloture,';
-$sql .= ' p.rowid as project_id, p.ref as project_ref, p.title as project_label,';
-$sql .= ' u.login, u.lastname, u.firstname, u.email as user_email, u.statut as user_statut, u.entity, u.photo, u.office_phone, u.office_fax, u.user_mobile, u.job, u.gender,';
-$sql .= ' c.fk_cond_reglement,c.deposit_percent,c.fk_mode_reglement,c.fk_shipping_method,';
-$sql .= ' c.fk_input_reason, c.import_key';
-if (($search_categ_cus > 0) || ($search_categ_cus == -2)) {
-	$sql .= ", cc.fk_categorie, cc.fk_soc";
-}
-
-// Add fields from extrafields
-if (!empty($extrafields->attributes[$object->table_element]['label'])) {
-	foreach ($extrafields->attributes[$object->table_element]['label'] as $key => $val) {
-		$sql .= ($extrafields->attributes[$object->table_element]['type'][$key] != 'separate' ? ", ef.".$key." as options_".$key : '');
-	}
-}
 
 // Add fields from hooks
 $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-$sql .= $hookmanager->resPrint;
-$sql = preg_replace('/,\s*$/', '', $sql);
-
-$sqlfields = $sql; // $sql fields to remove for count total
-
-$sql .= ' FROM '.MAIN_DB_PREFIX.'societe as s';
-$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s2 ON s2.rowid = s.parent";
-$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_country as country on (country.rowid = s.fk_pays)";
-$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_typent as typent on (typent.id = s.fk_typent)";
-$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_departements as state on (state.rowid = s.fk_departement)";
-if (($search_categ_cus > 0) || ($search_categ_cus == -2)) {
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX."categorie_societe as cc ON s.rowid = cc.fk_soc"; // We'll need this table joined to the select in order to filter by categ
-}
-$sql .= ', '.MAIN_DB_PREFIX.'commande as c';
-if (!empty($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
-	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."commande_extrafields as ef on (c.rowid = ef.fk_object)";
-}
-if ($sall) {
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commandedet as pd ON c.rowid=pd.fk_commande';
-}
-$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."projet as p ON p.rowid = c.fk_projet";
-$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'user as u ON c.fk_user_author = u.rowid';
-
-// We'll need this table joined to the select in order to filter by sale
-if ($search_sale > 0 || (empty($user->rights->societe->client->voir) && !$socid)) {
-	$sql .= ", ".MAIN_DB_PREFIX."societe_commerciaux as sc";
-}
-if ($search_user > 0) {
-	$sql .= ", ".MAIN_DB_PREFIX."element_contact as ec";
-	$sql .= ", ".MAIN_DB_PREFIX."c_type_contact as tc";
-}
 
 $sqlquery0 = "SELECT rowid FROM ".MAIN_DB_PREFIX."propal as p";
 $ressqlquery0 = $db->query($sqlquery0);
@@ -424,11 +301,6 @@ $parameters = array();
 $reshook = $hookmanager->executeHooks('printFieldListSearchParam', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 $param .= $hookmanager->resPrint;
 
-// List of mass actions available
-$arrayofmassactions = array(
-	'generate_doc'=>img_picto('', 'pdf', 'class="pictofixedwidth"').$langs->trans("ReGeneratePDF"),
-	'builddoc'=>img_picto('', 'pdf', 'class="pictofixedwidth"').$langs->trans("PDFMerge"),
-);
 
 $massactionbutton = $form->selectMassAction('', $arrayofmassactions);
 
@@ -613,8 +485,10 @@ foreach($refLines as $rowid => $qty){
 	}
 
 
-	print '<td class="nowraponall">';
-	print $societe->name;
+	print '<td class="nowraponall tdoverflowmax200">';
+	//print dol_escape_htmltag($societe->ref_client);
+	print $societe->getNomUrl(1, 0, 0, 0, 0, 1, 1);
+	//print $societe->name;
 	print '</td>';
 
 	if (!$i) {
@@ -623,7 +497,7 @@ foreach($refLines as $rowid => $qty){
 
 
 	print '<td class="nowraponall">';
-	print $pr->ref;
+	print $pr->getNomUrl(1, 0, 0, 0, 0, 1, 1);
 	print '</td>';
 
 	if (!$i) {
