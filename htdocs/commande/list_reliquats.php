@@ -328,8 +328,8 @@ print '<input type="hidden" name="action" value="list">';
 print '<input type="hidden" name="sortfield" value="'.$sortfield.'">';
 print '<input type="hidden" name="sortorder" value="'.$sortorder.'">';
 print '<input type="hidden" name="contextpage" value="'.$contextpage.'">';
-print '<input type="hidden" name="search_status" value="'.$search_status.'">';
-print '<input type="hidden" name="socid" value="'.$socid.'">';
+/*print '<input type="hidden" name="search_status" value="'.$search_status.'">';
+print '<input type="hidden" name="socid" value="'.$socid.'">';*/
 print '<input type="hidden" name="page_y" value="">';
 print '<input type="hidden" name="mode" value="'.$mode.'">';
 
@@ -355,7 +355,7 @@ if (GETPOST('autoselectall', 'int')) {
 	$selectedfields .= '   });';
 	$selectedfields .= '</script>';
 }
-
+$moreforfilter = "";
 print '<div class="div-table-responsive">'; // You can use div-table-responsive-no-min if you dont need reserved height for your table
 print '<table class="tagtable nobottomiftotal liste'.($moreforfilter ? " listwithfilterbefore" : "").'">'."\n";
 
@@ -517,7 +517,7 @@ foreach($refLines as $rowid => $qty){
 
 
 	print '<td class="nowraponall">';
-	print dol_print_date($db->jdate($pr->date_signature), 'day');
+	print dol_print_date($db->jdate($pr->dsignature), 'day');
 	print '</td>';
 
 	if (!$i) {
@@ -1276,7 +1276,8 @@ if ($num == 0) {
 	print '<tr><td colspan="'.$colspan.'"><span class="opacitymedium">'.$langs->trans("NoRecordFound").'</span></td></tr>';
 }
 
-$parameters = array('arrayfields'=>$arrayfields, 'sql'=>$sql);
+//$parameters = array('arrayfields'=>$arrayfields, 'sql'=>$sql);
+$parameters = array('arrayfields'=>$arrayfields);
 $reshook = $hookmanager->executeHooks('printFieldListFooter', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
 print $hookmanager->resPrint;
 
