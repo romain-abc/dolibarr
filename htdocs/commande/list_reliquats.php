@@ -392,6 +392,9 @@ $totalarray['nbfield']++;
 print_liste_field_titre("Devis", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
 $totalarray['nbfield']++;
 
+print_liste_field_titre("Date signature", $_SERVER["PHP_SELF"], '', '', $param, '', 0, 0);
+$totalarray['nbfield']++;
+
 
 print '</tr>'."\n";
 
@@ -505,6 +508,15 @@ foreach($refLines as $rowid => $qty){
 
 	print '<td class="nowraponall">';
 	print $pr->getNomUrl(1, '', '', 0, 1, 1);
+	print '</td>';
+
+	if (!$i) {
+		$totalarray['nbfield']++;
+	}
+
+
+	print '<td class="nowraponall">';
+	print $pr->date_signature;
 	print '</td>';
 
 	if (!$i) {
