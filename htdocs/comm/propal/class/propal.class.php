@@ -702,6 +702,7 @@ class Propal extends CommonObject
 
 			if($array_options['options_ecopart']){
 				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+				$total_tva = 20;
 			}
 
 			if($array_options['options_ecopart']){
@@ -977,6 +978,18 @@ class Propal extends CommonObject
 				foreach ($array_options as $key => $value) {
 					$this->line->array_options[$key] = $array_options[$key];
 				}
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ht        = $multicurrency_total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_tva        = $multicurrency_total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ttc        = $multicurrency_total_ttc+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
 			}
 
 			// Multicurrency
