@@ -696,6 +696,18 @@ class Propal extends CommonObject
 			// Insert line
 			$this->line = new PropaleLigne($this->db);
 
+			if($array_options['options_ecopart']){
+				$total_ht        = $pu+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
 			$this->line->context = $this->context;
 
 			$this->line->fk_propal = $this->id;
@@ -904,16 +916,16 @@ class Propal extends CommonObject
 			$line = new PropaleLigne($this->db);
 			$line->fetch($rowid);
 
-			if($line->array_options['options_ecopart']){
-				$total_ht        = $pu+($line->array_options['options_ecopart']*$line->qty); // The field visible at end of line detail
+			if($array_options['options_ecopart']){
+				$total_ht        = $pu+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
 			}
 
-			if($line->array_options['options_ecopart']){
-				$total_tva        = $total_tva+($line->array_options['options_ecopart']*$line->qty*($txtva/100)); // The field visible at end of line detail
+			if($array_options['options_ecopart']){
+				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
 			}
 
-			if($line->array_options['options_ecopart']){
-				$total_ttc        = $total_ttc+($line->array_options['options_ecopart']*$line->qty*($txtva/100)); // The field visible at end of line detail
+			if($array_options['options_ecopart']){
+				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
 			}
 
 			$staticline = clone $line;
