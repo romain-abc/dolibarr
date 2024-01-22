@@ -904,6 +904,18 @@ class Propal extends CommonObject
 			$line = new PropaleLigne($this->db);
 			$line->fetch($rowid);
 
+			if($line->array_options['options_ecopart']){
+				$total_ht        = $pu+($line->array_options['options_ecopart']*$line->qty); // The field visible at end of line detail
+			}
+
+			if($line->array_options['options_ecopart']){
+				$total_tva        = $total_tva+($line->array_options['options_ecopart']*$line->qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($line->array_options['options_ecopart']){
+				$total_ttc        = $total_ttc+($line->array_options['options_ecopart']*$line->qty*($txtva/100)); // The field visible at end of line detail
+			}
+
 			$staticline = clone $line;
 
 			$line->oldline = $staticline;
@@ -1990,7 +2002,7 @@ class Propal extends CommonObject
 		}
 
 		if (!((empty($conf->global->MAIN_USE_ADVANCED_PERMS) && !empty($user->rights->propal->creer))
-		|| (!empty($conf->global->MAIN_USE_ADVANCED_PERMS) && !empty($user->rights->propal->propal_advance->validate)))) {
+			|| (!empty($conf->global->MAIN_USE_ADVANCED_PERMS) && !empty($user->rights->propal->propal_advance->validate)))) {
 			$this->error = 'ErrorPermissionDenied';
 			dol_syslog(get_class($this)."::valid ".$this->error, LOG_ERR);
 			return -1;
