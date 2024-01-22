@@ -3672,30 +3672,30 @@ abstract class CommonObject
 				$originLine->fetch_optionals();
 
 				if($originLine->array_options['options_ecopart']){
-					$this->total_ht        += $obj->total_ht+($originLine->array_options['options_ecopart']*$obj->qty); // The field visible at end of line detail
+					$total_ht = $obj->total_ht+($originLine->array_options['options_ecopart']*$obj->qty); // The field visible at end of line detail
 				}
 				else{
-					$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
+					$total_ht = $obj->total_ht; // The field visible at end of line detail
 				}
 
 				if($originLine->array_options['options_ecopart']){
-					$this->total_tva        += $obj->total_tva+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
+					$total_tva = $obj->total_tva+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
 				}
 				else{
-					$this->total_tva        += $obj->total_tva; // The field visible at end of line detail
+					$total_tva = $obj->total_tva; // The field visible at end of line detail
 				}
 
 				if($originLine->array_options['options_ecopart']){
-					$this->total_ttc        += $obj->total_ttc+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
+					$total_ttc = $obj->total_ttc+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
 				}
 				else{
-					$this->total_ttc        += $obj->total_ttc; // The field visible at end of line detail
+					$total_ttc = $obj->total_ttc; // The field visible at end of line detail
 				}
-				$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
-				$this->total_tva       += $obj->total_tva;
+				$this->total_ht        += $total_ht; // The field visible at end of line detail
+				$this->total_tva       += $total_tva;
 				$this->total_localtax1 += $obj->total_localtax1;
 				$this->total_localtax2 += $obj->total_localtax2;
-				$this->total_ttc       += $obj->total_ttc;
+				$this->total_ttc       += $total_ttc;
 				$this->multicurrency_total_ht        += $obj->multicurrency_total_ht; // The field visible at end of line detail
 				$this->multicurrency_total_tva       += $obj->multicurrency_total_tva;
 				$this->multicurrency_total_ttc       += $obj->multicurrency_total_ttc;
