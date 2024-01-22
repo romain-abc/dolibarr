@@ -3671,12 +3671,13 @@ abstract class CommonObject
 				}
 				$originLine->fetch_optionals();
 
-				if($originLine->array_options['options_ecopart']){
+				/*if($originLine->array_options['options_ecopart']){
 					$total_ht = $obj->total_ht+($originLine->array_options['options_ecopart']*$obj->qty); // The field visible at end of line detail
 				}
 				else{
 					$total_ht = $obj->total_ht; // The field visible at end of line detail
-				}
+				}*/
+				$total_ht = $obj->total_ht; // The field visible at end of line detail
 
 				if($originLine->array_options['options_ecopart']){
 					$total_tva = $obj->total_tva+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
@@ -3685,14 +3686,12 @@ abstract class CommonObject
 					$total_tva = $obj->total_tva; // The field visible at end of line detail
 				}
 
-				$total_ttc = $total_ht + $total_tva;
-
-				/*if($originLine->array_options['options_ecopart']){
+				if($originLine->array_options['options_ecopart']){
 					$total_ttc = $obj->total_ttc+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
 				}
 				else{
 					$total_ttc = $obj->total_ttc; // The field visible at end of line detail
-				}*/
+				}
 				$this->total_ht        += $total_ht; // The field visible at end of line detail
 				$this->total_tva       += $total_tva;
 				$this->total_localtax1 += $obj->total_localtax1;
