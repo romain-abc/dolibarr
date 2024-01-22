@@ -702,7 +702,6 @@ class Propal extends CommonObject
 
 			if($array_options['options_ecopart']){
 				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
-				$total_tva = 20;
 			}
 
 			if($array_options['options_ecopart']){
@@ -4674,6 +4673,7 @@ class PropaleLigne extends CommonObjectLine
 
 		dol_syslog(get_class($this)."::update", LOG_DEBUG);
 		$resql = $this->db->query($sql);
+
 		if ($resql) {
 			if (!$error) {
 				$result = $this->insertExtraFields();
