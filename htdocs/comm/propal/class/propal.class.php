@@ -747,6 +747,18 @@ class Propal extends CommonObject
 			$this->line->origin_id = $origin_id;
 			$this->line->origin = $origin;
 
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ht        = $multicurrency_total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_tva        = $multicurrency_total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ttc        = $multicurrency_total_ttc+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
 			// Multicurrency
 			$this->line->fk_multicurrency = $this->fk_multicurrency;
 			$this->line->multicurrency_code = $this->multicurrency_code;
