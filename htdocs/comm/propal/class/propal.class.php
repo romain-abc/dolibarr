@@ -697,7 +697,7 @@ class Propal extends CommonObject
 			$this->line = new PropaleLigne($this->db);
 
 			if($array_options['options_ecopart']){
-				$total_ht        = $pu+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+				$total_ht        = $total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
 			}
 
 			if($array_options['options_ecopart']){
@@ -917,7 +917,7 @@ class Propal extends CommonObject
 			$line->fetch($rowid);
 
 			if($array_options['options_ecopart']){
-				$total_ht        = $pu+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+				$total_ht        = $total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
 			}
 
 			if($array_options['options_ecopart']){
