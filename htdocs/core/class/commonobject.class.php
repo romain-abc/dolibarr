@@ -3691,11 +3691,11 @@ abstract class CommonObject
 				else{
 					$this->total_ttc        += $obj->total_ttc; // The field visible at end of line detail
 				}
-				$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
-				$this->total_tva       += $obj->total_tva;
+				//$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
+				//$this->total_tva       += $obj->total_tva;
 				$this->total_localtax1 += $obj->total_localtax1;
 				$this->total_localtax2 += $obj->total_localtax2;
-				$this->total_ttc       += $obj->total_ttc;
+				//$this->total_ttc       += $obj->total_ttc;
 				$this->multicurrency_total_ht        += $obj->multicurrency_total_ht; // The field visible at end of line detail
 				$this->multicurrency_total_tva       += $obj->multicurrency_total_tva;
 				$this->multicurrency_total_ttc       += $obj->multicurrency_total_ttc;
