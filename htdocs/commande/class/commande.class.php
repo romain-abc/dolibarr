@@ -1670,6 +1670,18 @@ class Commande extends CommonOrder
 			// Insert line
 			$this->line = new OrderLine($this->db);
 
+			if($array_options['options_ecopart']){
+				$total_ht        = $total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
 			$this->line->context = $this->context;
 
 			$this->line->fk_commande = $this->id;
@@ -1707,6 +1719,18 @@ class Commande extends CommonOrder
 
 			$this->line->fk_fournprice = $fk_fournprice;
 			$this->line->pa_ht = $pa_ht;
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ht        = $multicurrency_total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_tva        = $multicurrency_total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ttc        = $multicurrency_total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
 
 			// Multicurrency
 			$this->line->fk_multicurrency = $this->fk_multicurrency;
@@ -3252,6 +3276,18 @@ class Commande extends CommonOrder
 				}
 			}
 
+			if($array_options['options_ecopart']){
+				$total_ht        = $total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
 			$staticline = clone $line;
 
 			$line->oldline = $staticline;
@@ -3295,6 +3331,18 @@ class Commande extends CommonOrder
 
 			$this->line->fk_fournprice = $fk_fournprice;
 			$this->line->pa_ht = $pa_ht;
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ht        = $multicurrency_total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_tva        = $multicurrency_total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ttc        = $multicurrency_total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
 
 			// Multicurrency
 			$this->line->multicurrency_subprice		= $pu_ht_devise;

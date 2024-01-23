@@ -3675,7 +3675,7 @@ abstract class CommonObject
 					}
 				}
 				$originLine->fetch_optionals();
-				
+
 				$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
 				$this->total_tva       += $obj->total_tva;
 				$this->total_localtax1 += $obj->total_localtax1;
