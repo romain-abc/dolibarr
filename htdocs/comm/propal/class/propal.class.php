@@ -705,7 +705,7 @@ class Propal extends CommonObject
 			}
 
 			if($array_options['options_ecopart']){
-				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
 			}
 
 			$this->line->context = $this->context;
