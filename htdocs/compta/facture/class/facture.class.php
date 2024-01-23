@@ -3969,6 +3969,18 @@ class Facture extends CommonInvoice
 			// Insert line
 			$this->line = new FactureLigne($this->db);
 
+			if($array_options['options_ecopart']){
+				$total_ht        = $total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
 			$this->line->context = $this->context;
 
 			$this->line->fk_facture = $this->id;
@@ -4013,6 +4025,18 @@ class Facture extends CommonInvoice
 			// infos marge
 			$this->line->fk_fournprice = $fk_fournprice;
 			$this->line->pa_ht = $pa_ht;
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ht        = $multicurrency_total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_tva        = $multicurrency_total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ttc        = $multicurrency_total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
 
 			// Multicurrency
 			$this->line->fk_multicurrency = $this->fk_multicurrency;
@@ -4206,6 +4230,18 @@ class Facture extends CommonInvoice
 			$line->fetch($rowid);
 			$line->fetch_optionals();
 
+			if($array_options['options_ecopart']){
+				$total_ht        = $total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_tva        = $total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$total_ttc        = $total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
 			if (!empty($line->fk_product)) {
 				$product = new Product($this->db);
 				$result = $product->fetch($line->fk_product);
@@ -4265,6 +4301,18 @@ class Facture extends CommonInvoice
 
 			$this->line->fk_fournprice = $fk_fournprice;
 			$this->line->pa_ht = $pa_ht;
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ht        = $multicurrency_total_ht+($array_options['options_ecopart']*$qty); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_tva        = $multicurrency_total_tva+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
+
+			if($array_options['options_ecopart']){
+				$multicurrency_total_ttc        = $multicurrency_total_ttc+($array_options['options_ecopart']*$qty)+($array_options['options_ecopart']*$qty*($txtva/100)); // The field visible at end of line detail
+			}
 
 			// Multicurrency
 			$this->line->multicurrency_subprice		= ($this->type == self::TYPE_CREDIT_NOTE ?-abs($pu_ht_devise) : $pu_ht_devise); // For credit note, unit price always negative, always positive otherwise
