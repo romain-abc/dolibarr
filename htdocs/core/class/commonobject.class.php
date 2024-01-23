@@ -3650,8 +3650,6 @@ abstract class CommonObject
 
 					$diff_when_using_price_ht = price2num($tmpcalprice - $obj->total_tva, 'MT', 1); // If price was set with tax price and unit price HT has a low number of digits, then we may have a diff on recalculation from unit price HT.
 					$diff_on_current_total = price2num($obj->total_ttc - $obj->total_ht - $obj->total_tva - $obj->total_localtax1 - $obj->total_localtax2, 'MT', 1);
-					//var_dump($obj->total_ht.' '.$obj->total_tva.' '.$obj->total_localtax1.' '.$obj->total_localtax2.' => '.$obj->total_ttc);
-					//var_dump($diff_when_using_price_ht.' '.$diff_on_current_total);
 
 					if ($diff_on_current_total) {
 						// This should not happen, we should always have in table: total_ttc = total_ht + total_vat + total_localtax1 + total_localtax2
@@ -3677,30 +3675,7 @@ abstract class CommonObject
 					}
 				}
 				$originLine->fetch_optionals();
-
-				/*if($originLine->array_options['options_ecopart']){
-					$total_ht = $obj->total_ht+($originLine->array_options['options_ecopart']*$obj->qty); // The field visible at end of line detail
-				}
-				else{
-					$total_ht = $obj->total_ht; // The field visible at end of line detail
-				}*/
-				$total_ht = $obj->total_ht; // The field visible at end of line detail
-
-				if($originLine->array_options['options_ecopart']){
-					$total_tva = $obj->total_tva+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
-				}
-				else{
-					$total_tva = $obj->total_tva; // The field visible at end of line detail
-				}
-
-				$total_ttc = $total_ht + $total_tva;
-
-				/*if($originLine->array_options['options_ecopart']){
-					$total_ttc = $obj->total_ttc+($originLine->array_options['options_ecopart']*$obj->qty*0.2); // The field visible at end of line detail
-				}
-				else{
-					$total_ttc = $obj->total_ttc; // The field visible at end of line detail
-				}*/
+				
 				$this->total_ht        += $obj->total_ht; // The field visible at end of line detail
 				$this->total_tva       += $obj->total_tva;
 				$this->total_localtax1 += $obj->total_localtax1;
