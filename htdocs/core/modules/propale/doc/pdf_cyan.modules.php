@@ -835,15 +835,13 @@ class pdf_cyan extends ModelePDFPropales
 									$price_exp = explode(" ", $extrafieldValue);
 									$price = $price_exp[0];
 									$price = number_format($price, 2);
-									$totalHT = $qty*$price;
-									$priceExlcEcopart = $totalHT-($extrafieldValue*$qty);
 									$pdf->SetFont('', 'italic', $default_font_size - 3);
 									$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
 									$this->printStdColumnContent($pdf, $nexY, 'vat', $vat_rate);
 									$extrafieldValue = $this->getExtrafieldContent($object->lines[$i], $extrafieldColKey, $outputlangs);
 									$this->printStdColumnContent($pdf, $nexY, 'subprice', $price);
 									$this->printStdColumnContent($pdf, $nexY, 'qty', $qty);
-									$this->printStdColumnContent($pdf, $nexY, 'totalexcltax', number_format($priceExlcEcopart, 2));
+									$this->printStdColumnContent($pdf, $nexY, 'totalexcltax', number_format($qty*$price, 2));
 									//$this->printStdColumnContent($pdf, $nexY, $extrafieldColKey, $extrafieldValue);
 									$nexY = max($pdf->GetY(), $nexY);
 									$pdf->SetFont('', '', $default_font_size);
