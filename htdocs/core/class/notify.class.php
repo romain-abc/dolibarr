@@ -540,11 +540,11 @@ class Notify
 								$soc = new Societe($this->db);
 								$soc->fetch($object->socid);
 								if($soc){
-									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+									$subject = strtoupper($mysoc->name)." - ".$newref." clôturée et signée";
 									$mesg = "La proposition commerciale ".$link." de ".$soc->name. " a été clôturée signée.";
 								}
 								else{
-									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+									$subject = strtoupper($mysoc->name)." - ".$newref." clôturée et signée";
 									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
 								}
 								/*if (!empty($object->context['closedfromonlinesignature'])) {
@@ -559,11 +559,11 @@ class Notify
 								$soc = new Societe($this->db);
 								$soc->fetch($object->socid);
 								if($soc){
-									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée par ".$soc->name;
+									$subject = strtoupper($mysoc->name)." - ".$newref." signée par ".$soc->name;
 									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail par ".$soc->name.".";
 								}
 								else{
-									$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée en ligne";
+									$subject = strtoupper($mysoc->name)." - ".$newref." signée en ligne";
 									$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
 								}
 								//$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
@@ -856,11 +856,11 @@ class Notify
 						$soc = new Societe($this->db);
 						$soc->fetch($object->socid);
 						if($soc){
-							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+							$subject = strtoupper($mysoc->name)." - ".$newref." clôturée et signée";
 							$mesg = "La proposition commerciale ".$link." de ".$soc->name. " a été clôturée signée.";
 						}
 						else{
-							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." clôturée et signée";
+							$subject = strtoupper($mysoc->name)." - ".$newref." clôturée et signée";
 							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
 						}
 						//$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSigned", $link);
@@ -872,11 +872,11 @@ class Notify
 						$soc = new Societe($this->db);
 						$soc->fetch($object->socid);
 						if($soc){
-							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée par ".$soc->name;
+							$subject = strtoupper($mysoc->name)." - ".$newref." signée par ".$soc->name;
 							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail par ".$soc->name.".";
 						}
 						else{
-							$subject = strtoupper($mysoc->name)." - Proposition commerciale ".$newref." signée en ligne";
+							$subject = strtoupper($mysoc->name)." - ".$newref." signée en ligne";
 							$mesg = "La proposition commerciale ".$link." a été fermée et signée sur la page du portail.";
 						}
 						//$mesg = $langs->transnoentitiesnoconv("EMailTextProposalClosedSignedWeb", $link);
