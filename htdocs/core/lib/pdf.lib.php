@@ -2307,19 +2307,13 @@ function pdf_getlinetotalexcltax($object, $i, $outputlangs, $hidedetails = 0)
 		}
 	}
 
-	if (!empty($object->lines[$i]->array_options)) {
-		foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
-
-		}
-	}
-
 	if (empty($reshook)) {
 		if (!empty($object->lines[$i]) && $object->lines[$i]->special_code == 3) {
 			$result .= $outputlangs->transnoentities("Option");
 		} elseif (empty($hidedetails) || $hidedetails > 1) {
-			if($object->lines[$i]->array_options["ecopart"]){
+			if($object->lines[$i]->array_options["options_ecopart"]){
 				$total_ht = (isModEnabled("multicurrency") && $object->multicurrency_tx != 1 ? $object->lines[$i]->multicurrency_total_ht : $object->lines[$i]->total_ht);
-				$total_ht = $total_ht-$object->lines[$i]->array_options["ecopart"];
+				$total_ht = $total_ht-$object->lines[$i]->array_options["options_ecopart"];
 			}
 			else{
 				$total_ht = (isModEnabled("multicurrency") && $object->multicurrency_tx != 1 ? $object->lines[$i]->multicurrency_total_ht : $object->lines[$i]->total_ht);
