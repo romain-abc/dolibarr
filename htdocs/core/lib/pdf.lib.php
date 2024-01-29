@@ -2313,7 +2313,7 @@ function pdf_getlinetotalexcltax($object, $i, $outputlangs, $hidedetails = 0)
 		} elseif (empty($hidedetails) || $hidedetails > 1) {
 			if($object->lines[$i]->array_options["options_ecopart"]){
 				$total_ht = (isModEnabled("multicurrency") && $object->multicurrency_tx != 1 ? $object->lines[$i]->multicurrency_total_ht : $object->lines[$i]->total_ht);
-				$total_ht = $total_ht-$object->lines[$i]->array_options["options_ecopart"];
+				$total_ht = $total_ht-($object->lines[$i]->array_options["options_ecopart"]*$object->lines[$i]->qty);
 			}
 			else{
 				$total_ht = (isModEnabled("multicurrency") && $object->multicurrency_tx != 1 ? $object->lines[$i]->multicurrency_total_ht : $object->lines[$i]->total_ht);
