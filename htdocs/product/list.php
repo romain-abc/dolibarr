@@ -222,6 +222,7 @@ $arrayfields = array(
 	//'pfp.ref_fourn'=>array('label'=>$langs->trans("RefSupplier"), 'checked'=>1, 'enabled'=>(isModEnabled('barcode'))),
 	'thumbnail'=>array('label'=>'Photo', 'checked'=>0, 'position'=>10),
 	'p.label'=>array('label'=>"Label", 'checked'=>1, 'position'=>10),
+	'p.description'=>array('label'=>"Description", 'checked'=>1, 'position'=>10),
 	'p.fk_product_type'=>array('label'=>"Type", 'checked'=>0, 'enabled'=>(isModEnabled("product") && isModEnabled("service")), 'position'=>11),
 	'p.barcode'=>array('label'=>"Gencod", 'checked'=>1, 'enabled'=>(isModEnabled('barcode')), 'position'=>12),
 	'p.duration'=>array('label'=>"Duration", 'checked'=>($contextpage != 'productlist'), 'enabled'=>(isModEnabled("service") && (string) $type == '1'), 'position'=>13),
@@ -977,6 +978,11 @@ if (!empty($arrayfields['p.label']['checked'])) {
 	print '<input class="flat" type="text" name="search_label" size="12" value="'.dol_escape_htmltag($search_label).'">';
 	print '</td>';
 }
+//Description
+if (!empty($arrayfields['p.description']['checked'])) {
+	print '<td class="liste_titre">';
+	print '</td>';
+}
 // Type
 if (!empty($arrayfields['p.fk_product_type']['checked'])) {
 	print '<td class="liste_titre center">';
@@ -1253,6 +1259,11 @@ if (!empty($arrayfields['p.label']['checked'])) {
 	print_liste_field_titre($arrayfields['p.label']['label'], $_SERVER["PHP_SELF"], "p.label", "", $param, "", $sortfield, $sortorder);
 	$totalarray['nbfield']++;
 }
+if (!empty($arrayfields['p.description']['checked'])) {
+	print_liste_field_titre($arrayfields['p.description']['label'], $_SERVER["PHP_SELF"], "p.description", "", $param, "", $sortfield, $sortorder);
+	$totalarray['nbfield']++;
+}
+
 if (!empty($arrayfields['p.fk_product_type']['checked'])) {
 	print_liste_field_titre($arrayfields['p.fk_product_type']['label'], $_SERVER["PHP_SELF"], "p.fk_product_type", "", $param, "", $sortfield, $sortorder, 'center ');
 	$totalarray['nbfield']++;
@@ -1621,6 +1632,14 @@ while ($i < $imaxinloop) {
 		// Label
 		if (!empty($arrayfields['p.label']['checked'])) {
 			print '<td class="tdoverflowmax200" title="'.dol_escape_htmltag($product_static->label).'">'.$product_static->label.'</td>';
+			if (!$i) {
+				$totalarray['nbfield']++;
+			}
+		}
+
+		// Description
+		if (!empty($arrayfields['p.description']['checked'])) {
+			print '<td class="tdoverflowmax200" title="'.dol_escape_htmltag($product_static->description).'">'.$product_static->description.'</td>';
 			if (!$i) {
 				$totalarray['nbfield']++;
 			}
