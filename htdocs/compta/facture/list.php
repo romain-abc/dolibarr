@@ -220,6 +220,7 @@ $arrayfields = array(
 	'f.date_valid'=>array('label'=>"DateValidation", 'checked'=>0, 'position'=>22),
 	'f.date_lim_reglement'=>array('label'=>"DateDue", 'checked'=>1, 'position'=>25),
 	'f.date_closing'=>array('label'=>"DateClosing", 'checked'=>0, 'position'=>30),
+	'f.date_closing_month'=>array('label'=>"DateClosingMonth", 'checked'=>0, 'position'=>31),
 	'p.ref'=>array('label'=>"ProjectRef", 'checked'=>1, 'enabled'=>(!isModEnabled('project') ? 0 : 1), 'position'=>40),
 	'p.title'=>array('label'=>"ProjectLabel", 'checked'=>0, 'enabled'=>(!isModEnabled('project') ? 0 : 1), 'position'=>41),
 	's.nom'=>array('label'=>"ThirdParty", 'checked'=>1, 'position'=>50),
@@ -1613,6 +1614,10 @@ if ($resql) {
 		print '<td class="liste_titre">';
 		print '</td>';
 	}
+	if (!empty($arrayfields['f.date_closing_month']['checked'])) {
+		print '<td class="liste_titre">';
+		print '</td>';
+	}
 	if (!empty($arrayfields['f.note_public']['checked'])) {
 		// Note public
 		print '<td class="liste_titre">';
@@ -1797,6 +1802,9 @@ if ($resql) {
 	}
 	if (!empty($arrayfields['f.date_closing']['checked'])) {
 		print_liste_field_titre($arrayfields['f.date_closing']['label'], $_SERVER["PHP_SELF"], "f.date_closing", "", $param, 'align="center" class="nowrap"', $sortfield, $sortorder);
+	}
+	if (!empty($arrayfields['f.date_closing_month']['checked'])) {
+		print_liste_field_titre($arrayfields['f.date_closing_month']['label'], $_SERVER["PHP_SELF"], "f.date_closing", "", $param, 'align="center" class="nowrap"', $sortfield, $sortorder);
 	}
 	if (!empty($arrayfields['f.note_public']['checked'])) {
 		print_liste_field_titre($arrayfields['f.note_public']['label'], $_SERVER["PHP_SELF"], "f.note_public", "", $param, '', $sortfield, $sortorder, 'center nowrap ');
@@ -2542,6 +2550,15 @@ if ($resql) {
 				if (!empty($arrayfields['f.date_closing']['checked'])) {
 					print '<td class="nowraponall center">';
 					print dol_print_date($db->jdate($obj->date_closing), 'dayhour', 'tzuser');
+					print '</td>';
+					if (!$i) {
+						$totalarray['nbfield']++;
+					}
+				}
+				// Date closing
+				if (!empty($arrayfields['f.date_closing_month']['checked'])) {
+					print '<td class="nowraponall center">';
+					print dol_print_date($db->jdate($obj->date_closing), '%B', 'tzuser');
 					print '</td>';
 					if (!$i) {
 						$totalarray['nbfield']++;
