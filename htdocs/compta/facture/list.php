@@ -2558,7 +2558,7 @@ if ($resql) {
 				// Date closing
 				if (!empty($arrayfields['f.date_closing_month']['checked'])) {
 					print '<td class="nowraponall center">';
-					print dol_print_date($db->jdate($obj->date_closing), '%B', 'tzuser');
+					print dol_print_date($db->jdate($obj->date_closing), '%B %Y', 'tzuser');
 					print '</td>';
 					if (!$i) {
 						$totalarray['nbfield']++;
