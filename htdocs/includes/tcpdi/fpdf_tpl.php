@@ -450,7 +450,7 @@ class FPDF_TPL extends FPDF {
     /**
      * Private Method
      */
-    function _out($s) {
+    public function _out($s) {
         if ($this->state == 2 && $this->_intpl) {
             $this->tpls[$this->tpl]['buffer'] .= $s . "\n";
         } else {

@@ -400,7 +400,7 @@ class pdf_cyan extends ModelePDFPropales
 						$tab_top -= 2;
 
 						$pdf->SetFont('', '', $default_font_size - 1);
-						$pdf->writeHTMLCell(190, 3, $this->posxdesc - 1, $tab_top - 1, dol_htmlentitiesbr($desc_incoterms), 0, 1);
+						$pdf->writeHTMLCell(190, 3, $this->posxdesc - 2, $tab_top - 1, dol_htmlentitiesbr($desc_incoterms), 0, 1);
 						$nexY = max($pdf->GetY(), $nexY);
 						$height_incoterms = $nexY - $tab_top;
 
@@ -516,10 +516,10 @@ class pdf_cyan extends ModelePDFPropales
 							// Draw note frame
 							if ($i > $pageposbeforenote) {
 								$height_note = $this->page_hauteur - ($tab_top_newpage + $heightforfooter);
-								$pdf->Rect($this->marge_gauche, $tab_top_newpage - 1, $tab_width, $height_note + 1);
+								//$pdf->Rect($this->marge_gauche, $tab_top_newpage - 1, $tab_width, $height_note + 1);
 							} else {
 								$height_note = $this->page_hauteur - ($tab_top + $heightforfooter);
-								$pdf->Rect($this->marge_gauche, $tab_top - 1, $tab_width, $height_note + 1);
+								//$pdf->Rect($this->marge_gauche, $tab_top - 1, $tab_width, $height_note + 1);
 							}
 
 							// Add footer
@@ -538,13 +538,13 @@ class pdf_cyan extends ModelePDFPropales
 							$this->_pagehead($pdf, $object, 0, $outputlangs);
 						}
 						$height_note = $posyafter - $tab_top_newpage;
-						$pdf->Rect($this->marge_gauche, $tab_top_newpage - 1, $tab_width, $height_note + 1);
+						//$pdf->Rect($this->marge_gauche, $tab_top_newpage - 1, $tab_width, $height_note + 1);
 					} else {
 						// No pagebreak
 						$pdf->commitTransaction();
 						$posyafter = $pdf->GetY();
 						$height_note = $posyafter - $tab_top;
-						$pdf->Rect($this->marge_gauche, $tab_top - 1, $tab_width, $height_note + 1);
+						//$pdf->Rect($this->marge_gauche, $tab_top - 1, $tab_width, $height_note + 1);
 
 
 						if ($posyafter > ($this->page_hauteur - ($heightforfooter + $heightforfreetext + 20))) {
