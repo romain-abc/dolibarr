@@ -400,7 +400,7 @@ class pdf_cyan extends ModelePDFPropales
 						$tab_top -= 2;
 
 						$pdf->SetFont('', '', $default_font_size - 1);
-						$pdf->writeHTMLCell(190, 3, $this->posxdesc - 2, $tab_top - 1, dol_htmlentitiesbr($desc_incoterms), 0, 1);
+						$pdf->writeHTMLCell(190, 3, $this->posxdesc - 1, $tab_top - 1, dol_htmlentitiesbr($desc_incoterms), 0, 1);
 						$nexY = max($pdf->GetY(), $nexY);
 						$height_incoterms = $nexY - $tab_top;
 
@@ -460,8 +460,8 @@ class pdf_cyan extends ModelePDFPropales
 
 					$pdf->startTransaction();
 
-					$pdf->SetFont('', '', $default_font_size - 1);
-					$pdf->writeHTMLCell(190, 3, $this->posxdesc - 1, $tab_top, dol_htmlentitiesbr($notetoshow), 0, 1);
+					$pdf->SetFont('', '', $default_font_size + 1);
+					$pdf->writeHTMLCell(190, 3, $this->posxdesc - 2, $tab_top, dol_htmlentitiesbr($notetoshow), 0, 1);
 					// Description
 					$pageposafternote = $pdf->getPage();
 					$posyafter = $pdf->GetY();
@@ -488,8 +488,8 @@ class pdf_cyan extends ModelePDFPropales
 						// back to start
 						$pdf->setPage($pageposbeforenote);
 						$pdf->setPageOrientation('', 1, $heightforfooter + $heightforfreetext);
-						$pdf->SetFont('', '', $default_font_size - 1);
-						$pdf->writeHTMLCell(190, 3, $this->posxdesc - 1, $tab_top, dol_htmlentitiesbr($notetoshow), 0, 1);
+						$pdf->SetFont('', '', $default_font_size + 1);
+						$pdf->writeHTMLCell(190, 3, $this->posxdesc - 2, $tab_top, dol_htmlentitiesbr($notetoshow), 0, 1);
 						$pageposafternote = $pdf->getPage();
 
 						$posyafter = $pdf->GetY();
