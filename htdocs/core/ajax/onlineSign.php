@@ -142,67 +142,76 @@ if ($action == "importSignature") {
 					$newpdffilename = $upload_dir . $ref . "_signed-" . $date . ".pdf";
 					$sourcefile = $upload_dir . $ref . ".pdf";
 
-					if (dol_is_file($sourcefile)) {
-						// We build the new PDF
-						$pdf = pdf_getInstance();
-						if (class_exists('TCPDF')) {
-							$pdf->setPrintHeader(false);
-							$pdf->setPrintFooter(false);
-						}
-						$pdf->SetFont(pdf_getPDFFont($langs));
+					$files = glob($upload_dir . '/*'.$ref.'_signed*');
 
-						if (getDolGlobalString('MAIN_DISABLE_PDF_COMPRESSION')) {
-							$pdf->SetCompression(false);
-						}
+					if (count($files) > 0) {
+						$error++;
+						$response = 'Error : you have already signed the file.';
+					}
+					else {
 
-						//$pdf->Open();
-						$pagecount = $pdf->setSourceFile($sourcefile);        // original PDF
-
-						$param = array();
-						$param['online_sign_name'] = $online_sign_name;
-						$param['pathtoimage'] = $upload_dir . $filename;
-
-						$s = array();    // Array with size of each page. Exemple array(w'=>210, 'h'=>297);
-						for ($i = 1; $i < ($pagecount + 1); $i++) {
-							try {
-								$tppl = $pdf->importPage($i);
-								$s = $pdf->getTemplatesize($tppl);
-								$pdf->AddPage($s['h'] > $s['w'] ? 'P' : 'L');
-								$pdf->useTemplate($tppl);
-
-								if (getDolGlobalString("PROPAL_SIGNATURE_ON_ALL_PAGES")) {
-									// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
-									// TODO Get position of box from PDF template
-
-									$param['xforimgstart'] = (empty($s['w']) ? 120 : round($s['w'] / 2) + 15);
-									$param['yforimgstart'] = (empty($s['h']) ? 240 : $s['h'] - 60);
-									$param['wforimg'] = $s['w'] - 20 - $param['xforimgstart'];
-
-									dolPrintSignatureImage($pdf, $langs, $param);
-								}
-							} catch (Exception $e) {
-								dol_syslog("Error when manipulating the PDF " . $sourcefile . " by onlineSign: " . $e->getMessage(), LOG_ERR);
-								$response = $e->getMessage();
-								$error++;
+						if (dol_is_file($sourcefile)) {
+							// We build the new PDF
+							$pdf = pdf_getInstance();
+							if (class_exists('TCPDF')) {
+								$pdf->setPrintHeader(false);
+								$pdf->setPrintFooter(false);
 							}
+							$pdf->SetFont(pdf_getPDFFont($langs));
+
+							if (getDolGlobalString('MAIN_DISABLE_PDF_COMPRESSION')) {
+								$pdf->SetCompression(false);
+							}
+
+							//$pdf->Open();
+							$pagecount = $pdf->setSourceFile($sourcefile);        // original PDF
+
+							$param = array();
+							$param['online_sign_name'] = $online_sign_name;
+							$param['pathtoimage'] = $upload_dir . $filename;
+
+							$s = array();    // Array with size of each page. Exemple array(w'=>210, 'h'=>297);
+							for ($i = 1; $i < ($pagecount + 1); $i++) {
+								try {
+									$tppl = $pdf->importPage($i);
+									$s = $pdf->getTemplatesize($tppl);
+									$pdf->AddPage($s['h'] > $s['w'] ? 'P' : 'L');
+									$pdf->useTemplate($tppl);
+
+									if (getDolGlobalString("PROPAL_SIGNATURE_ON_ALL_PAGES")) {
+										// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
+										// TODO Get position of box from PDF template
+
+										$param['xforimgstart'] = (empty($s['w']) ? 120 : round($s['w'] / 2) + 15);
+										$param['yforimgstart'] = (empty($s['h']) ? 240 : $s['h'] - 60);
+										$param['wforimg'] = $s['w'] - 20 - $param['xforimgstart'];
+
+										dolPrintSignatureImage($pdf, $langs, $param);
+									}
+								} catch (Exception $e) {
+									dol_syslog("Error when manipulating the PDF " . $sourcefile . " by onlineSign: " . $e->getMessage(), LOG_ERR);
+									$response = $e->getMessage();
+									$error++;
+								}
+							}
+
+							if (!getDolGlobalString("PROPAL_SIGNATURE_ON_ALL_PAGES")) {
+								// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
+								// TODO Get position of box from PDF template
+
+								$param['xforimgstart'] = (empty($s['w']) ? 120 : round($s['w'] / 2) + 15);
+								$param['yforimgstart'] = (empty($s['h']) ? 240 : $s['h'] - 60);
+								$param['wforimg'] = $s['w'] - 20 - $param['xforimgstart'];
+
+								dolPrintSignatureImage($pdf, $langs, $param);
+							}
+
+							//$pdf->Close();
+							$pdf->Output($newpdffilename, "F");
+
+							// Index the new file and update the last_main_doc property of object.
+							$object->indexFile($newpdffilename, 1);
 						}
-
-						if (!getDolGlobalString("PROPAL_SIGNATURE_ON_ALL_PAGES")) {
-							// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
-							// TODO Get position of box from PDF template
-
-							$param['xforimgstart'] = (empty($s['w']) ? 120 : round($s['w'] / 2) + 15);
-							$param['yforimgstart'] = (empty($s['h']) ? 240 : $s['h'] - 60);
-							$param['wforimg'] = $s['w'] - 20 - $param['xforimgstart'];
-
-							dolPrintSignatureImage($pdf, $langs, $param);
-						}
-
-						//$pdf->Close();
-						$pdf->Output($newpdffilename, "F");
-
-						// Index the new file and update the last_main_doc property of object.
-						$object->indexFile($newpdffilename, 1);
 					}
 				} elseif (preg_match('/\.odt/i', $last_main_doc_file)) {
 					// Adding signature on .ODT not yet supported
