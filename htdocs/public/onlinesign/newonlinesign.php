@@ -696,7 +696,7 @@ if ($action == "dosign" && empty($cancel)) {
 				console.log("We click on button sign");
 				document.body.style.cursor = \'wait\';
 				$("#signbutton").val(\''.dol_escape_js($langs->transnoentities('PleaseBePatient')).'\');
-				$("#signbutton").attr("disabled",false);
+				$("#signbutton").attr("disabled",true);
 				var signature = $("#signature").jSignature("getData", "image");
 				var name = document.getElementById("name").value;
 				$.ajax({
