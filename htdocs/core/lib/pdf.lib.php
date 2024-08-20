@@ -1192,7 +1192,7 @@ function pdf_pagefoot(&$pdf, $outputlangs, $paramfreetext, $fromcompany, $marge_
 		$line4 .= ($line4 ? " - " : "").$outputlangs->transnoentities("VATIntraShort").": ".$outputlangs->convToOutputCharset($fromcompany->tva_intra);
 	}
 
-	$pdf->SetFont('', '', 7);
+	$pdf->SetFont('', '', 6);
 	$pdf->SetDrawColor(224, 224, 224);
 	// Option for footer text color
 	if (getDolGlobalString('PDF_FOOTER_TEXT_COLOR')) {
@@ -1258,7 +1258,7 @@ function pdf_pagefoot(&$pdf, $outputlangs, $paramfreetext, $fromcompany, $marge_
 
 			// Hide footer line if footer background color is set
 			if (!getDolGlobalString('PDF_FOOTER_BACKGROUND_COLOR')) {
-				$pdf->line($dims['lm'], $dims['hk'] - $posy, $dims['wk'] - $dims['rm'], $dims['hk'] - $posy);
+				//$pdf->line($dims['lm'], $dims['hk'] - $posy, $dims['wk'] - $dims['rm'], $dims['hk'] - $posy);
 			}
 
 			// Option for set top margin height of footer after freetext
@@ -1323,19 +1323,19 @@ function pdf_pagefoot(&$pdf, $outputlangs, $paramfreetext, $fromcompany, $marge_
 				}
 
 				if (!empty($line1)) {
-					$pdf->SetFont('', 'B', 7);
+					$pdf->SetFont('', 'B', 6);
 					$pdf->SetXY($dims['lm'], -$posy);
 					$pdf->MultiCell($dims['wk'] - $dims['rm'] - $dims['lm'], 2, $line1, 0, 'C', 0);
 					$posy -= 3;
-					$pdf->SetFont('', '', 7);
+					$pdf->SetFont('', '', 6);
 				}
 
 				if (!empty($line2)) {
-					$pdf->SetFont('', 'B', 7);
+					$pdf->SetFont('', 'B', 6);
 					$pdf->SetXY($dims['lm'], -$posy);
 					$pdf->MultiCell($dims['wk'] - $dims['rm'] - $dims['lm'], 2, $line2, 0, 'C', 0);
 					$posy -= 3;
-					$pdf->SetFont('', '', 7);
+					$pdf->SetFont('', '', 6);
 				}
 
 				if (!empty($line3)) {
