@@ -65,24 +65,29 @@ class FormMargin
 
 		// Default returned array
 		$marginInfos = array(
-				'pa_products' => 0,
-				'pv_products' => 0,
-				'margin_on_products' => 0,
-				'margin_rate_products' => '',
-				'mark_rate_products' => '',
-				'pa_services' => 0,
-				'pv_services' => 0,
-				'margin_on_services' => 0,
-				'margin_rate_services' => '',
-				'mark_rate_services' => '',
-				'pa_total' => 0,
-				'pv_total' => 0,
-				'total_margin' => 0,
-				'total_margin_rate' => '',
-				'total_mark_rate' => ''
+			'pa_products' => 0,
+			'pv_products' => 0,
+			'margin_on_products' => 0,
+			'margin_rate_products' => '',
+			'mark_rate_products' => '',
+			'pa_services' => 0,
+			'pv_services' => 0,
+			'margin_on_services' => 0,
+			'margin_rate_services' => '',
+			'mark_rate_services' => '',
+			'pa_total' => 0,
+			'pv_total' => 0,
+			'total_margin' => 0,
+			'total_margin_rate' => '',
+			'total_mark_rate' => ''
 		);
 
 		foreach ($object->lines as $line) {
+			$line->fetch_optionals();
+			$ecopart = $line->qty * $line->array_options['options_ecopart'];
+			if(!$ecopart){
+				$ecopart = 0;
+			}
 			if (empty($line->pa_ht) && isset($line->fk_fournprice) && !$force_price) {
 				require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
 				$product = new ProductFournisseur($this->db);
@@ -125,7 +130,7 @@ class FormMargin
 					//	$marginInfos['margin_on_products'] += -1 * (abs($pv) - $pa);
 					//}
 					//else
-					$marginInfos['margin_on_products'] += $pv - $pa;
+					$marginInfos['margin_on_products'] += $pv - $pa - $ecopart;
 				} elseif (getDolGlobalString('MARGIN_METHODE_FOR_DISCOUNT') == '2') { // remise globale considérée comme service
 					$marginInfos['pa_services'] += $pa;
 					$marginInfos['pv_services'] += $pv;
@@ -135,7 +140,7 @@ class FormMargin
 					//if ($pv < 0)
 					//	$marginInfos['margin_on_services'] += -1 * (abs($pv) - $pa);
 					//else
-					$marginInfos['margin_on_services'] += $pv - $pa;
+					$marginInfos['margin_on_services'] += $pv - $pa - $ecopart;
 				} elseif (getDolGlobalString('MARGIN_METHODE_FOR_DISCOUNT') == '3') { // remise globale prise en compte uniqt sur total
 					$marginInfos['pa_total'] += $pa;
 					$marginInfos['pv_total'] += $pv;
@@ -154,7 +159,7 @@ class FormMargin
 					//}
 					//else
 					//{
-					$marginInfos['margin_on_products'] += $pv - $pa;
+					$marginInfos['margin_on_products'] += $pv - $pa - $ecopart;
 					//}
 				} elseif ($type == 1) {  // service
 					$marginInfos['pa_services'] += $pa;
@@ -165,7 +170,7 @@ class FormMargin
 					//if ($pv < 0)
 					//	$marginInfos['margin_on_services'] += -1 * (abs($pv) - $pa);
 					//else
-					$marginInfos['margin_on_services'] += $pv - $pa;
+					$marginInfos['margin_on_services'] += $pv - $pa - $ecopart;
 				}
 			}
 		}
@@ -187,7 +192,7 @@ class FormMargin
 		//if ($marginInfos['pv_total'] < 0)
 		//	$marginInfos['total_margin'] = -1 * (abs($marginInfos['pv_total']) - $marginInfos['pa_total']);
 		//else
-		$marginInfos['total_margin'] = $marginInfos['pv_total'] - $marginInfos['pa_total'];
+		$marginInfos['total_margin'] = $marginInfos['pv_total'] - $marginInfos['pa_total'] - $ecopart;
 		if ($marginInfos['pa_total'] > 0) {
 			$marginInfos['total_margin_rate'] = 100 * $marginInfos['total_margin'] / $marginInfos['pa_total'];
 		}
