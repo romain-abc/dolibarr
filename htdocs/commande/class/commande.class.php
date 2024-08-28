@@ -3754,7 +3754,12 @@ class Commande extends CommonOrder
 		} elseif ($status == self::STATUS_CLOSED) {
 			$labelStatus = $langs->transnoentitiesnoconv('StatusOrderDelivered').$billedtext;
 			$labelStatusShort = $langs->transnoentitiesnoconv('StatusOrderDeliveredShort').$billedtext;
-			$statusType = 'status6';
+			if($billed){
+				$statusType = 'status6';
+			}
+			else{
+				$statusType = 'status4';
+			}
 		} else {
 			$labelStatus = $langs->transnoentitiesnoconv('Unknown');
 			$labelStatusShort = '';
