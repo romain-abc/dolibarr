@@ -426,11 +426,24 @@ if ($nolinesbefore) {
 				echo '</div>';
 			}
 			if (is_object($objectline)) {
-				$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+				//$temps = $objectline->showOptionals($extrafields, 'create', array(), '', '', 1, 'line');
+				$temps = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "refproduct"), '', '', 1, 'line');
+				$temps2 = $objectline->showOptionals($extrafields, 'create', array("onlykey" => "fournisseurorigine"), '', '', 1, 'line');
 
-				if (!empty($temps)) {
+				/*if (!empty($temps)) {
 					print '<div style="padding-top: 10px" id="extrafield_lines_area_create" name="extrafield_lines_area_create">';
 					print $temps;
+					print '</div>';
+				}*/
+
+				if (!empty($temps) || !empty($temps2)) {
+					print '<div style="padding-top: 10px" id="extrafield_lines_area_create" name="extrafield_lines_area_create">';
+					if (!empty($temps)) {
+						print $temps;
+					}
+					if (!empty($temps2)) {
+						print $temps2;
+					}
 					print '</div>';
 				}
 			}
