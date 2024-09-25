@@ -1316,7 +1316,10 @@ abstract class CommonDocGenerator
 		);
 		$extrafieldDesc = $this->getExtrafieldsInHtml($object->lines[$i], $outputlangs, $params);
 		if (!empty($extrafieldDesc)) {
+			$default_font_size = pdf_getPDFFontSize($outputlangs);
+			$pdf->SetFont('', '', $default_font_size - 2);
 			$this->printStdColumnContent($pdf, $posYAfterDescription, $colKey, $extrafieldDesc);
+			$pdf->SetFont('', '', $default_font_size);
 		}
 	}
 
@@ -1588,13 +1591,13 @@ abstract class CommonDocGenerator
 
 						$itemsInRow = $maxItemsInRow;
 						$html .= '<td colspan="'.($maxItemsInRow * 2 - 1).'">';
-						$html .= '<strong>'.$field->label.' :</strong> ';
+						$html .= $field->label.' : ';
 						$html .= $field->content;
 						$html .= "</td>";
 					} else {
 						$itemsInRow++;
 						$html .= '<td width="'.$params['table']['labelcolwidth'].'" class="extrafield-label">';
-						$html .= '<strong>'.$field->label.' :</strong>';
+						$html .= $field->label.' :';
 						$html .= "</td>";
 
 

@@ -1012,10 +1012,11 @@ if (!empty($usemargins) && $user->hasRight('margins', 'creer')) {
 
 	console.log("finally selected defaultkey="+defaultkey+" defaultprice for buying price="+defaultprice);
 
-	$("#fournprice_predef").html(options).show();
+	/*$("#fournprice_predef").html(options).show();*/
+	$("#fournprice_predef").html(options);
 	if (defaultkey != '')
 	{
-	$("#fournprice_predef").val(defaultkey);
+		$("#fournprice_predef").val(defaultkey);
 	}
 
 	/* At loading, no product are yet selected, so we hide field of buying_price */
@@ -1023,7 +1024,9 @@ if (!empty($usemargins) && $user->hasRight('margins', 'creer')) {
 
 	/* Define default price at loading */
 	var defaultprice = $("#fournprice_predef").find('option:selected').attr("price");
+	defaultprice = parseFloat(defaultprice).toFixed(2).replace('.', ',');
 	$("#buying_price").val(defaultprice);
+	$('#buying_price').show();
 
 	$("#fournprice_predef").change(function() {
 	console.log("change on fournprice_predef");
@@ -1267,7 +1270,7 @@ if (getDolGlobalInt('PRODUIT_AUTOFILL_DESC') == 1) {
 <?php } ?>
 	/* jQuery("#tva_tx, #title_vat").hide(); */
 	/* jQuery("#title_fourn_ref").hide(); */
-	jQuery("#np_marginRate, #np_markRate, .np_marginRate, .np_markRate, #units, #title_units").hide();
+	/*jQuery("#np_marginRate, #np_markRate, .np_marginRate, .np_markRate, #units, #title_units").hide();*/
 	jQuery("#buying_price").show();
 	jQuery('#trlinefordates, .divlinefordates').show();
 	}
