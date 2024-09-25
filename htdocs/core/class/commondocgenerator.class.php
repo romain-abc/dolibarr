@@ -1557,7 +1557,7 @@ abstract class CommonDocGenerator
 				$i = 0;
 				foreach ($fields as $field) {
 					$html .= !empty($i) ? $params['list']['separator'] : '';
-					$html .= '<strong>'.$field->label.' : </strong>';
+					$html .= $field->label.' : ';
 					$html .= $field->content;
 					$i++;
 				}
