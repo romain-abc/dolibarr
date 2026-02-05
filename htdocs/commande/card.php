@@ -1981,7 +1981,7 @@ if ($action == 'create' && $usercancreate) {
 		print img_picto('', 'incoterm', 'class="pictofixedwidth"');
 		print $form->select_incoterms($incoterm_id, $incoterm_location);
 		print '</td></tr>';
-	}
+	}*/
 
 	// Other attributes
 	$parameters = array();
@@ -2005,7 +2005,7 @@ if ($action == 'create' && $usercancreate) {
 
 		print $object->showOptionals($extrafields, 'create', $parameters);
 	}
-
+/*
 	// Template to use by default
 	print '<tr><td>'.$langs->trans('DefaultModel').'</td>';
 	print '<td>';
