@@ -1935,8 +1935,6 @@ class Propal extends CommonObject
 				$line->remise_percent   = $objp->remise_percent;
 				$line->price            = $objp->price; // TODO deprecated
 
-				$line->fetch_optionals();
-
 				$line->info_bits        = $objp->info_bits;
 				$line->total_ht         = $objp->total_ht;
 				$line->total_tva        = $objp->total_tva;
@@ -1979,6 +1977,8 @@ class Propal extends CommonObject
 				$line->multicurrency_total_ht 	= $objp->multicurrency_total_ht;
 				$line->multicurrency_total_tva 	= $objp->multicurrency_total_tva;
 				$line->multicurrency_total_ttc 	= $objp->multicurrency_total_ttc;
+
+				$line->fetch_optionals();
 
 				// multilangs
 				if (getDolGlobalInt('MAIN_MULTILANGS') && !empty($objp->fk_product) && !empty($loadalsotranslation)) {
@@ -2026,7 +2026,7 @@ class Propal extends CommonObject
 
 
 		if (!((!getDolGlobalString('MAIN_USE_ADVANCED_PERMS') && $user->hasRight('propal', 'creer'))
-			|| (getDolGlobalString('MAIN_USE_ADVANCED_PERMS') && $user->hasRight('propal', 'propal_advance', 'validate')))) {
+		|| (getDolGlobalString('MAIN_USE_ADVANCED_PERMS') && $user->hasRight('propal', 'propal_advance', 'validate')))) {
 			$this->error = 'ErrorPermissionDenied';
 			dol_syslog(get_class($this)."::valid ".$this->error, LOG_ERR);
 			return -1;
