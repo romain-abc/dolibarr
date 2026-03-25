@@ -82,12 +82,14 @@ class FormMargin
 			'total_mark_rate' => ''
 		);
 
+		$total_ecopart = 0;
 		foreach ($object->lines as $line) {
 			$line->fetch_optionals();
 			$ecopart = $line->qty * $line->array_options['options_ecopart'];
 			if(!$ecopart){
 				$ecopart = 0;
 			}
+			$total_ecopart += $ecopart;
 			if (empty($line->pa_ht) && isset($line->fk_fournprice) && !$force_price) {
 				require_once DOL_DOCUMENT_ROOT.'/fourn/class/fournisseur.product.class.php';
 				$product = new ProductFournisseur($this->db);
@@ -192,7 +194,7 @@ class FormMargin
 		//if ($marginInfos['pv_total'] < 0)
 		//	$marginInfos['total_margin'] = -1 * (abs($marginInfos['pv_total']) - $marginInfos['pa_total']);
 		//else
-		$marginInfos['total_margin'] = $marginInfos['pv_total'] - $marginInfos['pa_total'] - $ecopart;
+		$marginInfos['total_margin'] = $marginInfos['pv_total'] - $marginInfos['pa_total'] - $total_ecopart;
 		if ($marginInfos['pa_total'] > 0) {
 			$marginInfos['total_margin_rate'] = 100 * $marginInfos['total_margin'] / $marginInfos['pa_total'];
 		}
