@@ -117,6 +117,8 @@ $fieldstosearchall = array(
 if (empty($user->socid)) {
 	$fieldstosearchall["e.note_private"] = "NotePrivate";
 }
+$fieldstosearchall["cdef.refproduct"] = "RefProduct";
+$fieldstosearchall["cdef.fournisseurorigine"] = "FournisseurOrigine";
 
 $checkedtypetiers = 0;
 $arrayfields = array(
@@ -293,6 +295,7 @@ if (!empty($extrafields->attributes[$object->table_element]['label']) && is_arra
 if ($search_all) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'expeditiondet as ed ON e.rowid=ed.fk_expedition';
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commandedet as pd ON pd.rowid=ed.fk_origin_line';
+	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commandedet_extrafields as cdef ON pd.rowid = cdef.fk_object';
 }
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe as s ON s.rowid = e.fk_soc";
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_country as country on (country.rowid = s.fk_pays)";

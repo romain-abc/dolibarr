@@ -203,6 +203,8 @@ $fieldstosearchall = array(
 if (empty($user->socid)) {
 	$fieldstosearchall["f.note_private"] = "NotePrivate";
 }
+$fieldstosearchall["fdef.refproduct"] = "RefProduct";
+$fieldstosearchall["fdef.fournisseurorigine"] = "FournisseurOrigine";
 
 $checkedtypetiers = 0;
 $arrayfields = array(
@@ -657,6 +659,7 @@ if (isset($extrafields->attributes[$object->table_element]['label']) && is_array
 }
 if ($sall) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facturedet as pd ON f.rowid = pd.fk_facture';
+	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facturedet_extrafields as fdef ON pd.rowid = fdef.fk_object';
 }
 if (!empty($search_fac_rec_source_title)) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facture_rec as facrec ON f.fk_fac_rec_source = facrec.rowid';

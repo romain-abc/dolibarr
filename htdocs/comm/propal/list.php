@@ -202,6 +202,8 @@ $fieldstosearchall = array(
 if (empty($user->socid)) {
 	$fieldstosearchall["p.note_private"] = "NotePrivate";
 }
+$fieldstosearchall["pdef.refproduct"] = "RefProduct";
+$fieldstosearchall["pdef.fournisseurorigine"] = "FournisseurOrigine";
 
 
 $checkedtypetiers = 0;
@@ -598,6 +600,7 @@ if (!empty($extrafields->attributes[$object->table_element]['label']) && is_arra
 }
 if ($search_all) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'propaldet as pd ON p.rowid = pd.fk_propal';
+	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'propaldet_extrafields as pdef ON pd.rowid = pdef.fk_object';
 }
 $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'user as u ON p.fk_user_author = u.rowid';
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."projet as pr ON pr.rowid = p.fk_projet";
