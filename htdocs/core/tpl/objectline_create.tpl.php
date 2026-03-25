@@ -295,7 +295,7 @@ if ($nolinesbefore) {
 			} else {
 				$ajaxoptions = array(
 					// Disabled: This is useless because setting discount and price_ht after a selection is already managed
-					// by ths page itself with a .change on the combolist '#idprodfournprice'
+					// by this page itself with a .change on the combolist '#idprodfournprice'
 					//'update' => array('remise_percent' => 'discount', 'price_ht' => 'price_ht')			// html id tags that will be edited with each ajax json response key
 				);
 				$alsoproductwithnosupplierprice = 1;
@@ -493,7 +493,7 @@ if ($nolinesbefore) {
 		<?php
 		if (isset($this->situation_cycle_ref) && $this->situation_cycle_ref) {
 			$coldisplay++;
-			print '<td class="nobottom nowrap right"><input class="falt right" type="text" size="1" value="" name="progress"><span class="opacitymedium hideonsmartphone">%</span></td>';
+			print '<td class="nobottom nowrap right"><input class="fault right" type="text" size="1" value="" name="progress"><span class="opacitymedium hideonsmartphone">%</span></td>';
 			$coldisplay++;
 			print '<td></td>';
 		}
@@ -671,7 +671,7 @@ if (!empty($usemargins) && $user->hasRight('margins', 'creer')) {
 	price = ((bpjs / (1 - ratejs / 100)) / (1 - remisejs / 100));
 	}
 
-	$("input[name='price_ht']:first").val(price);	// TODO Must use a function like php price to have here a formated value
+	$("input[name='price_ht']:first").val(price);	// TODO Must use a function like php price to have here a formatted value
 
 	return true;
 	}
@@ -792,7 +792,7 @@ if (!getDolGlobalString('MAIN_DISABLE_EDIT_PREDEF_PRICEHT') && empty($senderissu
 	console.log("objectline_create.tpl We are in a price per qty context, we do not call ajax/product, init of fields is done few lines later");
 	} else {
 	<?php if (getDolGlobalString('PRODUIT_CUSTOMER_PRICES_BY_QTY') || getDolGlobalString('PRODUIT_CUSTOMER_PRICES_BY_QTY_MULTIPRICES')) { ?>
-		if (isNaN(pbq)) { console.log("We use experimental option PRODUIT_CUSTOMER_PRICES_BY_QTY or PRODUIT_CUSTOMER_PRICES_BY_QTY but we could not get the id of pbq from product combo list, so load of price may be 0 if product has differet prices"); }
+		if (isNaN(pbq)) { console.log("We use experimental option PRODUIT_CUSTOMER_PRICES_BY_QTY or PRODUIT_CUSTOMER_PRICES_BY_QTY but we could not get the id of pbq from product combo list, so load of price may be 0 if product has different prices"); }
 	<?php } ?>
 	// Get the price for the product and display it
 	console.log("Load unit price and set it into #price_ht or #price_ttc for product id="+$(this).val()+" socid=<?php print $object->socid; ?>");
@@ -811,7 +811,7 @@ if (!getDolGlobalString('MAIN_DISABLE_EDIT_PREDEF_PRICEHT') && empty($senderissu
 	$('#date_start').attr('mandatoryperiod', data.mandatory_period);
 	$('#date_end').attr('mandatoryperiod', data.mandatory_period);
 
-	// service and we setted mandatory_period to true
+	// service and we set mandatory_period to true
 	if (data.mandatory_period == 1 && data.type == 1) {
 	jQuery('#date_start').addClass('inputmandatory');
 	jQuery('#date_end').addClass('inputmandatory');
@@ -880,7 +880,7 @@ if (!getDolGlobalString('MAIN_DISABLE_EDIT_PREDEF_PRICEHT') && empty($senderissu
 			var proddesc = data.desc;
 			<?php
 		} ?>
-		console.log("objectline_create.tpl Load desciption into text area : "+proddesc);
+		console.log("objectline_create.tpl Load description into text area : "+proddesc);
 		<?php
 		if (getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) { ?>
 			if (typeof CKEDITOR == "object" && typeof CKEDITOR.instances != "undefined")
@@ -952,13 +952,13 @@ if (!empty($usemargins) && $user->hasRight('margins', 'creer')) {
 	{
 	i++;
 	this.price = parseFloat(this.price); // to fix when this.price >0
-	// If margin is calculated on best supplier price, we set it by defaut (but only if value is not 0)
+	// If margin is calculated on best supplier price, we set it by default (but only if value is not 0)
 	//console.log("id="+this.id+"-price="+this.price+"-"+(this.price > 0));
 	if (bestpricefound == 0 && this.price > 0) { defaultkey = this.id; defaultprice = this.price; bestpriceid = this.id; bestpricevalue = this.price; bestpricefound=1; }	// bestpricefound is used to take the first price > 0
 	}
 	if (this.id == 'pmpprice')
 	{
-	// If margin is calculated on PMP, we set it by defaut (but only if value is not 0)
+	// If margin is calculated on PMP, we set it by default (but only if value is not 0)
 	console.log("id="+this.id+"-price="+this.price);
 	if ('pmp' == defaultbuyprice || 'costprice' == defaultbuyprice)
 	{
@@ -970,7 +970,7 @@ if (!empty($usemargins) && $user->hasRight('margins', 'creer')) {
 	}
 	if (this.id == 'costprice')
 	{
-	// If margin is calculated on Cost price, we set it by defaut (but only if value is not 0)
+	// If margin is calculated on Cost price, we set it by default (but only if value is not 0)
 	console.log("id="+this.id+"-price="+this.price+"-pmppricevalue="+pmppricevalue);
 	if ('costprice' == defaultbuyprice)
 	{
@@ -1119,7 +1119,7 @@ if (getDolGlobalInt('PRODUIT_AUTOFILL_DESC') == 1) {
 	var description = $('option:selected', this).attr('data-description');
 	if (typeof description == 'undefined') { description = jQuery('#idprodfournprice').attr('data-description');	}
 
-	console.log("Load desciption into text area : "+description);
+	console.log("Load description into text area : "+description);
 	<?php
 	if (getDolGlobalString('FCKEDITOR_ENABLE_DETAILS')) {
 		?>
