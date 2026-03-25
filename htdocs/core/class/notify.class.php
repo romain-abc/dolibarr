@@ -531,7 +531,7 @@ class Notify
 								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 								$object_type = 'propal';
-								$labeltouse = $conf->global->PROPAL_CLOSE_REFUSED_TEMPLATE;
+								$labeltouse = isset($conf->global->PROPAL_CLOSE_REFUSED_TEMPLATE) ? $conf->global->PROPAL_CLOSE_REFUSED_TEMPLATE : '';
 								$mesg = $outputlangs->transnoentitiesnoconv("EMailTextProposalClosedRefusedWeb", $link);
 								break;
 							case 'PROPAL_CLOSE_SIGNED':
@@ -557,7 +557,7 @@ class Notify
 								$link = '<a href="'.$urlwithroot.'/comm/propal/card.php?id='.$object->id.'&entity='.$object->entity.'">'.$newref.'</a>';
 								$dir_output = $conf->propal->multidir_output[$object->entity]."/".get_exdir(0, 0, 0, 1, $object, 'propal');
 								$object_type = 'propal';
-								$labeltouse = $conf->global->PROPAL_CLOSE_SIGNED_TEMPLATE;
+								$labeltouse = isset($conf->global->PROPAL_CLOSE_SIGNED_TEMPLATE) ? $conf->global->PROPAL_CLOSE_SIGNED_TEMPLATE : '';
 								$soc = new Societe($this->db);
 								$soc->fetch($object->socid);
 								if($soc){
@@ -693,16 +693,18 @@ class Notify
 						$ref = dol_sanitizeFileName($newref);
 						if($signed){
 							$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output));
-							foreach($files as $f){
-								$fichier = $dir_output."/".$f;
-								if (!dol_is_file($fichier)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
-									// We can't add PDF as it is not generated yet.
-									$filepdf = '';
-								} else {
-									$filepdf = $fichier;
-									$filename_list[] = $filepdf;
-									$mimetype_list[] = mime_content_type($filepdf);
-									$mimefilename_list[] = $f;
+							if (is_array($files)) {
+								foreach ($files as $f) {
+									$fichier = $dir_output . "/" . $f;
+									if (!dol_is_file($fichier) || (is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+										// We can't add PDF as it is not generated yet.
+										$filepdf = '';
+									} else {
+										$filepdf = $fichier;
+										$filename_list[] = $filepdf;
+										$mimetype_list[] = mime_content_type($filepdf);
+										$mimefilename_list[] = $f;
+									}
 								}
 							}
 						}
@@ -997,16 +999,18 @@ class Notify
 				$ref = dol_sanitizeFileName($newref);
 				if($signed){
 					$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output . "/" . $ref));
-					foreach($files as $f){
-						$fichier = $dir_output . "/" . $ref."/".$f;
-						if (!dol_is_file($fichier)||(is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
-							// We can't add PDF as it is not generated yet.
-							$filepdf = '';
-						} else {
-							$filepdf = $fichier;
-							$filename_list[] = $filepdf;
-							$mimetype_list[] = mime_content_type($filepdf);
-							$mimefilename_list[] = $f;
+					if (is_array($files)) {
+						foreach ($files as $f) {
+							$fichier = $dir_output . "/" . $ref . "/" . $f;
+							if (!dol_is_file($fichier) || (is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
+								// We can't add PDF as it is not generated yet.
+								$filepdf = '';
+							} else {
+								$filepdf = $fichier;
+								$filename_list[] = $filepdf;
+								$mimetype_list[] = mime_content_type($filepdf);
+								$mimefilename_list[] = $f;
+							}
 						}
 					}
 				}
