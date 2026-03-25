@@ -145,7 +145,7 @@ $coldisplay = 0;
 		}
 
 		// Do not allow editing during a situation cycle
-		// but in some situations that is required (update legal informations for example)
+		// but in some situations that is required (update legal information for example)
 		if (!empty($conf->global->INVOICE_SITUATION_CAN_FORCE_UPDATE_DESCRIPTION)) {
 			$situationinvoicelinewithparent = 0;
 		}
@@ -188,7 +188,7 @@ $coldisplay = 0;
 			}
 		}
 
-		// Show autofill date for recuring invoices
+		// Show autofill date for recurring invoices
 		if (isModEnabled("service") && $line->product_type == 1 && ($line->element == 'facturedetrec' || $line->element == 'invoice_supplier_det_rec')) {
 			if ($line->element == 'invoice_supplier_det_rec') {
 				$line->date_start_fill = $line->date_start;
