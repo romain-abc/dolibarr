@@ -1749,7 +1749,7 @@ class Societe extends CommonObject
 				$sql .= ", code_fournisseur = ".(!empty($this->code_fournisseur) ? "'".$this->db->escape($this->code_fournisseur)."'" : "null");
 			}
 			$sql .= ", fk_user_modif = ".($user->id > 0 ? $user->id : "null");
-			$sql .= ", fk_multicurrency = ".(int) $this->fk_multicurrency;
+			$sql .= ", fk_multicurrency = " . (int)$this->fk_multicurrency;
 			$sql .= ", multicurrency_code = '".$this->db->escape($this->multicurrency_code)."'";
 			$sql .= ", model_pdf = '".$this->db->escape($this->model_pdf)."'";
 			$sql .= " WHERE rowid = ".(int) $id;
@@ -1994,10 +1994,7 @@ class Societe extends CommonObject
 		$sql .= ' WHERE s.entity IN ('.getEntity($this->element).')';
 		if ($code_client) {
 			$sql .= " AND s.code_client = '".$this->db->escape($code_client)."'";
-		} else {
-			if ($rowid) {
-				$sql .= ' AND s.rowid = '.((int) $rowid);
-			}
+		}
 
 		// Filter on client or supplier, for Client::fetch() and Fournisseur::fetch()
 		if ($is_client) {

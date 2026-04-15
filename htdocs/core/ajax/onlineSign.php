@@ -212,7 +212,7 @@ if ($action == "importSignature") {
 											$keywords = pdfExtractMetadata($sourcefile, 'Keywords');
 											$reg = array();
 											if (preg_match('/PAGESIGN=(\d+)/', $keywords, $reg)) {
-												$propalsignonspecificpage = (int) $reg[1];
+												$propalsignonspecificpage = (int)$reg[1];
 											}
 										}
 
@@ -238,7 +238,7 @@ if ($action == "importSignature") {
 
 											dolPrintSignatureImage($pdf, $langs, $param);
 										}
-										if($i==$pagecount-3){
+										if ($i == $pagecount - 3) {
 											// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
 											// TODO Get position of box from PDF template
 
