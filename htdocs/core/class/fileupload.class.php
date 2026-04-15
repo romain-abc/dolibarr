@@ -1,6 +1,9 @@
 <?php
-/* Copyright (C) 2011-2022	Regis Houssin		<regis.houssin@inodbox.com>
- * Copyright (C) 2011-2023	Laurent Destailleur	<eldy@users.sourceforge.net>
+
+/* Copyright (C) 2011-2022	Regis Houssin			<regis.houssin@inodbox.com>
+ * Copyright (C) 2011-2023	Laurent Destailleur		<eldy@users.sourceforge.net>
+ * Copyright (C) 2024		Frédéric France			<frederic.france@free.fr>
+ * Copyright (C) 2024-2025	MDW						<mdeweerd@users.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +21,9 @@
 
 /**
  *       \file      htdocs/core/class/fileupload.class.php
- *       \brief     File to return Ajax response on common file upload.
- *       			For large files, see flowjs-server.php
+ *       \brief     File to return the ajax response of core/ajax/fileupload.php for common file upload.
+ *       			Security is check by the ajax component.
+ *       			For large files upload, see flowjs-server.php
  */
 
 require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
@@ -31,15 +35,25 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/images.lib.php';
  */
 class FileUpload
 {
+	/**
+	 * @var array{script_url:string,upload_dir:string,upload_url:string,param_name:string,delete_type:string,max_file_size:?int,min_file_size:int,accept_file_types:string,max_number_of_files:?int,max_width:?int,max_height:?int,min_width:int,min_height:int,discard_aborted_uploads:bool,image_versions:array<string,array{upload_dir:string,upload_url:string,max_width:int,max_height:int,jpeg_quality?:int}>}
+	 */
 	public $options;
+	/**
+	 * @var int
+	 */
 	protected $fk_element;
+
+	/**
+	 * @var string object element
+	 */
 	protected $element;
 
 	/**
 	 * Constructor.
 	 * This set ->$options
 	 *
-	 * @param array		$options		Options array
+	 * @param ?array{script_url?:string,upload_dir?:string,upload_url?:string,param_name?:string,delete_type?:string,max_file_size?:?int,min_file_size?:int,accept_file_types?:string,max_number_of_files?:?int,max_width?:?int,max_height?:?int,min_width?:int,min_height?:int,discard_aborted_uploads?:bool,image_versions?:array<string,array{upload_dir?:string,upload_url?:string,max_width?:int,max_height?:int,jpeg_quality?:int}>}	$options		Options array
 	 * @param int		$fk_element		ID of element
 	 * @param string	$element		Code of element
 	 */
@@ -63,10 +77,11 @@ class FileUpload
 		//print 'fileupload.class.php: element='.$element.' pathname='.$pathname.' filename='.$filename.' dir_output='.$dir_output."\n";
 
 		if (empty($dir_output)) {
-			setEventMessage('The element '.$element.' is not supported for uploading file. dir_output is unknow.', 'errors');
-			throw new Exception('The element '.$element.' is not supported for uploading file. dir_output is unknow.');
+			setEventMessage('The element '.$element.' is not supported for uploading file. dir_output is unknown.', 'errors');
+			throw new Exception('The element '.$element.' is not supported for uploading file. dir_output is unknown.');
 		}
 
+		$object_ref = 'UndefinedReference';
 		// If pathname and filename are null then we can still upload files if we have specified upload_dir on $options
 		if ($pathname !== null && $filename !== null) {
 			// Get object from its id and type
@@ -147,7 +162,7 @@ class FileUpload
 				'options' => &$options,
 				'element' => $element
 			),
-			$object,
+			$object,  // @phan-suppress-current-line PhanTypeMismatchArgumentNullable
 			$action
 		);
 
@@ -155,10 +170,9 @@ class FileUpload
 			$this->options = array_replace_recursive($this->options, $options);
 		}
 
-		// At this point we should have a valid upload_dir in options
-		//if ($pathname === null && $filename === null) { // OR or AND???
-		if ($pathname === null || $filename === null) {
-			if (!key_exists("upload_dir", $this->options)) {
+		// At this point we should have a valid upload_dir in this->options
+		if (empty($pathname) || empty($filename)) {
+			if (!array_key_exists("upload_dir", $this->options)) {
 				setEventMessage('If $fk_element = null or $element = null you must specify upload_dir on $options', 'errors');
 				throw new Exception('If $fk_element = null or $element = null you must specify upload_dir on $options');
 			} elseif (!is_dir($this->options['upload_dir'])) {
@@ -191,12 +205,12 @@ class FileUpload
 	/**
 	 * Set delete url
 	 *
-	 * @param 	object	$file		Filename
+	 * @param 	stdClass	$file		File object (see getFileObject)
 	 * @return	void
 	 */
 	protected function setFileDeleteUrl($file)
 	{
-		$file->delete_url = $this->options['script_url'].'?file='.urlencode($file->name).'&fk_element='.urlencode($this->fk_element).'&element='.urlencode($this->element);
+		$file->delete_url = $this->options['script_url'].'?file='.urlencode((string) ($file->name)).'&fk_element='.urlencode((string) ($this->fk_element)).'&element='.urlencode((string) ($this->element));
 		$file->delete_type = $this->options['delete_type'];
 		if ($file->delete_type !== 'DELETE') {
 			$file->delete_url .= '&_method=DELETE';
@@ -207,7 +221,7 @@ class FileUpload
 	 * getFileObject
 	 *
 	 * @param	string		$file_name		Filename
-	 * @return 	stdClass|null
+	 * @return 	?stdClass
 	 */
 	protected function getFileObject($file_name)
 	{
@@ -219,6 +233,7 @@ class FileUpload
 			$file->mime = dol_mimetype($file_name, '', 2);
 			$file->size = filesize($file_path);
 			$file->url = $this->options['upload_url'].urlencode($file->name);
+
 			foreach ($this->options['image_versions'] as $version => $options) {
 				if (dol_is_file($options['upload_dir'].$file_name)) {
 					$tmp = explode('.', $file->name);
@@ -237,7 +252,7 @@ class FileUpload
 	/**
 	 * getFileObjects
 	 *
-	 * @return	array	Array of objects
+	 * @return	array<?stdClass>	Array of objects
 	 */
 	protected function getFileObjects()
 	{
@@ -247,9 +262,9 @@ class FileUpload
 	/**
 	 *  Create thumbs of a file uploaded.
 	 *
-	 *  @param	string	$file_name		Filename
-	 *  @param	string	$options 		is array('max_width', 'max_height')
-	 *  @return	boolean
+	 *  @param	string	$file_name			Filename
+	 *  @param	array{upload_dir:string}	$options 	is array('max_width', 'max_height')
+	 *  @return	bool
 	 */
 	protected function createScaledImage($file_name, $options)
 	{
@@ -283,7 +298,7 @@ class FileUpload
 	/**
 	 * Make validation on an uploaded file
 	 *
-	 * @param 	string	$uploaded_file		Uploade file
+	 * @param 	string	$uploaded_file		Upload file
 	 * @param 	object	$file				File
 	 * @param 	string	$error				Error
 	 * @param	string	$index				Index
@@ -398,13 +413,14 @@ class FileUpload
 	 * handleFileUpload.
 	 * Validate data, move the uploaded file then create the thumbs if this is an image.
 	 *
-	 * @param 	string		$uploaded_file		Uploade file
+	 * @param 	string		$uploaded_file		Upload file
 	 * @param 	string		$name				Name
 	 * @param 	int			$size				Size
 	 * @param 	string		$type				Type
 	 * @param 	string		$error				Error
 	 * @param	string		$index				Index
 	 * @return stdClass|null
+	 * @see dol_add_file_process()
 	 */
 	protected function handleFileUpload($uploaded_file, $name, $size, $type, $error, $index)
 	{
@@ -416,7 +432,7 @@ class FileUpload
 
 		// Sanitize to avoid stream execution when calling file_size(). Not that this is a second security because
 		// most streams are already disabled by stream_wrapper_unregister() in filefunc.inc.php
-		$uploaded_file = preg_replace('/\s*(http|ftp)s?:/i', '', $uploaded_file);
+		$uploaded_file = preg_replace('/\s*(http|ftp|sftp|)s?:/i', '', $uploaded_file);
 		$uploaded_file = realpath($uploaded_file);	// A hack to be sure the file point to an existing file on disk (and is not a SSRF attack)
 
 		$validate = $this->validate($uploaded_file, $file, $error, $index);
@@ -433,12 +449,15 @@ class FileUpload
 					if ($append_file) {
 						file_put_contents($file_path, fopen($uploaded_file, 'r'), FILE_APPEND);
 					} else {
+						// TODO Replace this with a call of dol_add_file_process(... $mode=1)
 						$result = dol_move_uploaded_file($uploaded_file, $file_path, 1, 0, 0, 0, 'userfile');
 					}
 				} else {
 					// Non-multipart uploads (PUT method support)
 					file_put_contents($file_path, fopen('php://input', 'r'), $append_file ? FILE_APPEND : 0);
 				}
+				dolChmod($file_path);
+
 				$file_size = dol_filesize($file_path);
 				if ($file_size === $file->size) {
 					$file->url = $this->options['upload_url'].urlencode($file->name);
@@ -472,18 +491,19 @@ class FileUpload
 	 *
 	 * @return	void
 	 */
-	public function get()
+	/*public function get()
 	{
-		$file_name = isset($_REQUEST['file']) ?
-		basename(stripslashes($_REQUEST['file'])) : null;
+		$file_name = isset($_REQUEST['file']) ? basename(stripslashes($_REQUEST['file'])) : null;
 		if ($file_name) {
 			$info = $this->getFileObject($file_name);
 		} else {
 			$info = $this->getFileObjects();
 		}
+
 		header('Content-type: application/json');
 		echo json_encode($info);
 	}
+	*/
 
 	/**
 	 * Output data
@@ -494,13 +514,8 @@ class FileUpload
 	{
 		$error = 0;
 
-		if (isset($_REQUEST['_method']) && $_REQUEST['_method'] === 'DELETE') {
-			return $this->delete();
-		}
-		//var_dump($_FILES);
+		$upload = isset($_FILES[$this->options['param_name']]) ? $_FILES[$this->options['param_name']] : null;
 
-		$upload = isset($_FILES[$this->options['param_name']]) ?
-		$_FILES[$this->options['param_name']] : null;
 		$info = array();
 		if ($upload && is_array($upload['tmp_name'])) {
 			// param_name is an array identifier like "files[]",
@@ -512,7 +527,7 @@ class FileUpload
 					isset($_SERVER['HTTP_X_FILE_SIZE']) ? $_SERVER['HTTP_X_FILE_SIZE'] : $upload['size'][$index],
 					isset($_SERVER['HTTP_X_FILE_TYPE']) ? $_SERVER['HTTP_X_FILE_TYPE'] : $upload['type'][$index],
 					$upload['error'][$index],
-					$index
+					(string) $index
 				);
 				if (!empty($tmpres->error)) {
 					$error++;
@@ -528,7 +543,7 @@ class FileUpload
 				isset($_SERVER['HTTP_X_FILE_SIZE']) ? $_SERVER['HTTP_X_FILE_SIZE'] : (isset($upload['size']) ? $upload['size'] : null),
 				isset($_SERVER['HTTP_X_FILE_TYPE']) ? $_SERVER['HTTP_X_FILE_TYPE'] : (isset($upload['type']) ? $upload['type'] : null),
 				isset($upload['error']) ? $upload['error'] : null,
-				0
+				'0'
 			);
 			if (!empty($tmpres->error)) {
 				$error++;
@@ -560,11 +575,13 @@ class FileUpload
 	/**
 	 * Delete uploaded file
 	 *
+	 * @param	string	$file	File
 	 * @return	int
 	 */
-	public function delete()
+	/*
+	public function delete($file)
 	{
-		$file_name = GETPOST('file') ? basename(GETPOST('file')) : null;
+		$file_name = $file ? basename($file) : null;
 		$file_path = $this->options['upload_dir'].dol_sanitizeFileName($file_name);
 		$success = dol_is_file($file_path) && $file_name[0] !== '.' && unlink($file_path);
 		if ($success) {
@@ -581,4 +598,5 @@ class FileUpload
 
 		return 0;
 	}
+	*/
 }
