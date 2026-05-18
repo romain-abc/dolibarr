@@ -1756,7 +1756,7 @@ class Societe extends CommonObject
 
 			$resql = $this->db->query($sql);
 			if ($resql) {
-				if (is_object($this->oldcopy)) {	// If we have information on old values
+				if (is_object($this->oldcopy)) {    // If we have information on old values
 					if ($this->oldcopy->country_id != $this->country_id) {
 						unset($this->country_code);
 						unset($this->country);

@@ -3491,9 +3491,9 @@ if ($action == 'create') {
 			print '<table id="tablelines" class="noborder noshadow centpercent">';
 		}
 
-	if (!empty($object->lines)) {
-		$object->printObjectLinesPropal($action, $mysoc, $object->thirdparty, $lineid, 1);
-	}
+		if (!empty($object->lines)) {
+			$object->printObjectLinesPropal($action, $mysoc, $object->thirdparty, $lineid, 1);
+		}
 
 		// Form to add new line
 		if ($object->status == Propal::STATUS_DRAFT && $usercancreate && $action != 'selectlines') {
