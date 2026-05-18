@@ -1440,8 +1440,7 @@ function get_left_menu_commercial($mainmenu, &$newmenu, $usemenuhider = 1, $left
 			} else {
 				$newmenu->add("/commande/stats/index.php?leftmenu=orders", $langs->trans("Statistics"), 1, $user->hasRight('commande', 'lire'));
 			}
-			$newmenu->add("/commande/list_reliquats.php/index.php?leftmenu=orders", $langs->trans("RemainingToBeDelivered"), 1, $user->hasRight('commande',  'lire'));
-			$newmenu->add("/commande/stats/index.php?leftmenu=orders", $langs->trans("Statistics"), 1, $user->hasRight('commande',  'lire'));
+			$newmenu->add("/commande/list_reliquats.php?leftmenu=orders", $langs->trans("RemainingToBeDelivered"), 1, $user->hasRight('commande', 'lire'));
 
 			// Categories
 			if (isModEnabled('category') && getDolGlobalString('CATEGORY_EDIT_IN_MENU_NOT_IN_POPUP')) {
