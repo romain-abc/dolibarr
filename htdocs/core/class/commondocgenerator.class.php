@@ -1673,6 +1673,8 @@ abstract class CommonDocGenerator
 	 */
 	public function printColEcopartContent($pdf, &$curY, $colKey, $object, $i, $outputlangs, $hideref = 0, $hidedesc = 0, $issupplierline = 0)
 	{
+		global $hookmanager;
+
 		// load desc col params
 		$colDef = $this->cols[$colKey];
 		// save curent cell padding

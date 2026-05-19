@@ -624,10 +624,6 @@ $sql .= ' INNER JOIN '.MAIN_DB_PREFIX.'propal as p ON p.fk_soc = s.rowid';
 if (!empty($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element."_extrafields as ef on (p.rowid = ef.fk_object)";
 }
-if ($search_all) {
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'propaldet as pd ON p.rowid = pd.fk_propal';
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'propaldet_extrafields as pdef ON pd.rowid = pdef.fk_object';
-}
 $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'user as u ON p.fk_user_author = u.rowid';
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."projet as pr ON pr.rowid = p.fk_projet";
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."c_availability as ava on (ava.rowid = p.fk_availability)";
@@ -726,17 +722,28 @@ if ($search_all) {
 	$sqltoadd = '';
 	$fieldstosearchallwithoutpd = array();
 	$fieldstosearchallwithpd = array();
+	$fieldstosearchallwithpdef = array();
 	foreach ($fieldstosearchall as $key => $val) {
-		if (!preg_match('/^pd\./', $key)) {
-			$fieldstosearchallwithoutpd[$key] = $val;
-		} else {
+		if (preg_match('/^pdef\./', $key)) {
+			$fieldstosearchallwithpdef[$key] = $val;
+		} elseif (preg_match('/^pd\./', $key)) {
 			$fieldstosearchallwithpd[$key] = $val;
+		} else {
+			$fieldstosearchallwithoutpd[$key] = $val;
 		}
 	}
 
 	if (count($fieldstosearchallwithpd) > 0) {
 		$sqltoadd .= ' OR EXISTS (SELECT pd.rowid FROM '.MAIN_DB_PREFIX.'propaldet as pd WHERE pd.fk_propal = p.rowid';
 		$sqltoadd .= natural_search(array_keys($fieldstosearchallwithpd), '__KEYTOSEARCH__');
+		$sqltoadd .= ')';
+	}
+
+	if (count($fieldstosearchallwithpdef) > 0) {
+		$sqltoadd .= ' OR EXISTS (SELECT pd.rowid FROM '.MAIN_DB_PREFIX.'propaldet as pd';
+		$sqltoadd .= ' LEFT JOIN '.MAIN_DB_PREFIX.'propaldet_extrafields as pdef ON pd.rowid = pdef.fk_object';
+		$sqltoadd .= ' WHERE pd.fk_propal = p.rowid';
+		$sqltoadd .= natural_search(array_keys($fieldstosearchallwithpdef), '__KEYTOSEARCH__');
 		$sqltoadd .= ')';
 	}
 

@@ -2635,6 +2635,7 @@ if ($action == 'create' && $usercancreate) {
 		$qty_commandes = array();
 		$refLines = array();
 		$selectedLines = array();
+		$completed = false;
 		foreach($ressqlquery as $q){
 			$qty_propal[$q["rang"]] = $q["qty"];
 			$sqlquery2 = "SELECT DISTINCT(cdt.rowid), cdt.fk_product, cdt.rang, cdt.qty FROM ".MAIN_DB_PREFIX."commandedet as cdt INNER JOIN ".MAIN_DB_PREFIX."commande as c";
@@ -2650,7 +2651,7 @@ if ($action == 'create' && $usercancreate) {
 				foreach($res as $r){
 					/*var_dump($r);
 					echo "<br /><br />";*/
-					if($qty_commandes[$r["rang"]]){
+					if(!empty($qty_commandes[$r["rang"]])){
 						$qty_commandes[$r["rang"]] = $qty_commandes[$r["rang"]] + $r["qty"];
 					}
 					else{
@@ -2665,14 +2666,15 @@ if ($action == 'create' && $usercancreate) {
 		}
 		//var_dump($qty_commandes);
 		foreach($qty_propal as $rang => $qtyp){
-			if($qtyp!=$qty_commandes[$rang]){
+			$qtyc = $qty_commandes[$rang] ?? 0;
+			if($qtyp != $qtyc){
 				$sqlquery3 = "SELECT rowid FROM ".MAIN_DB_PREFIX."propaldet as pdt";
 				$sqlquery3.= " WHERE rang='".$rang."' AND fk_propal = '".$db->escape($objectsrc->id)."'";
 
 				$ressqlquery3 = $db->query($sqlquery3);
 				if($ressqlquery3){
 					foreach($ressqlquery3 as $sql3){
-						$refLines[$sql3["rowid"]] = $qtyp - $qty_commandes[$rang];
+						$refLines[$sql3["rowid"]] = $qtyp - $qtyc;
 						$selectedLines[] = $sql3["rowid"];
 					}
 				}

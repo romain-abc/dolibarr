@@ -3495,22 +3495,6 @@ if ($action == 'create') {
 			$object->printObjectLinesPropal($action, $mysoc, $object->thirdparty, $lineid, 1);
 		}
 
-		// Form to add new line
-		if ($object->status == Propal::STATUS_DRAFT && $usercancreate && $action != 'selectlines') {
-			if ($action != 'editline') {
-				$parameters = array();
-				$reshook = $hookmanager->executeHooks('formAddObjectLine', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-				if ($reshook < 0) {
-					setEventMessages($hookmanager->error, $hookmanager->errors, 'errors');
-				}
-				if (empty($reshook)) {
-					$object->formAddObjectLine(1, $mysoc, $soc);
-				}
-			} else {
-				$parameters = array();
-				$reshook = $hookmanager->executeHooks('formEditObjectLine', $parameters, $object, $action); // Note that $action and $object may have been modified by hook
-			}
-		}
 	// Form to add new line
 	if ($object->statut == Propal::STATUS_DRAFT && $usercancreate && $action != 'selectlines') {
 		if ($action != 'editline') {
