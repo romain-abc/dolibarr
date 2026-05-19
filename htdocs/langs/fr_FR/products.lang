@@ -156,6 +156,7 @@ PredefinedItem=Article prédéfini
 PredefinedProducts=Produits prédéfinis
 PredefinedServices=Services prédéfinis
 PredefinedProductsAndServices=Produits/services prédéfinis
+PredefinedProductsAndServicesToSell=Produits/services prédéfinis à vendre
 NotPredefinedProducts=Pas de produit/service prédéfini
 GenerateThumb=Générer la vignette
 ServiceNb=Service no %s
