@@ -1008,10 +1008,6 @@ $sql .= ', '.MAIN_DB_PREFIX.'commande as c';
 if (!empty($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX."commande_extrafields as ef on (c.rowid = ef.fk_object)";
 }
-if ($search_all) {
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commandedet as pd ON c.rowid=pd.fk_commande';
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'commandedet_extrafields as cdef ON pd.rowid = cdef.fk_object';
-}
 $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."projet as p ON p.rowid = c.fk_projet";
 $sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'user as u ON c.fk_user_author = u.rowid';
 // Add table from hooks
@@ -1303,7 +1299,9 @@ if ($search_all) {
 	$fieldstosearchallwithoutpd = array();
 	$fieldstosearchallwithpd = array();
 	foreach ($fieldstosearchall as $key => $val) {
-		if (!preg_match('/^pd\./', $key)) {
+		// pd.* (order line) and cdef.* (order line extrafields) are searched through an EXISTS subquery
+		// to avoid both duplicated rows and a reference to a join missing from the main query.
+		if (!preg_match('/^(pd|cdef)\./', $key)) {
 			$fieldstosearchallwithoutpd[$key] = $val;
 		} else {
 			$fieldstosearchallwithpd[$key] = $val;
@@ -1311,7 +1309,9 @@ if ($search_all) {
 	}
 
 	if (count($fieldstosearchallwithpd) > 0) {
-		$sqltoadd .= " OR EXISTS (SELECT pd.rowid FROM ".MAIN_DB_PREFIX."commandedet as pd WHERE pd.fk_commande = c.rowid";
+		$sqltoadd .= " OR EXISTS (SELECT pd.rowid FROM ".MAIN_DB_PREFIX."commandedet as pd";
+		$sqltoadd .= " LEFT JOIN ".MAIN_DB_PREFIX."commandedet_extrafields as cdef ON pd.rowid = cdef.fk_object";
+		$sqltoadd .= " WHERE pd.fk_commande = c.rowid";
 		$sqltoadd .= natural_search(array_keys($fieldstosearchallwithpd), '__KEYTOSEARCH__');
 		$sqltoadd .= ')';
 	}

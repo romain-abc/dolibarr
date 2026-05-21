@@ -825,10 +825,6 @@ if ($sortfield == "f.datef") {
 if (isset($extrafields->attributes[$object->table_element]['label']) && is_array($extrafields->attributes[$object->table_element]['label']) && count($extrafields->attributes[$object->table_element]['label'])) {
 	$sql .= " LEFT JOIN ".MAIN_DB_PREFIX.$object->table_element."_extrafields as ef on (f.rowid = ef.fk_object)";
 }
-if ($sall) {
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facturedet as pd ON f.rowid = pd.fk_facture';
-	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facturedet_extrafields as fdef ON pd.rowid = fdef.fk_object';
-}
 if (!empty($search_fac_rec_source_title)) {
 	$sql .= ' LEFT JOIN '.MAIN_DB_PREFIX.'facture_rec as facrec ON f.fk_fac_rec_source = facrec.rowid';
 }
@@ -1163,7 +1159,9 @@ if ($search_all) {
 	$fieldstosearchallwithoutpd = array();
 	$fieldstosearchallwithpd = array();
 	foreach ($fieldstosearchall as $key => $val) {
-		if (!preg_match('/^pd\./', $key)) {
+		// pd.* (invoice line) and fdef.* (invoice line extrafields) are searched through an EXISTS subquery
+		// to avoid both duplicated rows and a reference to a join missing from the main query.
+		if (!preg_match('/^(pd|fdef)\./', $key)) {
 			$fieldstosearchallwithoutpd[$key] = $val;
 		} else {
 			$fieldstosearchallwithpd[$key] = $val;
@@ -1171,7 +1169,9 @@ if ($search_all) {
 	}
 
 	if (count($fieldstosearchallwithpd) > 0) {
-		$sqltoadd .= " OR EXISTS (SELECT pd.rowid FROM ".MAIN_DB_PREFIX."facturedet as pd WHERE pd.fk_facture = f.rowid";
+		$sqltoadd .= " OR EXISTS (SELECT pd.rowid FROM ".MAIN_DB_PREFIX."facturedet as pd";
+		$sqltoadd .= " LEFT JOIN ".MAIN_DB_PREFIX."facturedet_extrafields as fdef ON pd.rowid = fdef.fk_object";
+		$sqltoadd .= " WHERE pd.fk_facture = f.rowid";
 		$sqltoadd .= natural_search(array_keys($fieldstosearchallwithpd), '__KEYTOSEARCH__');
 		$sqltoadd .= ')';
 	}
