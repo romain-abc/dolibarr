@@ -2617,8 +2617,6 @@ if ($action == 'create' && $usercancreate) {
 
 	print dol_get_fiche_end();
 
-	print $form->buttonsSaveCancel("CreateDraft");
-
 	// Show origin lines
 	if (!empty($origin) && !empty($originid) && is_object($objectsrc)) {
 
