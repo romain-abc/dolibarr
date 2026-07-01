@@ -3058,6 +3058,39 @@ if (empty($reshook)) {
 		} else {
 			setEventMessages($object->error, $object->errors, 'errors');
 		}
+	} elseif ($action == 'updatelinedesc' && $usercancreate && getDolGlobalInt('INVOICE_ALLOW_EDIT_LINE_DESC') && !GETPOST('cancel', 'alpha')) {
+		// Update only the description of a line on a validated/sent invoice (no price change)
+		if (!$object->fetch($id) > 0) {
+			dol_print_error($db);
+		}
+		$lineid = GETPOSTINT('lineid');
+		$newdesc = dol_htmlcleanlastbr(GETPOST('line_desc', 'restricthtml'));
+		$result = $object->updateLineDesc($lineid, $newdesc);
+		if ($result > 0) {
+			$object->fetch($object->id); // Reload to get updated line description
+			$object->fetch_thirdparty();
+
+			// Regenerate PDF so the new description is reflected in the document
+			if (!getDolGlobalString('MAIN_DISABLE_PDF_AUTOUPDATE')) {
+				$outputlangs = $langs;
+				$newlang = GETPOST('lang_id', 'alpha');
+				if (getDolGlobalInt('MAIN_MULTILANGS') && empty($newlang)) {
+					$newlang = $object->thirdparty->default_lang;
+				}
+				if (!empty($newlang)) {
+					$outputlangs = new Translate("", $conf);
+					$outputlangs->setDefaultLang($newlang);
+				}
+				$object->generateDocument($object->model_pdf, $outputlangs, $hidedetails, $hidedesc, $hideref);
+			}
+
+			setEventMessages($langs->trans("RecordSaved"), null, 'mesgs');
+			header('Location: '.$_SERVER["PHP_SELF"].'?id='.$object->id);
+			exit;
+		} else {
+			setEventMessages($object->error, $object->errors, 'errors');
+		}
+		$action = '';
 	} elseif ($action == 'updateline' && $usercancreate && !GETPOST('cancel', 'alpha')) {
 		if (!$object->fetch($id) > 0) {
 			dol_print_error($db);
@@ -6576,6 +6609,33 @@ if ($action == 'create') {
 
 		print "</form>\n";
 	}
+
+	// Panel to edit ONLY the description of each line on a validated/sent invoice (no price change).
+	// Enabled by the hidden option INVOICE_ALLOW_EDIT_LINE_DESC.
+	if (getDolGlobalInt('INVOICE_ALLOW_EDIT_LINE_DESC') && $object->status != Facture::STATUS_DRAFT && $usercancreate && !empty($object->lines)) {
+		print '<br>';
+		print '<div class="div-table-responsive-no-min">';
+		print '<table class="noborder centpercent">';
+		print '<tr class="liste_titre"><td colspan="2">'.$langs->trans("EditLineDescOnlyTitle").'</td></tr>';
+		foreach ($object->lines as $line) {
+			$linelabel = dol_trunc(!empty($line->label) ? $line->label : ($line->product_ref ? $line->product_ref : ''), 60);
+			print '<tr class="oddeven">';
+			print '<td class="tdtop" style="width:200px">'.($linelabel ? $linelabel : '&nbsp;').'</td>';
+			print '<td>';
+			print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'">';
+			print '<input type="hidden" name="token" value="'.newToken().'">';
+			print '<input type="hidden" name="action" value="updatelinedesc">';
+			print '<input type="hidden" name="lineid" value="'.$line->id.'">';
+			print '<textarea name="line_desc" class="quatrevingtpercent" rows="'.ROWS_2.'">'.dol_escape_htmltag($line->desc, 0, 1).'</textarea>';
+			print '<br><input type="submit" class="button small" value="'.$langs->trans("Save").'">';
+			print '</form>';
+			print '</td>';
+			print '</tr>';
+		}
+		print '</table>';
+		print '</div>';
+	}
+
 	print dol_get_fiche_end();
 
 

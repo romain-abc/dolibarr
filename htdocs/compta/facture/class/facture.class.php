@@ -4829,6 +4829,50 @@ class Facture extends CommonInvoice
 	}
 
 	/**
+	 *  Update only the description of an invoice line, without touching any price, qty, tax or total.
+	 *  Allowed on a validated/sent invoice (i.e. even when updateline() is forbidden) only if the
+	 *  hidden option INVOICE_ALLOW_EDIT_LINE_DESC is set. Prices are never recomputed.
+	 *
+	 *  @param	int		$rowid		Id of line to update (facturedet.rowid)
+	 *  @param	string	$desc		New description
+	 *  @return	int					Return integer >0 if OK, <0 if KO
+	 */
+	public function updateLineDesc($rowid, $desc)
+	{
+		if (!getDolGlobalInt('INVOICE_ALLOW_EDIT_LINE_DESC')) {
+			$this->error = "Feature INVOICE_ALLOW_EDIT_LINE_DESC not enabled";
+			return -1;
+		}
+
+		$rowid = (int) $rowid;
+
+		// Make sure the line belongs to this invoice before touching anything
+		$line = new FactureLigne($this->db);
+		if ($line->fetch($rowid) <= 0 || (int) $line->fk_facture != (int) $this->id) {
+			$this->error = "Line not found for this invoice";
+			return -2;
+		}
+
+		$this->db->begin();
+
+		$sql = "UPDATE ".MAIN_DB_PREFIX."facturedet";
+		$sql .= " SET description = '".$this->db->escape($desc)."'";
+		$sql .= " WHERE rowid = ".((int) $rowid);
+		$sql .= " AND fk_facture = ".((int) $this->id);
+
+		dol_syslog(get_class($this)."::updateLineDesc rowid=".$rowid, LOG_DEBUG);
+		$resql = $this->db->query($sql);
+		if (!$resql) {
+			$this->error = $this->db->lasterror();
+			$this->db->rollback();
+			return -3;
+		}
+
+		$this->db->commit();
+		return 1;
+	}
+
+	/**
 	 * Check if the percent edited is lower of next invoice line
 	 *
 	 * @param	int		$idline				id of line to check
