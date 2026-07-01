@@ -833,8 +833,8 @@ class pdf_crabe extends ModelePDFFactures
 							if($extrafieldColKey=="options_ecopart"){
 								if($extrafieldValue){
 									$price_exp = explode(" ", $extrafieldValue);
-									$price = $price_exp[0];
-									$price = number_format($price, 2);
+									$priceecopart = (float) price2num($price_exp[0]); // numeric value for computation
+									$price = number_format($priceecopart, 2);
 									$pdf->SetFont('', 'italic', $default_font_size - 3);
 									$pdf->writeHTMLCell($this->posxtva - $curX, 3, $curX, $nexY+2, "Éco-participation", 0, 1, false, true, 'J', true);
 									//$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
@@ -850,7 +850,7 @@ class pdf_crabe extends ModelePDFFactures
 									$pdf->MultiCell($this->posxunit - $this->posxqty - 0.8, 4, $qty, 0, 'R'); // Enough for 6 chars
 									//TOTAL HT
 									$pdf->SetXY($this->postotalht, $nexY+2);
-									$pdf->MultiCell($this->page_largeur - $this->marge_droite - $this->postotalht, 3, number_format($qty*$price, 2), 0, 'R', 0);
+									$pdf->MultiCell($this->page_largeur - $this->marge_droite - $this->postotalht, 3, number_format($priceecopart * (float) $object->lines[$i]->qty, 2), 0, 'R', 0);
 									//$this->printStdColumnContent($pdf, $nexY, $extrafieldColKey, $extrafieldValue);
 									$nexY = max($pdf->GetY(), $nexY);
 									$pdf->SetFont('', '', $default_font_size);

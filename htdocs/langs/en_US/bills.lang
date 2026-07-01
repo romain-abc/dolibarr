@@ -17,7 +17,6 @@ DisabledBecauseNotLastSituationInvoice=Disabled because invoice is not erasable.
 DisabledBecauseThereIsAPayment=Disabled because invoice has already some payments.
 DisabledBecauseAlreadyPrintedOnce=Disabled because invoice has already been downloaded or printed at least once
 DisabledBecauseAlreadySentByEmail=Disabled because invoice has already been sent by email at least once
-EditLineDescOnlyTitle=Edit line descriptions (no impact on prices)
 DisabledBecauseVersionProtected=Disabled because invoice has already been validated and the application is protected against modification of invoices
 DisabledBecauseNotDraft=Disabled because invoice is not in draft status
 DisabledBecauseNotEditable=Disabled because cannot be modified

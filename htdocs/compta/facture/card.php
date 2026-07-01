@@ -6610,46 +6610,6 @@ if ($action == 'create') {
 		print "</form>\n";
 	}
 
-	// Panel to edit ONLY the description of a line on a validated/sent invoice (no price change).
-	// Enabled by the hidden option INVOICE_ALLOW_EDIT_LINE_DESC. Uses the standard inline-edit
-	// pattern: one pencil per line, a single line editable at a time.
-	if (getDolGlobalInt('INVOICE_ALLOW_EDIT_LINE_DESC') && $object->status != Facture::STATUS_DRAFT && $usercancreate && !empty($object->lines)) {
-		$editlineid = ($action == 'editlinedesc') ? GETPOSTINT('lineid') : 0;
-
-		print '<br>';
-		print '<div class="div-table-responsive-no-min">';
-		print '<table class="noborder centpercent">';
-		print '<tr class="liste_titre"><td>'.$langs->trans("Label").'</td><td>'.$langs->trans("EditLineDescOnlyTitle").'</td></tr>';
-		foreach ($object->lines as $line) {
-			$linelabel = dol_trunc(!empty($line->label) ? $line->label : ($line->product_ref ? $line->product_ref : ''), 60);
-
-			print '<tr class="oddeven">';
-			print '<td class="tdtop minwidth200">'.($linelabel ? $linelabel : '&nbsp;').'</td>';
-			print '<td>';
-			if ($editlineid == $line->id) {
-				// Edit mode for this line only
-				print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'">';
-				print '<input type="hidden" name="token" value="'.newToken().'">';
-				print '<input type="hidden" name="action" value="updatelinedesc">';
-				print '<input type="hidden" name="lineid" value="'.$line->id.'">';
-				print '<textarea name="line_desc" class="quatrevingtpercent" rows="'.ROWS_3.'">'.dol_escape_htmltag($line->desc, 0, 1).'</textarea>';
-				print '<div class="center">';
-				print '<input type="submit" class="button button-save small" value="'.$langs->trans("Save").'">';
-				print '<input type="submit" name="cancel" class="button button-cancel small" value="'.$langs->trans("Cancel").'">';
-				print '</div>';
-				print '</form>';
-			} else {
-				// Read-only display with a pencil to switch this line to edit mode
-				print '<div class="inline-block">'.(dol_strlen($line->desc) ? dol_htmlentitiesbr($line->desc) : '&nbsp;').'</div>';
-				print '<a class="editfielda paddingleft" href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&action=editlinedesc&lineid='.$line->id.'&token='.newToken().'">'.img_edit().'</a>';
-			}
-			print '</td>';
-			print '</tr>';
-		}
-		print '</table>';
-		print '</div>';
-	}
-
 	print dol_get_fiche_end();
 
 

@@ -90,6 +90,23 @@ $coldisplay = 0;
 <?php } ?>
 	<td class="linecoldescription minwidth300imp"><?php $coldisplay++; ?><div id="line_<?php print $line->id; ?>"></div>
 <?php
+// Edit only the line description on a validated/sent invoice (no price change).
+// Enabled by the hidden option INVOICE_ALLOW_EDIT_LINE_DESC (customer invoices only).
+$editlinedescmode = (getDolGlobalInt('INVOICE_ALLOW_EDIT_LINE_DESC') && !empty($object->element) && $object->element == 'facture' && !empty($object->statut) && $action == 'editlinedesc' && GETPOSTINT('lineid') == $line->id && !empty($object_rights->creer));
+if ($editlinedescmode) {
+	require_once DOL_DOCUMENT_ROOT.'/core/class/doleditor.class.php';
+	print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'">';
+	print '<input type="hidden" name="token" value="'.newToken().'">';
+	print '<input type="hidden" name="action" value="updatelinedesc">';
+	print '<input type="hidden" name="lineid" value="'.$line->id.'">';
+	$doleditordesc = new DolEditor('line_desc', GETPOSTISSET('line_desc') ? GETPOST('line_desc', 'restricthtml') : $line->description, '', (getDolGlobalInt('MAIN_DOLEDITOR_HEIGHT') ? getDolGlobalInt('MAIN_DOLEDITOR_HEIGHT') : 164), 'dolibarr_details', '', false, true, 1, ROWS_3, '98%');
+	$doleditordesc->Create();
+	print '<div class="center paddingtop">';
+	print '<input type="submit" class="button button-save small" value="'.$langs->trans("Save").'">';
+	print ' <input type="submit" name="cancel" class="button button-cancel small" value="'.$langs->trans("Cancel").'">';
+	print '</div>';
+	print '</form>';
+} else {
 if (($line->info_bits & 2) == 2) {
 	print '<a href="'.DOL_URL_ROOT.'/comm/remx.php?id='.$this->socid.'">';
 	$txt = '';
@@ -261,6 +278,12 @@ if (isModEnabled('accounting') && !empty($line->fk_accounting_account) && $line-
 	$accountingaccount->fetch($line->fk_accounting_account);
 	print '<div class="clearboth"></div><br><span class="opacitymedium">'.$langs->trans('AccountingAffectation').' : </span>'.$accountingaccount->getNomUrl(0, 1, 1);
 }
+
+// Pencil to edit only the line description on a validated/sent invoice (see INVOICE_ALLOW_EDIT_LINE_DESC)
+if (getDolGlobalInt('INVOICE_ALLOW_EDIT_LINE_DESC') && !empty($object->element) && $object->element == 'facture' && !empty($object->statut) && $action != 'editlinedesc' && !empty($object_rights->creer)) {
+	print '<a class="editfielda paddingleft" href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&action=editlinedesc&lineid='.$line->id.'&token='.newToken().'" title="'.dol_escape_htmltag($langs->trans("Modify")).'">'.img_edit().'</a>';
+}
+} // end of view mode (else of $editlinedescmode)
 
 print '</td>';
 // Vendor price ref
