@@ -515,24 +515,45 @@ class Stripe extends CommonObject
 
 			$descriptioninpaymentintent = $description;
 
-			$dataforintent = array(
+			// When STRIPE_USE_INTENT_WITH_AUTOMATIC_CONFIRMATION=2, use automatic_payment_methods
+			// so Stripe Dashboard controls active methods (Klarna, Bancontact, Link, etc.)
+			// and return_url redirect flow works correctly.
+			// In terminal mode, automatic methods are not supported — fallback to manual list.
+			$useautomaticmethods = (getDolGlobalInt('STRIPE_USE_INTENT_WITH_AUTOMATIC_CONFIRMATION') == 2 && $mode != 'terminal');
+			$dataforintent = array_merge(
+				array(
+					"confirm"     => $confirmnow,
+					"amount"      => $stripeamount,
+					"currency"    => $currency_code,
+					"description" => $descriptioninpaymentintent,
+					"metadata"    => $metadata,
+				),
+				$useautomaticmethods ? array(
+					'automatic_payment_methods' => array(
+						'enabled' => true,
+					),
+				) : array(
+					'confirmation_method'  => $stripemode,
+					'payment_method_types' => $paymentmethodtypes,
+					'setup_future_usage'   => 'on_session',
+				)
+			);
+			/*$dataforintent = array(
 				"confirm" => $confirmnow, // try to confirm immediately after create (if conditions are ok)
 				"confirmation_method" => $stripemode,
 				"amount" => $stripeamount,
 				"currency" => $currency_code,
 				"payment_method_types" => $paymentmethodtypes,	// When payment_method_types is set, return_url is not required but payment mode can't be managed from dashboard
-				/*
-				'return_url' => $dolibarr_main_url_root.'/public/payment/paymentok.php',
-				'automatic_payment_methods' => array(
-					'enabled' => true,
-					'allow_redirects' => 'never',
-				),
-				*/
+				//'return_url' => $dolibarr_main_url_root.'/public/payment/paymentok.php',
+				//'automatic_payment_methods' => array(
+				//	'enabled' => true,
+				//	'allow_redirects' => 'never',
+				//),
 				"description" => $descriptioninpaymentintent,
 				//"save_payment_method" => true,
 				"setup_future_usage" => "on_session",
 				"metadata" => $metadata
-			);
+			);*/
 			if ($descriptor) {
 				$dataforintent["statement_descriptor_suffix"] = $descriptor; // For card payment, 22 chars that appears on bank receipt (prefix into stripe setup + this suffix)
 				$dataforintent["statement_descriptor"] = $descriptor; 	// For SEPA, it will take only statement_descriptor, not statement_descriptor_suffix
