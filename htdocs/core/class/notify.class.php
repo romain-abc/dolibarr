@@ -1352,10 +1352,10 @@ class Notify
 				}
 				$ref = dol_sanitizeFileName($newref);
 				if($signed){
-					$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output . "/" . $ref));
+					$files = preg_grep('~^'.$ref.'_signed.*~', scandir($dir_output));
 					if (is_array($files)) {
 						foreach ($files as $f) {
-							$fichier = $dir_output . "/" . $ref . "/" . $f;
+							$fichier = $dir_output . "/" . $f;
 							if (!dol_is_file($fichier) || (is_object($arraydefaultmessage) && $arraydefaultmessage->id > 0 && !$arraydefaultmessage->joinfiles)) {
 								// We can't add PDF as it is not generated yet.
 								$filepdf = '';
