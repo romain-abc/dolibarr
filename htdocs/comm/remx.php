@@ -97,7 +97,7 @@ if ($action == 'confirm_split_more' && $permissiontocreate) {
 		foreach ($splitamounts as $key => $value) {
 			$totalsplitted += (float) $value;
 		}
-		if ($totalsplitted != (float) $discount->amount_ttc) {
+		if ((float) price2num($totalsplitted, 'MT') != (float) price2num($discount->amount_ttc, 'MT')) {
 			$error++;
 			setEventMessages($langs->trans("TotalOfDiscountMustEqualsOriginal"), null, 'errors');
 		}
@@ -175,7 +175,7 @@ if ($action == 'confirm_split' && GETPOST("confirm", "alpha") == 'yes' && $permi
 		$error++;
 		setEventMessages($langs->trans("ErrorFailedToLoadDiscount"), null, 'errors');
 	}
-	if (!$error && price2num((float) $amount_ttc_1 + (float) $amount_ttc_2, 'MT') != $discount->amount_ttc) {
+	if (!$error && price2num((float) $amount_ttc_1 + (float) $amount_ttc_2, 'MT') != price2num($discount->amount_ttc, 'MT')) {
 		$error++;
 		setEventMessages($langs->trans("TotalOfTwoDiscountMustEqualsOriginal"), null, 'errors');
 	}

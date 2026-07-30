@@ -686,7 +686,7 @@ if (empty($reshook)) {
 			//var_dump($object->getRemainToPay(0));
 			//var_dump($discount->amount_ttc);exit;
 			$remaintopay = $object->getRemainToPay(0);
-			if (price2num($discount->total_ttc) > price2num($remaintopay)) {
+			if ((float) price2num($discount->total_ttc, 'MT') > (float) price2num($remaintopay, 'MT')) {
 				// TODO Split the discount in 2 automatically
 				$error++;
 				setEventMessages($langs->trans("ErrorDiscountLargerThanRemainToPaySplitItBefore"), null, 'errors');
@@ -1041,6 +1041,18 @@ if (empty($reshook)) {
 				}
 			}
 			//var_dump($amount_ht);var_dump($amount_tva);var_dump($amount_ttc);exit;
+
+			// Round amounts to MAIN_MAX_DECIMALS_TOT: source invoice lines may carry more decimals (import, API)
+			// and discounts stored with extra decimals can never be applied nor split (remain to pay is rounded).
+			// We round HT and TTC then recompute VAT so that HT + VAT = TTC stays exact.
+			foreach ($amount_ht as $vatrate => $val) {
+				$amount_ht[$vatrate] = (float) price2num($amount_ht[$vatrate], 'MT');
+				$amount_ttc[$vatrate] = (float) price2num($amount_ttc[$vatrate], 'MT');
+				$amount_tva[$vatrate] = $amount_ttc[$vatrate] - $amount_ht[$vatrate];
+				$multicurrency_amount_ht[$vatrate] = (float) price2num($multicurrency_amount_ht[$vatrate], 'MT');
+				$multicurrency_amount_ttc[$vatrate] = (float) price2num($multicurrency_amount_ttc[$vatrate], 'MT');
+				$multicurrency_amount_tva[$vatrate] = $multicurrency_amount_ttc[$vatrate] - $multicurrency_amount_ht[$vatrate];
+			}
 
 			// Insert one discount by VAT rate category
 			$discount = new DiscountAbsolute($db);
