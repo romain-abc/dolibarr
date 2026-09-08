@@ -242,16 +242,6 @@ if ($action == "importSignature") {
 
 											dolPrintSignatureImage($pdf, $langs, $param);
 										}
-										if ($i == $pagecount - 3) {
-											// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
-											// TODO Get position of box from PDF template
-
-											$param['xforimgstart'] = (empty($s['w']) ? 120 : round($s['w'] / 2) + 15);
-											$param['yforimgstart'] = (empty($s['h']) ? 240 : $s['h'] - 60);
-											$param['wforimg'] = $s['w'] - 20 - $param['xforimgstart'];
-
-											dolPrintSignatureImage($pdf, $langs, $param);
-										}
 									} catch (Exception $e) {
 										dol_syslog("Error when manipulating the PDF " . $sourcefile . " by onlineSign: " . $e->getMessage(), LOG_ERR);
 										$response = $e->getMessage();
@@ -259,7 +249,7 @@ if ($action == "importSignature") {
 									}
 								}
 
-								/*if (!getDolGlobalString("PROPAL_SIGNATURE_ON_ALL_PAGES") && !$propalsignonspecificpage) {
+								if (!getDolGlobalString("PROPAL_SIGNATURE_ON_ALL_PAGES") && !$propalsignonspecificpage) {
 									// We do not found specific instruction or page for the signature, so we add it now we are on the last page.
 									// A signature image file is 720 x 180 (ratio 1/4) but we use only the size into PDF
 									if (getDolGlobalString("PROPAL_SIGNATURE_XFORIMGSTART")) {
@@ -279,7 +269,7 @@ if ($action == "importSignature") {
 									}
 
 									dolPrintSignatureImage($pdf, $langs, $param);
-								}*/
+								}
 
 								//$pdf->Close();
 								$pdf->Output($newpdffilename, "F");
