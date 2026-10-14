@@ -434,6 +434,8 @@ class pdf_livraison extends ModelePDFCommandes
 					for ($i = 0; $i < $nblines; $i++) {
 						$curY = $nexY;
 						$pdf->SetFont('', '', $default_font_size - 1); // Into loop to work with multipage
+						$descEndPage = 0; // Page et position réelles de fin de description (pour la ligne Éco-participation)
+						$descEndY = 0;
 						$pdf->SetTextColor(0, 0, 0);
 
 						$pdf->setTopMargin($tab_top_newpage);
@@ -458,6 +460,8 @@ class pdf_livraison extends ModelePDFCommandes
 							$posyafter = $pdf->GetY();
 							if ($posyafter > ($this->page_hauteur - ($heightforfooter + $heightforfreetext + $heightforinfotot))) {	// There is no space left for total+free text
 								if ($i == ($nblines - 1)) {	// No more lines, and no space left to show total, so we create a new page
+									$descEndPage = $pdf->getPage();
+									$descEndY = $posyafter;
 									$pdf->AddPage('', '', true);
 									if (!empty($tplidx)) {
 										$pdf->useTemplate($tplidx);
@@ -485,6 +489,10 @@ class pdf_livraison extends ModelePDFCommandes
 						$nexY = $pdf->GetY();
 						$pageposafter = $pdf->getPage();
 
+						if (empty($descEndPage)) {
+							$descEndPage = $pageposafter;
+							$descEndY = $nexY;
+						}
 						$pdf->setPage($pageposbefore);
 						$pdf->setTopMargin($this->marge_haute);
 						$pdf->setPageOrientation('', 1, 0); // The only function to edit the bottom margin of current page to set it.
@@ -600,35 +608,56 @@ class pdf_livraison extends ModelePDFCommandes
 						}
 						$this->tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')] = array('vatrate'=>$vatrate, 'vatcode'=>$vatcode, 'amount'=> $this->tva_array[$vatrate.($vatcode ? ' ('.$vatcode.')' : '')]['amount'] + $tvaligne);
 
-						if (!empty($object->lines[$i]->array_options)) {
-							foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
-								if($extrafieldColKey=="options_ecopart"){
-									if($extrafieldValue){
-										$price_exp = explode(" ", $extrafieldValue);
-										$price = $price_exp[0];
-										$price = number_format($price, 2);
-										$pdf->SetFont('', 'italic', $default_font_size - 3);
-										$pdf->writeHTMLCell($this->posxtva - $curX, 3, $curX, $nexY+2, "Éco-participation", 0, 1, false, true, 'J', true);
-										//$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
-										//VAT
-										$pdf->SetXY($this->posxtva - 5, $nexY+2);
-										$pdf->MultiCell($this->posxup - $this->posxtva + 4, 3, $vat_rate, 0, 'R');
-										$extrafieldValue = $this->getExtrafieldContent($object->lines[$i], $extrafieldColKey, $outputlangs);
-										//Price Unit
-										$pdf->SetXY($this->posxup, $nexY+2);
-										$pdf->MultiCell($this->posxqty - $this->posxup - 0.8, 3, $price, 0, 'R', 0);
-										//Quantity
-										$pdf->SetXY($this->posxqty, $nexY+2);
-										$pdf->MultiCell($this->posxunit - $this->posxqty - 0.8, 4, $qty, 0, 'R'); // Enough for 6 chars
-										//TOTAL HT
-										$pdf->SetXY($this->postotalht, $nexY+2);
-										$pdf->MultiCell($this->page_largeur - $this->marge_droite - $this->postotalht, 3, number_format($qty*$price, 2), 0, 'R', 0);
-										//$this->printStdColumnContent($pdf, $nexY, $extrafieldColKey, $extrafieldValue);
-										$nexY = max($pdf->GetY(), $nexY);
-										$pdf->SetFont('', '', $default_font_size);
+						if (!empty($object->lines[$i]->array_options['options_ecopart'])) {
+							// Ligne Éco-participation : placée juste sous la fin réelle de la description ($descEndPage / $descEndY).
+							// $nexY ne convient pas : il peut pointer sur une autre page que la page courante quand une page
+							// a été ajoutée pour les totaux (dernière ligne) ou via MAIN_PDF_DATA_ON_FIRST_PAGE.
+							$price_exp = explode(" ", $object->lines[$i]->array_options['options_ecopart']);
+							$priceecopart = (float) price2num($price_exp[0]); // numeric value for computation
+							$price = number_format($priceecopart, 2);
+							$ecoHeight = 4;
+							$ecoPage = $descEndPage;
+							$ecoY = $descEndY + 2;
+							if (($ecoY + $ecoHeight) > ($this->page_hauteur - $heightforfooter)) {
+								// Pas de place sous la description : la ligne passe en haut de la page suivante (créée si besoin)
+								if ($ecoPage >= $pdf->getNumPages()) {
+									$pdf->setPage($pdf->getNumPages());
+									$pdf->AddPage('', '', true);
+									if (!empty($tplidx)) {
+										$pdf->useTemplate($tplidx);
 									}
 								}
+								$ecoPage++;
+								$ecoY = $tab_top_newpage;
 							}
+							$pdf->setPage($ecoPage);
+							$pdf->setPageOrientation('', true, 0); // The only function to edit the bottom margin of current page to set it.
+							$pdf->SetFont('', 'italic', $default_font_size - 3);
+							$pdf->writeHTMLCell($this->posxtva - $curX, 3, $curX, $ecoY, "Éco-participation", 0, 1, false, true, 'J', true);
+							// VAT
+							if (!getDolGlobalString('MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT') && !getDolGlobalString('MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT_COLUMN')) {
+								$pdf->SetXY($this->posxtva - 5, $ecoY);
+								$pdf->MultiCell($this->posxup - $this->posxtva + 4, 3, $vat_rate, 0, 'R');
+							}
+							// Price Unit
+							$pdf->SetXY($this->posxup, $ecoY);
+							$pdf->MultiCell($this->posxqty - $this->posxup - 0.8, 3, $price, 0, 'R', 0);
+							// Quantity
+							$pdf->SetXY($this->posxqty, $ecoY);
+							$pdf->MultiCell($this->posxunit - $this->posxqty - 0.8, 4, $qty, 0, 'R'); // Enough for 6 chars
+							// Total HT
+							$pdf->SetXY($this->postotalht, $ecoY);
+							$pdf->MultiCell($this->page_largeur - $this->marge_droite - $this->postotalht, 3, number_format($priceecopart * (float) $object->lines[$i]->qty, 2), 0, 'R', 0);
+							$pdf->SetFont('', '', $default_font_size);
+							$nexY = max($pdf->GetY(), $ecoY + $ecoHeight);
+							// Dernière ligne : plus de place pour les totaux sous l'écotaxe, on ajoute une page (même logique que pour la description)
+							if ($i == ($nblines - 1) && $ecoPage == $pdf->getNumPages() && $nexY > ($this->page_hauteur - ($heightforfooter + $heightforfreetext + $heightforinfotot))) {
+								$pdf->AddPage('', '', true);
+								if (!empty($tplidx)) {
+									$pdf->useTemplate($tplidx);
+								}
+							}
+							$pageposafter = $pdf->getNumPages();
 						}
 
 						// Add line

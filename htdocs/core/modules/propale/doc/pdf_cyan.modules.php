@@ -842,26 +842,30 @@ class pdf_cyan extends ModelePDFPropales
 					$pdf->setPage($afterPosData['page']);
 					$nexY = $afterPosData['y'];
 
-					if (!empty($object->lines[$i]->array_options)) {
-						foreach ($object->lines[$i]->array_options as $extrafieldColKey => $extrafieldValue) {
-							if($extrafieldColKey=="options_ecopart"){
-								if($extrafieldValue){
-									$price_exp = explode(" ", $extrafieldValue);
-									$price = $price_exp[0];
-									$price = number_format($price, 2);
-									$pdf->SetFont('', 'italic', $default_font_size - 3);
-									$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
-									$this->printStdColumnContent($pdf, $nexY, 'vat', $vat_rate);
-									$extrafieldValue = $this->getExtrafieldContent($object->lines[$i], $extrafieldColKey, $outputlangs);
-									$this->printStdColumnContent($pdf, $nexY, 'subprice', $price);
-									$this->printStdColumnContent($pdf, $nexY, 'qty', $qty);
-									$this->printStdColumnContent($pdf, $nexY, 'totalexcltax', number_format((float)$qty * (float)$price_exp[0], 2));
-									//$this->printStdColumnContent($pdf, $nexY, $extrafieldColKey, $extrafieldValue);
-									$nexY = max($pdf->GetY(), $nexY);
-									$pdf->SetFont('', '', $default_font_size);
-								}
+					if (!empty($object->lines[$i]->array_options['options_ecopart'])) {
+						$price_exp = explode(" ", $object->lines[$i]->array_options['options_ecopart']);
+						$priceecopart = (float) price2num($price_exp[0]);
+						$price = number_format($priceecopart, 2);
+						// Pas de place pour la ligne Éco-participation en bas de page : on passe sur une nouvelle page
+						if (($nexY + 4) > ($this->page_hauteur - $heightforfooter)) {
+							$pdf->setPage($pdf->getNumPages());
+							$pdf->AddPage();
+							if (!empty($tplidx)) {
+								$pdf->useTemplate($tplidx);
 							}
+							$pdf->setPage($pdf->getNumPages());
+							$nexY = $tab_top_newpage;
 						}
+						$pdf->SetFont('', 'italic', $default_font_size - 3);
+						$this->printColEcopartContent($pdf, $nexY, 'desc', $object, $i, $outputlangs, $hideref, $hidedesc);
+						$this->printStdColumnContent($pdf, $nexY, 'vat', $vat_rate);
+						$this->printStdColumnContent($pdf, $nexY, 'subprice', $price);
+						$this->printStdColumnContent($pdf, $nexY, 'qty', $qty);
+						$this->printStdColumnContent($pdf, $nexY, 'totalexcltax', number_format($priceecopart * (float) $object->lines[$i]->qty, 2));
+						$nexY = max($pdf->GetY(), $nexY);
+						$pdf->SetFont('', '', $default_font_size);
+						// On enregistre la position de fin pour le calcul de la place restante (totaux sur la dernière page)
+						$this->setAfterColsLinePositionsData('ecopart', $nexY, $pdf->getPage());
 					}
 
 					// Add line
